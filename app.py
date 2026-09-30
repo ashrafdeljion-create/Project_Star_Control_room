@@ -19,7 +19,7 @@ st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown("Your unified command center for Weekly 911's pipeline automation and NPS Excel Report generation.")
 
 # --- TABS FOR THE ONE-STOP SHOP ---
-tab1, tab2 = st.tabs(["⚡ Weekly 911's Control Room", "📊 NPS Dashboard & Data Generator"])
+tab1, tab2 = st.tabs(["⚡ Weekly 911's Control Room", "📊 BM/RM NPS Dashboard Portfolio & Data Generator"])
 
 # ==========================================
 # TAB 1: WEEKLY 911'S CONTROL ROOM
