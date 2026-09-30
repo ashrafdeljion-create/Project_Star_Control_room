@@ -314,7 +314,7 @@ with tab2:
     if "report_files" not in st.session_state:
         st.session_state.report_files = {}
 
-    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (.sav) for NPS Dashboard", type=["sav"], key="nps_file")
+    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (Project Star_W? to W?.sav) for NPS Dashboard", type=["sav"], key="nps_file")
 
     portfolio_mode = st.selectbox(
         "Select Portfolio Filter Mode:",
