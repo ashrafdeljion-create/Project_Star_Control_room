@@ -163,6 +163,28 @@ with tab1:
     })
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
+    # --- ADDED SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE BELOW MAIN SUMMARY ---
+    st.markdown("#### 📊 Segment Quotas Executive Summary Breakdown")
+    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
+    achieved_r60_r150, achieved_r150_plus = 247, 185
+    
+    total_seg_target = q_seg_r0_r1 + q_seg_r1_r5 + q_seg_r5_r10 + q_seg_r10_r60 + q_seg_r60_r150 + q_seg_r150_plus
+    total_seg_achieved = achieved_r0_r1 + achieved_r1_r5 + achieved_r5_r10 + achieved_r10_r60 + achieved_r60_r150 + achieved_r150_plus
+    total_seg_outstanding = total_seg_target - total_seg_achieved
+
+    seg_summary_df = pd.DataFrame({
+        "Segment": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M", "R60-R150M", "R150M+", "Total"],
+        "TOTAL Target": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus, total_seg_target],
+        "TOTAL Achieved": [achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60, achieved_r60_r150, achieved_r150_plus, total_seg_achieved],
+        "Total Outstanding": [
+            q_seg_r0_r1 - achieved_r0_r1, q_seg_r1_r5 - achieved_r1_r5, 
+            q_seg_r5_r10 - achieved_r5_r10, q_seg_r10_r60 - achieved_r10_r60, 
+            q_seg_r60_r150 - achieved_r60_r150, q_seg_r150_plus - achieved_r150_plus, 
+            total_seg_outstanding
+        ]
+    })
+    st.dataframe(seg_summary_df, use_container_width=True, hide_index=True)
+
     # --- Live Visual Previews inside App Dashboard ---
     st.markdown("---")
     st.subheader("🔍 Live Regional & Segment Breakdown Tables")
@@ -196,7 +218,6 @@ with tab1:
         })
         st.dataframe(bus_seg_df, use_container_width=True, hide_index=True)
 
-        # --- ADDED BUSINESS CROSSTAB (REGIONS x SEGMENTS R0m-R1m, R1m-R5m, R5m-R10) ---
         st.markdown("#### Business Regional vs. Segments Crosstab")
         bus_crosstab_df = pd.DataFrame({
             "Busines": [
@@ -239,7 +260,6 @@ with tab1:
         })
         st.dataframe(ent_seg_df, use_container_width=True, hide_index=True)
 
-        # --- ADDED ENTERPRISE CROSSTAB (REGIONS x SEGMENTS R10m-R60m, R150m+, R60m-R150) ---
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
         ent_crosstab_df = pd.DataFrame({
             "Enterprise": [
