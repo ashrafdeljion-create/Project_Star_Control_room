@@ -95,7 +95,7 @@ with tab1:
     st.markdown("Monitor overall sample quotas achieved, view executive summaries across portfolios, and download the PM Project Status Update report.")
 
     st.markdown("---")
-    st.subheader("⚙️ Live Quota Target Adjustments")
+    st.subheader("⚙️️ Live Quota Target Adjustments")
     
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=5, key="target_bus")
@@ -263,10 +263,10 @@ with tab1:
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
         ent_crosstab_df = pd.DataFrame({
             "Enterprise": [
-                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
-                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
-                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
-                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
+                "Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", 
+                "Gauteng Tshwane", "Gauteng West", "Greater Sandton", "Kzn Coastal", 
+                "Kzn Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", 
+                "Northern Cape", "Western Cape Inland", "Western Cape Metro"
             ],
             "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
             "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
@@ -573,10 +573,10 @@ with tab1:
             c.alignment = CENTER_ALIGN
 
 
-        # 4. Update PUBSC Sheet (Fixed Aligned Labels & Columns)
+        # 4. Update PUBSC Sheet (Fixed Aligned Labels, Columns, and Region Column Totals)
         ws_pub = wb.create_sheet(title='Update PUBSC')
         ws_pub.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
-        ws_pub.merge_cells("B1:K1")
+        ws_pub.merge_cells("B1:L1")
         ws_pub.cell(row=1, column=2).alignment = CENTER_ALIGN
 
         pub_headers = ["ORGANISATION TYPE", "EASTERN CAPE", "FREE STATE", "GAUTENG", "KWAZULU-NATAL", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE", "WESTERN CAPE", "TOTAL"]
@@ -601,10 +601,19 @@ with tab1:
                 c = ws_pub.cell(row=row_offset, column=val_idx, value=val)
                 c.border = THIN_BORDER
                 c.alignment = CENTER_ALIGN
-            # Total Formula in Column L (index 12)
             tot_c = ws_pub.cell(row=row_offset, column=12, value=f"=SUM(C{row_offset}:K{row_offset})")
             tot_c.border = THIN_BORDER
             tot_c.alignment = CENTER_ALIGN
+
+        # Add Bottom Total Row for Region Columns & Total Column
+        pub_tot_row = len(pub_rows_data) + 3
+        ws_pub.cell(row=pub_tot_row, column=2, value="").border = THIN_BORDER
+        for c_idx in range(3, 13):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_pub.cell(row=pub_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{pub_tot_row-1})")
+            c.border = THIN_BORDER
+            c.alignment = CENTER_ALIGN
+            c.font = Font(name="Calibri", size=11, bold=True)
 
         # --- AUTO-ADJUST COLUMN WIDTHS FOR ALL WORKSHEETS ---
         for sheet in wb.worksheets:
