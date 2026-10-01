@@ -108,14 +108,14 @@ with tab1:
     st.markdown("Specify exact individual segment quotas below for detailed tracking and Excel report integration:")
 
     col_seg1, col_seg2, col_seg3, col_seg4 = st.columns(4)
-    with col_seg1: q_seg_r0_r1 = st.number_input("R0M-R1M Quota", min_value=0, value=800, step=25, key="q_r0_r1")
-    with col_seg2: q_seg_r1_r5 = st.number_input("R1M-R5M Quota", min_value=0, value=550, step=25, key="q_r1_r5")
-    with col_seg3: q_seg_r5_r10 = st.number_input("R5M-R10M Quota", min_value=0, value=450, step=25, key="q_r5_r10")
-    with col_seg4: q_seg_r10_r60 = st.number_input("R10-R60M Quota", min_value=0, value=550, step=25, key="q_r10_r60")
+    with col_seg1: q_seg_r0_r1 = st.number_input("R0M-R1M Quota", min_value=0, value=1600, step=25, key="q_r0_r1")
+    with col_seg2: q_seg_r1_r5 = st.number_input("R1M-R5M Quota", min_value=0, value=1100, step=25, key="q_r1_r5")
+    with col_seg3: q_seg_r5_r10 = st.number_input("R5M-R10M Quota", min_value=0, value=900, step=25, key="q_r5_r10")
+    with col_seg4: q_seg_r10_r60 = st.number_input("R10-R60M Quota", min_value=0, value=1100, step=25, key="q_r10_r60")
 
     col_seg5, col_seg6, _ = st.columns(3)
-    with col_seg5: q_seg_r60_r150 = st.number_input("R60-R150M Quota", min_value=0, value=450, step=25, key="q_r60_r150")
-    with col_seg6: q_seg_r150_plus = st.number_input("R150M+ Quota", min_value=0, value=250, step=25, key="q_r150_plus")
+    with col_seg5: q_seg_r60_r150 = st.number_input("R60-R150M Quota", min_value=0, value=900, step=25, key="q_r60_r150")
+    with col_seg6: q_seg_r150_plus = st.number_input("R150M+ Quota", min_value=0, value=500, step=25, key="q_r150_plus")
 
     total_target_val = target_business + target_enterprise + target_pubsc
 
