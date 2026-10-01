@@ -102,7 +102,7 @@ with tab1:
     with col_t2: target_enterprise = st.number_input("Enterprise (R10Mil) Target", min_value=0, value=1400, step=50, key="target_ent")
     with col_t3: target_pubsc = st.number_input("PUBSC Target", min_value=0, value=500, step=25, key="target_pub")
 
-    # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW (Added as requested) ---
+    # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW ---
     st.markdown("---")
     st.subheader("⚙️ Segment-Level Quota Breakdown Inputs")
     st.markdown("Specify exact individual segment quotas below for detailed tracking and Excel report integration:")
@@ -285,6 +285,13 @@ with tab1:
             cell.fill = FNB_TEAL
             cell.font = WHITE_BOLD_FONT
 
+        # Add header for the Total column (Column H / index 8)
+        tot_hdr_bus = ws_bus.cell(row=2, column=8, value="Total")
+        tot_hdr_bus.fill = FNB_TEAL
+        tot_hdr_bus.font = WHITE_BOLD_FONT
+        tot_hdr_bus.alignment = CENTER_ALIGN
+        tot_hdr_bus.border = THIN_BORDER
+
         bus_rows = [
             ("Eastern Cape", [180, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 54, 0]),
             ("Gauteng East", [0, 0, 88, 0, 0]), ("Gauteng South Central", [0, 0, 93, 0, 0]),
@@ -352,6 +359,13 @@ with tab1:
             cell = ws_ent.cell(row=2, column=c_idx, value=reg)
             cell.fill = FNB_TEAL
             cell.font = WHITE_BOLD_FONT
+
+        # Add header for the Total column (Column H / index 8) on Enterprise sheet
+        tot_hdr_ent = ws_ent.cell(row=2, column=8, value="Total")
+        tot_hdr_ent.fill = FNB_TEAL
+        tot_hdr_ent.font = WHITE_BOLD_FONT
+        tot_hdr_ent.alignment = CENTER_ALIGN
+        tot_hdr_ent.border = THIN_BORDER
 
         ent_rows = [
             ("Eastern Cape", [55, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 21, 0]),
