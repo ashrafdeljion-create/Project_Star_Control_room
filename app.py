@@ -13,6 +13,7 @@ from dateutil.relativedelta import relativedelta, FR
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 st.set_page_config(
@@ -71,17 +72,18 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("⭐ Project Star: One-Stop Operations Hub")
-st.markdown("Your unified command center for Project Status, Weekly 911's pipeline automation, NPS Excel reports, and Q11 extractions.")
+st.markdown("Your unified command center for Project Status, Weekly 911's pipeline automation, NPS Excel reports, Q11 extractions, and Yearly Dashboard generation.")
 
 
 # =========================================================================
-# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (Project Status is Tab 1)
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (5 Tabs Total)
 # =========================================================================
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📋 Project Status & Quotas Update",
     "⚡ Weekly 911's Control Room", 
     "📊 NPS Dashboard & Data Generator", 
-    "📈 Q11 Ratings & Reasons Extraction"
+    "📈 Q11 Ratings & Reasons Extraction",
+    "📈 NPS Yearly Dashboard"
 ])
 
 
@@ -95,7 +97,7 @@ with tab1:
     st.markdown("Monitor overall sample quotas achieved, view executive summaries across portfolios, and download the PM Project Status Update report.")
 
     st.markdown("---")
-    st.subheader("⚙️️ Live Quota Target Adjustments")
+    st.subheader("⚙️ Live Quota Target Adjustments")
     
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=5, key="target_bus")
@@ -832,7 +834,7 @@ with tab2:
 # ==========================================================================
 # ==========================================================================
 with tab3:
-    st.markdown("### 📊 NPS Dashboard & Streamlined Data Generator")
+    st.markdown("### 📊 NPS Ratings BM/RM Portfolio Dashboard & Data Generator")
     st.markdown("Upload your master SPSS data file below, select your wave preferences and portfolio filter, then click **Run Processing**.")
 
     if "reports_ready" not in st.session_state: st.session_state.reports_ready = False
@@ -890,3 +892,890 @@ with tab4:
     with col_q2: file_q11_grow = st.file_uploader("Upload Growth SPSS File (.sav)", type=["sav"], key="q11_grow")
     if st.button("🚀 Run Q11 Extraction", type="primary", key="run_q11"):
         st.success("Q11 Extraction complete!")
+
+
+# ==========================================================================
+# ==========================================================================
+# TAB 5: NPS YEARLY DASHBOARD GENERATOR
+# ==========================================================================
+# ==========================================================================
+with tab5:
+    st.markdown("### 📈 NPS Yearly Dashboard Generator")
+    st.markdown("Upload your multi-wave yearly SPSS dataset (`.sav`) below to process and generate the comprehensive longitudinal `Star_Yearly_Dashboard.xlsx` report.")
+
+    yearly_uploaded_file = st.file_uploader("Upload Yearly SPSS File (`Project Star_W1 to W22.sav`)", type=["sav"], key="yearly_sav_file")
+
+    def generate_yearly_dashboard_workbook(uploaded_sav):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
+            tmp.write(uploaded_sav.getvalue())
+            tmp_path = tmp.name
+
+        try:
+            df, meta = pyreadstat.read_sav(tmp_path)
+            df = df.loc[:, ~df.columns.duplicated()].copy()
+
+            rm_driver_cols = [f"Q4_{i:02d}" for i in range(1, 24)]
+            channel_q2_cols = ['Q2_1', 'Q2_2', 'Q2_3', 'Q2_4', 'Q2_5', 'Q2_6', 'Q2_7']
+            pref_channel_col = 'Q2_2_1'
+            personal_banker_col = 'Q4A2'
+            pb_sat_col = 'Q4B2'
+            branch_service_cols = ['Q5_1', 'Q5_2', 'Q5_3', 'Q5_4', 'Q5_21', 'Q5_22', 'Q5_23', 'Q5_24']
+            branch_cols = branch_service_cols + ['Q10_2']
+            cc_cols = ['Q7_1', 'Q7_2', 'Q7_3', 'Q7_4', 'Q7_5', 'Q7_21', 'Q7_22', 'Q10_3']
+
+            online_cols = ['Q8_1', 'Q8_2', 'Q8_3', 'Q8_4', 'Q8_21', 'Q8_22', 'Q8_23', 'Q8_24', 'Q8_25', 'Q8_26']
+            app_cols = ['Q9_1', 'Q9_2', 'Q9_3', 'Q9_4', 'Q9_21', 'Q9_22', 'Q9_23', 'Q9_24', 'Q9_25', 'Q9_26']
+            chan_sat_cols = ['Q10_1', 'Q10_2', 'Q10_3', 'Q10_4', 'Q10_5']
+            product_sat_cols = ['Q11_1_1', 'Q11_1_2', 'Q11_1_3', 'Q11_1_4', 'Q11_1_5']
+
+            q11a_groups = {
+                'Q11A_1': [
+                    ('Q11a.1. Lending products - Overdraft', 'Q11A_1_1'),
+                    ('Q11a.1. Lending products - Loans', 'Q11A_1_2'),
+                    ('Q11a.1. Lending products - Other', 'Q11A_1_3')
+                ],
+                'Q11A_2': [
+                    ('Q11a.2. Transactional products - Business account', 'Q11A_2_1'),
+                    ('Q11a.2. Transactional products - Debit card', 'Q11A_2_2'),
+                    ('Q11a.2. Transactional products - Credit Card', 'Q11A_2_3'),
+                    ('Q11a.2. Transactional products - Other', 'Q11A_2_4')
+                ],
+                'Q11A_3': [
+                    ('Q11a.3. Insurance products - Business credit protection plan', 'Q11A_3_1'),
+                    ('Q11a.3. Insurance products - Law-on-call business plan', 'Q11A_3_2'),
+                    ('Q11a.3. Insurance products - Other', 'Q11A_3_3')
+                ],
+                'Q11A_4': [
+                    ('Q11a.4. Investment products - Savings', 'Q11A_4_1'),
+                    ('Q11A_4. Investment products - Notice deposits', 'Q11A_4_2'),
+                    ('Q11A_4. Investment products - Other', 'Q11A_4_3')
+                ]
+            }
+
+            all_q11a_cols = [col for grp in q11a_groups.values() for _, col in grp]
+            expectations_cols = ['Q12_1', 'Q12_2', 'Q12_3']
+            q16_col = 'Q16'
+
+            consideration_items = [
+                ("Absa", "Q16_1_1_flag"),
+                ("Capitec", "Q16_1_2_flag"),
+                ("Investec", "Q16_1_8_flag"),
+                ("Mercantile", "Q16_1_9_flag"),
+                ("Nedbank", "Q16_1_3_flag"),
+                ("Sasfin", "Q16_1_10_flag"),
+                ("Standard Bank", "Q16_1_4_flag"),
+                ("Some other business banking offering", "Q16_1_5_flag"),
+                ("I would not consider moving from FNB at all", "Q16_1_6_flag")
+            ]
+            raw_consideration_cols = ['Q16_1_1', 'Q16_1_2', 'Q16_1_3', 'Q16_1_4', 'Q16_1_5', 'Q16_1_6', 'Q16_1_8', 'Q16_1_9', 'Q16_1_10']
+            q5a_cols = ['Q5A_1', 'Q5A_3', 'Q5A_4', 'Q5A_5', 'Q5A_6', 'Q5A_7', 'Q5A_8', 'Q5A_9', 'Q5A_10', 'Q5A_11', 'Q5A_12', 'Q5A_13', 'Q5A_14', 'Q5A_2']
+
+            all_rating_cols = list(set(rm_driver_cols + branch_cols + cc_cols + online_cols + app_cols + chan_sat_cols + product_sat_cols + expectations_cols))
+            if pb_sat_col and pb_sat_col not in all_rating_cols:
+                all_rating_cols.append(pb_sat_col)
+
+            channel_items = [
+                ("Q2. Business Manager", "Q2_1_flag"),
+                ("Q2. Branch", "Q2_2_flag"),
+                ("Q2. Contact Centre", "Q2_3_flag"),
+                ("Q2. Online Banking", "Q2_4_flag"),
+                ("Q2. FNB Business Banking App", "Q2_5_flag"),
+                ("Q2. Account fulfilment", "Q6_code1_flag"),
+                ("Q2. Product contact centre", "Q6_code2_flag"),
+                ("Q2. Business Desk", "Q6_code3_flag"),
+                ("Q2. Secure chat", "Q2_7_flag"),
+                ("Q2. None of the above", "Q2_6_flag"),
+            ]
+
+            q5a_items = [
+                ("Q5a. Prefer face-to-face interaction", "Q5A_1_flag"),
+                ("Q5a. Required to submit documents", "Q5A_3_flag"),
+                ("Q5a. Card collection", "Q5A_4_flag"),
+                ("Q5a. Card queries", "Q5A_5_flag"),
+                ("Q5a. Issue could not be resolved digitally/limited options on digital channels", "Q5A_6_flag"),
+                ("Q5a. Difficulty using digital channels", "Q5A_7_flag"),
+                ("Q5a. Not enough information on digital channels", "Q5A_8_flag"),
+                ("Q5a. Directed to branch", "Q5A_9_flag"),
+                ("Q5a. Needed help/assistance", "Q5A_10_flag"),
+                ("Q5a. Cash deposit/withdrawal", "Q5A_11_flag"),
+                ("Q5a. To open account", "Q5A_12_flag"),
+                ("Q5a. To get bank statement", "Q5A_13_flag"),
+                ("Q5a. Update personal information/details", "Q5A_14_flag"),
+                ("Q5a. Others; specify", "Q5A_2_flag"),
+            ]
+
+            q6_items = [
+                ("FICA, outstanding documents relating to your account", "Q6_code_1"),
+                ("A specific product, e.g. such as Instant Solutions", "Q6_code_2"),
+                ("General enquiries (e.g. account, card & cheque-related)", "Q6_code_3"),
+                ("Don't know / not sure", "Q6_code_4")
+            ]
+
+            pref_channel_items = [
+                ("Branch", 1),
+                ("Contact Centre", 2),
+                ("Online Banking", 3),
+                ("FNB Business Banking App", 4),
+                ("Business Manager at the branch", 5),
+                ("Business/RM Manager", 6),
+                ("Secure chat Help note", 7),
+                ("None of the above", 8)
+            ]
+
+            personal_banker_items = [
+                ("Yes", 1),
+                ("No", 2),
+                ("Do not have a personal FNB Account", 3),
+                ("Refused to answer", 4)
+            ]
+
+            rm_labels = {}
+            for col in rm_driver_cols:
+                if col in meta.column_names_to_labels and meta.column_names_to_labels[col]:
+                    rm_labels[col] = re.sub(r'^(Q4[\._\s\d]*)+', '', meta.column_names_to_labels[col], flags=re.IGNORECASE).strip()
+                else:
+                    rm_labels[col] = f"Statement {col}"
+
+            pb_sat_label = "Overall satisfaction with your Personal Banker"
+            if pb_sat_col and pb_sat_col in meta.column_names_to_labels and meta.column_names_to_labels[pb_sat_col]:
+                pb_sat_label = re.sub(r'^(Q4B2[\._\s\d]*)+', '', meta.column_names_to_labels[pb_sat_col], flags=re.IGNORECASE).strip()
+
+            explicit_branch_labels = {
+                'Q5_1': 'Offering you personalized service',
+                'Q5_2': 'The manner in which you are welcomed and directed',
+                'Q5_3': 'Staff understanding your business banking needs',
+                'Q5_4': 'Waiting time for service',
+                'Q5_21': 'Operating hours of the branch',
+                'Q5_22': 'Staff communicating with you in a clear and easily understandable way',
+                'Q5_23': 'Staff being willing to help',
+                'Q5_24': 'Consistently delivering on promises made to you',
+                'Q10_2': 'OVERALL Branch experience'
+            }
+            branch_labels = {col: explicit_branch_labels.get(col, col) for col in branch_cols}
+
+            explicit_cc_labels = {
+                'Q7_1': 'Knowledge and competency',
+                'Q7_2': 'Taking ownership of your query',
+                'Q7_3': 'Offering you personalized service',
+                'Q7_4': 'Processing requests accurately',
+                'Q7_5': 'Providing the correct advice relating to your query',
+                'Q7_21': 'The agent providing the correct advice relating to your enquiry or transaction',
+                'Q7_22': 'The agent delivering on promises made',
+                'Q10_3': 'OVERALL Contact Centre experience'
+            }
+            cc_labels = {col: explicit_cc_labels.get(col, col) for col in cc_cols}
+
+            online_labels = {
+                'Q8_1': 'Q8. User-friendliness - having a logical layout and structure',
+                'Q8_2': 'Q8. The range of functionalities offered effectively addressing your banking needs',
+                'Q8_3': 'Q8. Reliability; stability and availability (uptime)',
+                'Q8_4': 'Q8. Security and other mechanisms mitigating against fraudulent activity',
+                'Q8_21': 'Q8. The availability of help text; information or direct chat / instant messaging',
+                'Q8_22': 'Q8. The response time on the submission of information',
+                'Q8_23': 'Q8. Logical layout and structure of the website',
+                'Q8_24': 'Q8. Fraud and data protection offered for transactions executed',
+                'Q8_25': 'Q8. Accuracy – transactions executed are always correct',
+                'Q8_26': 'Q8. Navigability – quick to find logical links and always know exactly where I am'
+            }
+
+            app_labels = {
+                'Q9_1': 'Q9. User-friendliness - having a logical layout and structure',
+                'Q9_2': 'Q9. The range of functionalities offered effectively addressing your banking needs',
+                'Q9_3': 'Q9. Reliability; stability and availability (uptime)',
+                'Q9_4': 'Q9. Security and other mechanisms mitigating against fraudulent activity',
+                'Q9_21': 'Q9. The availability of help text; information or direct chat / instant messaging',
+                'Q9_22': 'Q9. The response time on the submission of information',
+                'Q9_23': 'Q9. Logical layout and structure of the Business Banking App',
+                'Q9_24': 'Q9. Fraud and data protection offered for transactions executed',
+                'Q9_25': 'Q9. Accuracy – transactions executed are always correct',
+                'Q9_26': 'Q9. Navigability – quick to find logical links and always know exactly where I am'
+            }
+
+            explicit_chan_sat_items = [
+                ("Q10.1. OVERALL - Business Manager experience", "Q10_1"),
+                ("Q10.2. OVERALL - Branch experience", "Q10_2"),
+                ("Q10.3. OVERALL - Contact Centre experience", "Q10_3"),
+                ("Q10.4. OVERALL - Online Banking experience", "Q10_4"),
+                ("Q10.5. OVERALL - FNB Business Banking App experience?", "Q10_5"),
+            ]
+
+            explicit_product_sat_items = [
+                ("Q11.1. FNB Business Lending products", "Q11_1_1"),
+                ("Q11.2. FNB Business Transactional products", "Q11_1_2"),
+                ("Q11.3. FNB Business Insurance products", "Q11_1_3"),
+                ("Q11.4. FNB Business Investment products", "Q11_1_4"),
+                ("Q11.5. FNB Business Forex Products", "Q11_1_5")
+            ]
+
+            expectations_items = [
+                ("Q12.1. Your overall level of satisfaction with the products you received from FNB Business?", "Q12_1"),
+                ("Q12.2. Your overall level of satisfaction with FNB Business?", "Q12_2"),
+                ("Q12.3. Your overall level of satisfaction with your BM over the last 3 months?", "Q12_3")
+            ]
+
+            cols = ['wave', 'REGION', 'SUBREG', 'SEGMENT', 'Type', 'Q14_1', 'Q14_2', 'Q6', q16_col] + all_rating_cols + channel_q2_cols + q5a_cols + [pref_channel_col, personal_banker_col, pb_sat_col] + raw_consideration_cols + all_q11a_cols
+            cols_present = [c for c in cols if c in df.columns]
+
+            df_sub = df[cols_present].copy()
+            df_sub = df_sub.loc[:, ~df_sub.columns.duplicated()].copy()
+
+            df_sub['Q6_raw'] = df_sub['Q6'].copy() if 'Q6' in df_sub.columns else None
+
+            for col in ['wave', 'REGION', 'SUBREG', 'SEGMENT', 'Type']:
+                if col in meta.variable_value_labels and col in df_sub.columns:
+                    df_sub[col] = df_sub[col].map(meta.variable_value_labels[col]).fillna(df_sub[col])
+
+            df_sub['REGION'] = df_sub['REGION'].fillna("Unspecified")
+            df_sub['SUBREG'] = df_sub['SUBREG'].fillna("Unspecified")
+            df_sub['SEGMENT'] = df_sub['SEGMENT'].fillna("Unspecified")
+
+            segment_relabel_map = {
+                'MEDIUM TOUCH': 'MEDIUM TOUCH (R10-R60M)',
+                'HIGH TOUCH': 'HIGH TOUCH (R60-R150M)',
+                'PREMIUM': 'PREMIUM (R150M+)'
+            }
+            df_sub['SEGMENT'] = df_sub['SEGMENT'].apply(lambda x: segment_relabel_map.get(str(x).strip(), str(x).strip()))
+
+            def assign_type(segment_val):
+                seg = str(segment_val).strip().upper()
+                if 'PUBLIC SECTOR' in seg or 'NON-PROFIT' in seg or 'PUBSC' in seg:
+                    return 'PUBSC'
+                elif seg in ['HIGH TOUCH (R60-R150M)', 'HIGH TOUCH', 'PREMIUM (R150M+)', 'PREMIUM']:
+                    return 'R10m+'
+                else:
+                    return 'Growth'
+
+            df_sub['Type'] = df_sub['SEGMENT'].apply(assign_type)
+
+            def get_wave_number(val):
+                match = re.search(r'\d+', str(val))
+                return int(match.group()) if match else 999
+
+            df_sub['wave_num'] = df_sub['wave'].apply(get_wave_number)
+            sorted_wave_nums = sorted(df_sub['wave_num'].unique())
+
+            regions = sorted([str(x) for x in df_sub['REGION'].unique() if x != "Unspecified"])
+            subregs = ["All"] + sorted([str(x) for x in df_sub['SUBREG'].unique() if x != "Unspecified"])
+            segments = ["All"] + sorted([str(x) for x in df_sub['SEGMENT'].unique() if x != "Unspecified"])
+            types = ["All"] + sorted([str(x) for x in df_sub['Type'].unique() if x != "Unspecified"])
+
+            def clean_rating_score(val):
+                try:
+                    fval = float(val)
+                    if fval == 11 or fval == 11.0:
+                        return None
+                    return fval if 1 <= fval <= 10 else None
+                except (ValueError, TypeError):
+                    return None
+
+            new_cols = {}
+            for col in all_rating_cols:
+                if col in df_sub.columns:
+                    new_cols[f"{col}_clean"] = df_sub[col].apply(clean_rating_score)
+
+            new_cols['Q14_1_clean'] = df_sub['Q14_1'].apply(lambda x: x if pd.notnull(x) and x in range(0, 11) else None)
+            new_cols['Q14_2_clean'] = df_sub['Q14_2'].apply(lambda x: x if pd.notnull(x) and x in range(0, 11) else None)
+
+            def is_q6_match(val, code_num, desc_text):
+                if pd.isnull(val): return False
+                sval = str(val).strip().lower()
+                return sval == str(code_num) or sval == f"{code_num}.0" or desc_text.lower() in sval
+
+            if 'Q6_raw' in df_sub.columns:
+                q10_3_clean = new_cols.get('Q10_3_clean', pd.Series(index=df_sub.index))
+                new_cols['Q6_code1_clean'] = [q10_3_clean[i] if is_q6_match(v, 1, "Business Account Fulfilment") else None for i, v in enumerate(df_sub['Q6_raw'])]
+                new_cols['Q6_code2_clean'] = [q10_3_clean[i] if is_q6_match(v, 2, "Product Contact Centre") else None for i, v in enumerate(df_sub['Q6_raw'])]
+                new_cols['Q6_code3_clean'] = [q10_3_clean[i] if is_q6_match(v, 3, "Business Desk") else None for i, v in enumerate(df_sub['Q6_raw'])]
+                new_cols['Q6_code1_flag'] = [1 if is_q6_match(v, 1, "Business Account Fulfilment") else 0 for v in df_sub['Q6_raw']]
+                new_cols['Q6_code2_flag'] = [1 if is_q6_match(v, 2, "Product Contact Centre") else 0 for v in df_sub['Q6_raw']]
+                new_cols['Q6_code3_flag'] = [1 if is_q6_match(v, 3, "Business Desk") else 0 for v in df_sub['Q6_raw']]
+                for code_val in [1, 2, 3, 4]:
+                    new_cols[f"Q6_code_{code_val}"] = df_sub['Q6_raw'].apply(lambda x: 1 if pd.notnull(x) and float(x) == code_val else 0)
+
+            for q11a_key, sub_items in q11a_groups.items():
+                sub_cols = [c for _, c in sub_items if c in df_sub.columns]
+                if sub_cols: df_sub[f"{q11a_key}_Base"] = df_sub[sub_cols].notnull().any(axis=1).astype(int)
+                for _, col in sub_items:
+                    if col in df_sub.columns: new_cols[f"{col}_flag"] = df_sub[col].apply(lambda x: 1 if pd.notnull(x) and float(x) == 1 else 0)
+
+            if q16_col in df_sub.columns:
+                df_sub['Q16_mapped'] = df_sub[q16_col].apply(lambda x: 'Yes' if str(x).strip().lower() in ['1', '1.0', 'yes'] else ('No' if str(x).strip().lower() in ['2', '2.0', 'no'] else None))
+                new_cols['Q16_Yes'] = df_sub['Q16_mapped'].apply(lambda x: 1 if x == 'Yes' else 0)
+                new_cols['Q16_No'] = df_sub['Q16_mapped'].apply(lambda x: 1 if x == 'No' else 0)
+                new_cols['Q16_Base'] = df_sub['Q16_mapped'].apply(lambda x: 1 if pd.notnull(x) else 0)
+            else:
+                new_cols['Q16_Yes'], new_cols['Q16_No'], new_cols['Q16_Base'] = 0, 0, 0
+
+            for _, flag_col in consideration_items:
+                raw_col = flag_col.replace('_flag', '')
+                new_cols[flag_col] = df_sub[raw_col].apply(lambda x: 1 if pd.notnull(x) and float(x) == 1 else 0) if raw_col in df_sub.columns else 0
+
+            bm_clean, fnb_clean = new_cols['Q14_2_clean'], new_cols['Q14_1_clean']
+            new_cols['BM_Det'] = bm_clean.apply(lambda x: 1 if pd.notnull(x) and x <= 6 else 0)
+            new_cols['BM_Pas'] = bm_clean.apply(lambda x: 1 if pd.notnull(x) and 7 <= x <= 8 else 0)
+            new_cols['BM_Pro'] = bm_clean.apply(lambda x: 1 if pd.notnull(x) and x >= 9 else 0)
+            new_cols['BM_Base'] = bm_clean.apply(lambda x: 1 if pd.notnull(x) else 0)
+
+            new_cols['FNB_Det'] = fnb_clean.apply(lambda x: 1 if pd.notnull(x) and x <= 6 else 0)
+            new_cols['FNB_Pas'] = fnb_clean.apply(lambda x: 1 if pd.notnull(x) and 7 <= x <= 8 else 0)
+            new_cols['FNB_Pro'] = fnb_clean.apply(lambda x: 1 if pd.notnull(x) and x >= 9 else 0)
+            new_cols['FNB_Base'] = fnb_clean.apply(lambda x: 1 if pd.notnull(x) else 0)
+
+            for qcol in channel_q2_cols:
+                if qcol in df_sub.columns: new_cols[f"{qcol}_flag"] = df_sub[qcol].apply(lambda x: 1 if pd.notnull(x) and float(x) == 1 else 0)
+            for qcol in q5a_cols:
+                if qcol in df_sub.columns: new_cols[f"{qcol}_flag"] = df_sub[qcol].apply(lambda x: 1 if pd.notnull(x) and float(x) == 1 else 0)
+            if pref_channel_col in df_sub.columns:
+                for lbl, code in pref_channel_items: new_cols[f"pref_chan_{code}"] = df_sub[pref_channel_col].apply(lambda x: 1 if pd.notnull(x) and float(x) == code else 0)
+            if personal_banker_col in df_sub.columns:
+                for lbl, code in personal_banker_items: new_cols[f"pb_code_{code}"] = df_sub[personal_banker_col].apply(lambda x: 1 if pd.notnull(x) and float(x) == code else 0)
+
+            df_sub = pd.concat([df_sub, pd.DataFrame(new_cols, index=df_sub.index)], axis=1)
+            df_sub = df_sub.loc[:, ~df_sub.columns.duplicated()].copy()
+
+            q16a_flag_cols = [flag_col for _, flag_col in consideration_items if flag_col in df_sub.columns]
+            df_sub['Q16A_Base'] = (df_sub[q16a_flag_cols].sum(axis=1) > 0).astype(int) if q16a_flag_cols else 0
+            df_sub['Channel_Base'] = df_sub[[c for c in channel_q2_cols if c in df_sub.columns]].notnull().any(axis=1).astype(int)
+            df_sub['Q5A_Base'] = (df_sub[[f"{q}_flag" for q in q5a_cols if f"{q}_flag" in df_sub.columns]].sum(axis=1) > 0).astype(int)
+            df_sub['Q6_Base'] = df_sub['Q6_raw'].apply(lambda x: 1 if pd.notnull(x) else 0)
+            df_sub['Pref_Channel_Base'] = df_sub[pref_channel_col].apply(lambda x: 1 if pd.notnull(x) else 0) if pref_channel_col in df_sub.columns else 0
+            df_sub['PB_Base'] = df_sub[personal_banker_col].apply(lambda x: 1 if pd.notnull(x) else 0) if personal_banker_col in df_sub.columns else 0
+
+            base_agg_dict = {
+                'Total_n': ('wave_num', 'count'),
+                'BM_Base': ('BM_Base', 'sum'), 'BM_Det': ('BM_Det', 'sum'), 'BM_Pas': ('BM_Pas', 'sum'), 'BM_Pro': ('BM_Pro', 'sum'),
+                'FNB_Base': ('FNB_Base', 'sum'), 'FNB_Det': ('FNB_Det', 'sum'), 'FNB_Pas': ('FNB_Pas', 'sum'), 'FNB_Pro': ('FNB_Pro', 'sum'),
+                'Channel_Base': ('Channel_Base', 'sum'), 'Q5A_Base': ('Q5A_Base', 'sum'), 'Q6_Base': ('Q6_Base', 'sum'),
+                'Pref_Channel_Base': ('Pref_Channel_Base', 'sum'), 'PB_Base': ('PB_Base', 'sum'),
+            }
+
+            for col_name in ['Q16_Base', 'Q16_Yes', 'Q16_No', 'Q16A_Base']:
+                if col_name in df_sub.columns: base_agg_dict[col_name] = (col_name, 'sum')
+            for _, flag_col in consideration_items:
+                if flag_col in df_sub.columns: base_agg_dict[flag_col] = (flag_col, 'sum')
+            for q11a_key in q11a_groups.keys():
+                if f"{q11a_key}_Base" in df_sub.columns: base_agg_dict[f"{q11a_key}_Base"] = (f"{q11a_key}_Base", 'sum')
+            for col in all_rating_cols:
+                if f"{col}_clean" in df_sub.columns:
+                    base_agg_dict[f"{col}_sum"] = (f"{col}_clean", 'sum')
+                    base_agg_dict[f"{col}_count"] = (f"{col}_clean", 'count')
+            for code_num in [1, 2, 3]:
+                clean_col_name = f"Q6_code{code_num}_clean"
+                if clean_col_name in df_sub.columns:
+                    base_agg_dict[f"Q6_code{code_num}_sum"] = (clean_col_name, 'sum')
+                    base_agg_dict[f"Q6_code{code_num}_count"] = (clean_col_name, 'count')
+            for _, flag_col in channel_items:
+                if flag_col in df_sub.columns:
+                    base_agg_dict[flag_col] = (flag_col, 'sum')
+                    base_agg_dict[f"{flag_col}_count"] = (flag_col, 'count')
+            for _, flag_col in q5a_items:
+                if flag_col in df_sub.columns:
+                    base_agg_dict[flag_col] = (flag_col, 'sum')
+                    base_agg_dict[f"{flag_col}_count"] = (flag_col, 'count')
+            for q11a_key, sub_items in q11a_groups.items():
+                for _, col in sub_items:
+                    flag_name = f"{col}_flag"
+                    if flag_name in df_sub.columns:
+                        base_agg_dict[flag_name] = (flag_name, 'sum')
+                        base_agg_dict[f"{flag_name}_count"] = (flag_name, 'count')
+            for code_val in [1, 2, 3, 4]:
+                col_name = f"Q6_code_{code_val}"
+                if col_name in df_sub.columns:
+                    base_agg_dict[col_name] = (col_name, 'sum')
+                    base_agg_dict[f"{col}_count"] = (col_name, 'count')
+            for _, code in pref_channel_items:
+                flag_name = f"pref_chan_{code}"
+                if flag_name in df_sub.columns:
+                    base_agg_dict[flag_name] = (flag_name, 'sum')
+                    base_agg_dict[f"{flag_name}_count"] = (flag_name, 'count')
+            for _, code in personal_banker_items:
+                flag_name = f"pb_code_{code}"
+                if flag_name in df_sub.columns:
+                    base_agg_dict[flag_name] = (flag_name, 'sum')
+                    base_agg_dict[f"{flag_name}_count"] = (flag_name, 'count')
+
+            for col_name in ['Q16_Yes', 'Q16_No']:
+                if col_name in df_sub.columns:
+                    base_agg_dict[f"{col_name}_count"] = (col_name, 'count')
+
+            agg_dict = {k: v for k, v in base_agg_dict.items() if v[0] in df_sub.columns}
+            summary_data = df_sub.groupby(['wave_num', 'REGION', 'SUBREG', 'SEGMENT', 'Type'], as_index=False).agg(**agg_dict)
+            data_cols_list = list(summary_data.columns)
+
+            def get_excel_col_letter(col_name):
+                if col_name not in data_cols_list: return "A"
+                return get_column_letter(data_cols_list.index(col_name) + 1)
+
+            wb_dash = openpyxl.Workbook()
+            ws_dash = wb_dash.active
+            ws_dash.title = "NPS Dashboard"
+            ws_dash.views.sheetView[0].showGridLines = True
+
+            ws_data = wb_dash.create_sheet(title="_Data")
+            ws_data.sheet_state = 'hidden'
+            ws_data.append(list(summary_data.columns))
+            for row in summary_data.itertuples(index=False): ws_data.append(list(row))
+
+            FNB_TEAL, FNB_AMBER, LIGHT_TEAL, LIGHT_AMBER, WHITE, GRAY_FILL, GRAY_TEXT = "009B9E", "EA8B24", "E5F5F5", "FDF3E7", "FFFFFF", "F2F2F2", "7F7F7F"
+            font_title_main = Font(name="Calibri", size=14, bold=True, color=WHITE)
+            font_title_sub = Font(name="Calibri", size=10, italic=True, color=WHITE)
+            font_header = Font(name="Calibri", size=9, bold=True, color=WHITE)
+            font_bold = Font(name="Calibri", size=10, bold=True)
+            font_regular = Font(name="Calibri", size=10)
+            font_italic_bold = Font(name="Calibri", size=10, italic=True, bold=True, color=WHITE)
+            font_sub_subheader = Font(name="Calibri", size=10, italic=True, bold=True, color="105B5C")
+            font_filter_lbl = Font(name="Calibri", size=10, bold=True, color=WHITE)
+            font_filter_val = Font(name="Calibri", size=11, bold=True, color="105B5C")
+            font_na = Font(name="Calibri", size=9, italic=True, color=GRAY_TEXT)
+
+            fill_teal_header = PatternFill(start_color=FNB_TEAL, end_color=FNB_TEAL, fill_type="solid")
+            fill_amber_header = PatternFill(start_color=FNB_AMBER, end_color=FNB_AMBER, fill_type="solid")
+            fill_light_teal = PatternFill(start_color=LIGHT_TEAL, end_color=LIGHT_TEAL, fill_type="solid")
+            fill_light_amber = PatternFill(start_color=LIGHT_AMBER, end_color=LIGHT_AMBER, fill_type="solid")
+            fill_na = PatternFill(start_color=GRAY_FILL, end_color=GRAY_FILL, fill_type="solid")
+
+            thin_border_side = Side(border_style="thin", color="B0C4DE")
+            thick_border_side = Side(border_style="medium", color=FNB_TEAL)
+            border_cell = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
+            border_box = Border(left=thick_border_side, right=thick_border_side, top=thick_border_side, bottom=thick_border_side)
+
+            align_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            align_left = Alignment(horizontal="left", vertical="center")
+            align_right = Alignment(horizontal="right", vertical="center")
+
+            start_col = 3
+            end_col_idx = start_col + len(sorted_wave_nums) - 1
+
+            ws_dash.merge_cells(start_row=2, start_column=2, end_row=2, end_column=end_col_idx)
+            ws_dash.cell(row=2, column=2, value="PROJECT STAR: MULTI-WAVE PERFORMANCE ANALYTICS").font = font_title_main
+            ws_dash.cell(row=2, column=2).fill = fill_teal_header
+
+            ws_dash.merge_cells(start_row=3, start_column=2, end_row=3, end_column=end_col_idx)
+            ws_dash.cell(row=3, column=2, value="A Comprehensive Longitudinal Evaluation of NPS, RM Engagement Drivers, Channel Usage, and Local Branch Dynamics").font = font_title_sub
+            ws_dash.cell(row=3, column=2).fill = fill_amber_header
+
+            filter_configs = [("Region:", 2, 3), ("Sub-Region:", 5, 6), ("Segment:", 8, 9), ("Type:", 11, 12)]
+            for label, lbl_col, val_col in filter_configs:
+                c_lbl = ws_dash.cell(row=5, column=lbl_col, value=label)
+                c_lbl.font, c_lbl.fill, c_lbl.alignment, c_lbl.border = font_filter_lbl, fill_teal_header, align_center, border_box
+                c_val = ws_dash.cell(row=5, column=val_col, value="All")
+                c_val.font, c_val.fill, c_val.alignment, c_val.border = font_filter_val, fill_light_amber, align_center, border_box
+
+            dv_region = DataValidation(type="list", formula1=f'"{",".join(["All"] + regions)}"', allow_blank=True)
+            dv_subreg = DataValidation(type="list", formula1=f'"{",".join(subregs)}"', allow_blank=True)
+            dv_segment = DataValidation(type="list", formula1=f'"{",".join(segments)}"', allow_blank=True)
+            dv_type = DataValidation(type="list", formula1=f'"{",".join(types)}"', allow_blank=True)
+            for dv, cell_ref in zip([dv_region, dv_subreg, dv_segment, dv_type], ["C5", "F5", "I5", "L5"]):
+                ws_dash.add_data_validation(dv)
+                dv.add(ws_dash[cell_ref])
+
+            def build_sumifs(target_col_letter, wave_num):
+                base_formula = f"_Data!{target_col_letter}:{target_col_letter}, _Data!A:A, {wave_num}"
+                return f"SUMIFS({base_formula}, _Data!B:B, IF($C$5=\"All\", \"*\", $C$5), _Data!C:C, IF($F$5=\"All\", \"*\", $F$5), _Data!D:D, IF($I$5=\"All\", \"*\", $I$5), _Data!E:E, IF($L$5=\"All\", \"*\", $L$5))"
+
+            def add_section_header(ws_target, row_idx, section_title, wave_nums):
+                c_title = ws_target.cell(row=row_idx, column=2, value=section_title)
+                c_title.font, c_title.fill, c_title.alignment, c_title.border = font_italic_bold, fill_teal_header, align_left, border_cell
+                for idx, w_num in enumerate(wave_nums):
+                    c_hdr = ws_target.cell(row=row_idx, column=start_col + idx, value=f"Wave {w_num}")
+                    c_hdr.font, c_hdr.fill, c_hdr.alignment, c_hdr.border = font_header, fill_teal_header, align_center, border_cell
+
+            header_row, n_row = 7, 8
+            ws_dash.cell(row=n_row, column=2, value="n=").font = font_bold
+            ws_dash.cell(row=n_row, column=2).alignment = align_right
+
+            for idx, w_num in enumerate(sorted_wave_nums):
+                col = start_col + idx
+                c_hdr = ws_dash.cell(row=header_row, column=col, value=f"Wave {w_num}")
+                c_hdr.font, c_hdr.fill, c_hdr.alignment, c_hdr.border = font_header, fill_teal_header, align_center, border_cell
+                c_n = ws_dash.cell(row=n_row, column=col, value=f"={build_sumifs(get_excel_col_letter('Total_n'), w_num)}")
+                c_n.font, c_n.alignment, c_n.border, c_n.number_format = font_bold, align_center, border_cell, "#,##0"
+
+            metric_rows = [
+                ("NET PROMOTER SCORE - NPS", "header_dark", None),
+                ("NPS FNB Relationship Manager", "sub_header", None),
+                ("Net Score", "net_bm", None), ("Base (n)", "sum", "BM_Base"), ("Detractors", "pct", "BM_Det"), ("Passives", "pct", "BM_Pas"), ("Promoters", "pct", "BM_Pro"),
+                ("", "blank", None),
+                ("NPS FNB Business", "sub_header", None),
+                ("Net Score", "net_fnb", None), ("Base (n)", "sum", "FNB_Base"), ("Detractors", "pct", "FNB_Det"), ("Passives", "pct", "FNB_Pas"), ("Promoters", "pct", "FNB_Pro"),
+            ]
+
+            curr_row = 9
+            for label, row_type, data_col_name in metric_rows:
+                if row_type == "blank": curr_row += 1; continue
+                if row_type == "header_dark": add_section_header(ws_dash, curr_row, label, sorted_wave_nums); curr_row += 1; continue
+                if row_type == "sub_header":
+                    ws_dash.merge_cells(start_row=curr_row, start_column=2, end_row=curr_row, end_column=start_col + len(sorted_wave_nums) - 1)
+                    c = ws_dash.cell(row=curr_row, column=2, value=label)
+                    c.font, c.fill, c.alignment = font_italic_bold, fill_amber_header, align_left
+                    curr_row += 1; continue
+                
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=label)
+                lbl_cell.font = font_bold if "Net" in label or "Base" in label else font_regular
+                lbl_cell.alignment = align_left
+                if "Passives" in label: lbl_cell.fill = fill_light_teal
+                
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    col = start_col + idx
+                    col_let = get_column_letter(col)
+                    val_cell = ws_dash.cell(row=curr_row, column=col)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    if "Passives" in label: val_cell.fill = fill_light_teal
+                        
+                    if row_type == "sum":
+                        val_cell.value = f"={build_sumifs(get_excel_col_letter(data_col_name), w_num)}"
+                        val_cell.number_format, val_cell.font = "#,##0", font_bold
+                    elif row_type == "pct":
+                        base_col = "BM_Base" if curr_row < 17 else "FNB_Base"
+                        val_cell.value = f"=IFERROR({build_sumifs(get_excel_col_letter(data_col_name), w_num)}/{build_sumifs(get_excel_col_letter(base_col), w_num)}, 0)"
+                        val_cell.number_format = "0%"
+                    elif row_type in ["net_bm", "net_fnb"]:
+                        det_row, pro_row = curr_row + 2, curr_row + 4
+                        val_cell.value = f"=({col_let}{pro_row}-{col_let}{det_row})*100"
+                        val_cell.number_format, val_cell.font = "0.00", font_bold
+                curr_row += 1
+
+            def add_dashboard_section(title, items, label_dict, is_mean=True):
+                nonlocal curr_row
+                curr_row += 1
+                add_section_header(ws_dash, curr_row, title, sorted_wave_nums)
+                curr_row += 1
+                for idx_item, var_code in enumerate(items):
+                    if f"{var_code}_sum" not in summary_data.columns and is_mean: continue
+                    lbl = label_dict.get(var_code, var_code)
+                    is_overall = "OVERALL" in str(lbl).upper()
+                    use_zebra = (idx_item % 2 == 0)
+                    
+                    lbl_cell = ws_dash.cell(row=curr_row, column=2, value=lbl)
+                    lbl_cell.font = font_bold if is_overall else font_regular
+                    lbl_cell.alignment = align_left
+                    if is_overall: lbl_cell.fill = fill_light_amber
+                    elif use_zebra: lbl_cell.fill = fill_light_teal
+                    
+                    sum_let, cnt_let = get_excel_col_letter(f"{var_code}_sum"), get_excel_col_letter(f"{var_code}_count")
+                    for idx, w_num in enumerate(sorted_wave_nums):
+                        col = start_col + idx
+                        val_cell = ws_dash.cell(row=curr_row, column=col)
+                        val_cell.alignment, val_cell.border = align_center, border_cell
+                        val_cell.value = f"=IFERROR(IF({build_sumifs(cnt_let, w_num)}=0, \"N/A\", {build_sumifs(sum_let, w_num)}/{build_sumifs(cnt_let, w_num)}), \"N/A\")"
+                        val_cell.number_format = "0.00"
+                        
+                        wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                        if wave_sub.empty or wave_sub[f"{var_code}_count"].sum() == 0:
+                            val_cell.fill, val_cell.font = fill_na, font_na
+                        elif is_overall:
+                            val_cell.fill, val_cell.font = fill_light_amber, font_bold
+                        elif use_zebra:
+                            val_cell.fill = fill_light_teal
+                    curr_row += 1
+
+            add_dashboard_section("LAST INTERACTION WITH YOUR RM/CPE/AE", rm_driver_cols, rm_labels)
+
+            # Channel Usage
+            curr_row += 1
+            add_section_header(ws_dash, curr_row, "CHANNEL USAGE", sorted_wave_nums)
+            curr_row += 1
+            chan_base_let = get_excel_col_letter("Channel_Base")
+            ws_dash.cell(row=curr_row, column=2, value="Base (n)").font = font_bold
+            for idx, w_num in enumerate(sorted_wave_nums):
+                c = ws_dash.cell(row=curr_row, column=start_col + idx, value=f"={build_sumifs(chan_base_let, w_num)}")
+                c.font, c.alignment, c.border, c.number_format = font_bold, align_center, border_cell, "#,##0"
+            curr_row += 1
+
+            for item_idx, (label_text, flag_col) in enumerate(channel_items):
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=label_text)
+                lbl_cell.font, lbl_cell.alignment = font_regular, align_left
+                use_zebra = (item_idx % 2 == 0)
+                if use_zebra: lbl_cell.fill = fill_light_teal
+                flag_let = get_excel_col_letter(flag_col)
+                cnt_let = get_excel_col_letter(f"{flag_col}_count")
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    if use_zebra: val_cell.fill = fill_light_teal
+                    val_cell.value = f"=IFERROR(IF({build_sumifs(chan_base_let, w_num)}=0, \"N/A\", {build_sumifs(flag_let, w_num)}/{build_sumifs(chan_base_let, w_num)}), \"N/A\")"
+                    val_cell.number_format = "0%"
+                    
+                    wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                    if wave_sub.empty or wave_sub[f"{flag_col}"].sum() == 0 or wave_sub['Channel_Base'].sum() == 0:
+                        val_cell.fill, val_cell.font = fill_na, font_na
+                curr_row += 1
+
+            # Preferred Channel Usage
+            curr_row += 1
+            add_section_header(ws_dash, curr_row, "Preferred Channel usage", sorted_wave_nums)
+            curr_row += 1
+            pref_base_let = get_excel_col_letter("Pref_Channel_Base")
+            ws_dash.cell(row=curr_row, column=2, value="Base (n)").font = font_bold
+            for idx, w_num in enumerate(sorted_wave_nums):
+                c = ws_dash.cell(row=curr_row, column=start_col + idx, value=f"={build_sumifs(pref_base_let, w_num)}")
+                c.font, c.alignment, c.border, c.number_format = font_bold, align_center, border_cell, "#,##0"
+            curr_row += 1
+
+            for item_idx, (label_text, code) in enumerate(pref_channel_items):
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=label_text)
+                lbl_cell.font, lbl_cell.alignment = font_regular, align_left
+                use_zebra = (item_idx % 2 == 0)
+                if use_zebra: lbl_cell.fill = fill_light_teal
+                flag_col = f"pref_chan_{code}"
+                flag_let = get_excel_col_letter(flag_col)
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    if use_zebra: val_cell.fill = fill_light_teal
+                    val_cell.value = f"=IFERROR(IF({build_sumifs(pref_base_let, w_num)}=0, \"N/A\", {build_sumifs(flag_let, w_num)}/{build_sumifs(pref_base_let, w_num)}), \"N/A\")"
+                    val_cell.number_format = "0%"
+                    
+                    wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                    if wave_sub.empty or wave_sub[flag_col].sum() == 0 or wave_sub['Pref_Channel_Base'].sum() == 0:
+                        val_cell.fill, val_cell.font = fill_na, font_na
+                curr_row += 1
+
+            add_dashboard_section("LOCAL BRANCH MEAN SCORES", branch_cols, branch_labels)
+
+            # Contact Centre Service Aspects & Q6
+            curr_row += 1
+            add_section_header(ws_dash, curr_row, "Contact Centre Service Aspects", sorted_wave_nums)
+            curr_row += 1
+            q6_base_let = get_excel_col_letter("Q6_Base")
+            ws_dash.cell(row=curr_row, column=2, value="Base (n)").font = font_bold
+            for idx, w_num in enumerate(sorted_wave_nums):
+                c = ws_dash.cell(row=curr_row, column=start_col + idx, value=f"={build_sumifs(q6_base_let, w_num)}")
+                c.font, c.alignment, c.border, c.number_format = font_bold, align_center, border_cell, "#,##0"
+            curr_row += 1
+
+            for item_idx, (label_text, code_col) in enumerate(q6_items):
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=label_text)
+                lbl_cell.font, lbl_cell.alignment = font_regular, align_left
+                use_zebra = (item_idx % 2 == 0)
+                if use_zebra: lbl_cell.fill = fill_light_teal
+                flag_let = get_excel_col_letter(code_col)
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    if use_zebra: val_cell.fill = fill_light_teal
+                    val_cell.value = f"=IFERROR(IF({build_sumifs(q6_base_let, w_num)}=0, \"N/A\", {build_sumifs(flag_let, w_num)}/{build_sumifs(q6_base_let, w_num)}), \"N/A\")"
+                    val_cell.number_format = "0%"
+                    
+                    wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                    if wave_sub.empty or wave_sub[code_col].sum() == 0 or wave_sub['Q6_Base'].sum() == 0:
+                        val_cell.fill, val_cell.font = fill_na, font_na
+                curr_row += 1
+
+            ws_dash.merge_cells(start_row=curr_row, start_column=2, end_row=curr_row, end_column=start_col + len(sorted_wave_nums) - 1)
+            sub_hdr = ws_dash.cell(row=curr_row, column=2, value="Contact Centre agent ratings")
+            sub_hdr.font, sub_hdr.fill, sub_hdr.alignment = font_sub_subheader, fill_light_teal, align_left
+            curr_row += 1
+
+            for idx_item, var_code in enumerate(cc_cols):
+                lbl = cc_labels.get(var_code, var_code)
+                is_overall = "OVERALL" in str(lbl).upper()
+                use_zebra = (idx_item % 2 == 0)
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=lbl)
+                lbl_cell.font = font_bold if is_overall else font_regular
+                if is_overall: lbl_cell.fill = fill_light_amber
+                elif use_zebra: lbl_cell.fill = fill_light_teal
+                sum_let, cnt_let = get_excel_col_letter(f"{var_code}_sum"), get_excel_col_letter(f"{var_code}_count")
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    val_cell.value = f"=IFERROR(IF({build_sumifs(cnt_let, w_num)}=0, \"N/A\", {build_sumifs(sum_let, w_num)}/{build_sumifs(cnt_let, w_num)}), \"N/A\")"
+                    val_cell.number_format = "0.00"
+                    wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                    if wave_sub.empty or wave_sub[f"{var_code}_count"].sum() == 0: val_cell.fill, val_cell.font = fill_na, font_na
+                    elif is_overall: val_cell.fill, val_cell.font = fill_light_amber, font_bold
+                    elif use_zebra: val_cell.fill = fill_light_teal
+                curr_row += 1
+
+            add_dashboard_section("Online Banking through laptop or desktop PC Service Aspects", online_cols, online_labels)
+            add_dashboard_section("Banking App Service Aspects", app_cols, app_labels)
+
+            # Overall Ratings & Product Satisfaction
+            curr_row += 1
+            add_section_header(ws_dash, curr_row, "OVERALL ratings", sorted_wave_nums)
+            curr_row += 1
+            for label_text, var_code in explicit_chan_sat_items:
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=label_text)
+                lbl_cell.font, lbl_cell.fill, lbl_cell.alignment = font_bold, fill_light_amber, align_left
+                sum_let, cnt_let = get_excel_col_letter(f"{var_code}_sum"), get_excel_col_letter(f"{var_code}_count")
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border, val_cell.fill, val_cell.font = align_center, border_cell, fill_light_amber, font_bold
+                    val_cell.value = f"=IFERROR(IF({build_sumifs(cnt_let, w_num)}=0, \"N/A\", {build_sumifs(sum_let, w_num)}/{build_sumifs(cnt_let, w_num)}), \"N/A\")"
+                    val_cell.number_format = "0.00"
+                curr_row += 1
+
+            curr_row += 1
+            add_section_header(ws_dash, curr_row, "Satisfaction with products", sorted_wave_nums)
+            curr_row += 1
+            for idx_item, (label_text, var_code) in enumerate(explicit_product_sat_items):
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=label_text)
+                lbl_cell.font, lbl_cell.alignment = font_regular, align_left
+                use_zebra = (item_idx % 2 == 0)
+                if use_zebra: lbl_cell.fill = fill_light_teal
+                sum_let, cnt_let = get_excel_col_letter(f"{var_code}_sum"), get_excel_col_letter(f"{var_code}_count")
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    if use_zebra: val_cell.fill = fill_light_teal
+                    val_cell.value = f"=IFERROR(IF({build_sumifs(cnt_let, w_num)}=0, \"N/A\", {build_sumifs(sum_let, w_num)}/{build_sumifs(cnt_let, w_num)}), \"N/A\")"
+                    val_cell.number_format = "0.00"
+                curr_row += 1
+
+            ws_dash.merge_cells(start_row=curr_row, start_column=2, end_row=curr_row, end_column=start_col + len(sorted_wave_nums) - 1)
+            ws_dash.cell(row=curr_row, column=2, value="Drivers of Dissatisfaction").font, ws_dash.cell(row=curr_row, column=2).fill, ws_dash.cell(row=curr_row, column=2).alignment = font_sub_subheader, fill_light_teal, align_left
+            curr_row += 1
+
+            for q11a_key, sub_items in q11a_groups.items():
+                base_let = get_excel_col_letter(f"{q11a_key}_Base")
+                ws_dash.cell(row=curr_row, column=2, value=f"Base (n) - {q11a_key}").font = font_bold
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    c = ws_dash.cell(row=curr_row, column=start_col + idx, value=f"={build_sumifs(base_let, w_num)}")
+                    c.font, c.alignment, c.border, c.number_format = font_bold, align_center, border_cell, "#,##0"
+                curr_row += 1
+                for item_idx, (lbl_txt, col_code) in enumerate(sub_items):
+                    lbl_cell = ws_dash.cell(row=curr_row, column=2, value=lbl_txt)
+                    lbl_cell.font, lbl_cell.alignment = font_regular, align_left
+                    use_zebra = (item_idx % 2 == 0)
+                    if use_zebra: lbl_cell.fill = fill_light_teal
+                    flag_col = f"{col_code}_flag"
+                    flag_let = get_excel_col_letter(flag_col)
+                    for idx, w_num in enumerate(sorted_wave_nums):
+                        val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                        val_cell.alignment, val_cell.border = align_center, border_cell
+                        if use_zebra: val_cell.fill = fill_light_teal
+                        val_cell.value = f"=IFERROR(IF({build_sumifs(base_let, w_num)}=0, \"N/A\", {build_sumifs(flag_let, w_num)}/{build_sumifs(base_let, w_num)}), \"N/A\")"
+                        val_cell.number_format = "0%"
+                        
+                        wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                        if wave_sub.empty or wave_sub[flag_col].sum() == 0 or wave_sub[f"{q11a_key}_Base"].sum() == 0:
+                            val_cell.fill, val_cell.font = fill_na, font_na
+                    curr_row += 1
+
+            add_dashboard_section("Satisfaction: Quality of service and product solutions", expectations_items, {})
+
+            # Business Banking Consideration & Q5A
+            curr_row += 1
+            add_section_header(ws_dash, curr_row, "Business banking consideration", sorted_wave_nums)
+            curr_row += 1
+            ws_dash.merge_cells(start_row=curr_row, start_column=2, end_row=curr_row, end_column=start_col + len(sorted_wave_nums) - 1)
+            ws_dash.cell(row=curr_row, column=2, value="Q16. Consideration to switch").font, ws_dash.cell(row=curr_row, column=2).fill = font_sub_subheader, fill_light_teal
+            curr_row += 1
+
+            q16_base_let = get_excel_col_letter("Q16_Base")
+            ws_dash.cell(row=curr_row, column=2, value="Base (n)").font = font_bold
+            for idx, w_num in enumerate(sorted_wave_nums):
+                c = ws_dash.cell(row=curr_row, column=start_col + idx, value=f"={build_sumifs(q16_base_let, w_num)}")
+                c.font, c.alignment, c.border, c.number_format = font_bold, align_center, border_cell, "#,##0"
+            curr_row += 1
+
+            for item_idx, (lbl_txt, col_key, is_pct) in enumerate([("Yes (n)", "Q16_Yes", False), ("Yes (%)", "Q16_Yes", True), ("No (n)", "Q16_No", False), ("No (%)", "Q16_No", True)]):
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=lbl_txt)
+                lbl_cell.font, lbl_cell.alignment = font_regular, align_left
+                use_zebra = (item_idx in [2, 3])
+                if use_zebra: lbl_cell.fill = fill_light_teal
+                flag_let = get_excel_col_letter(col_key)
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    if use_zebra: val_cell.fill = fill_light_teal
+                    if is_pct:
+                        val_cell.value = f"=IFERROR(IF({build_sumifs(q16_base_let, w_num)}=0, \"N/A\", {build_sumifs(flag_let, w_num)}/{build_sumifs(q16_base_let, w_num)}), \"N/A\")"
+                        val_cell.number_format = "0%"
+                    else:
+                        val_cell.value = f"={build_sumifs(flag_let, w_num)}"
+                        val_cell.number_format, val_cell.font = "#,##0", font_bold
+                        
+                    wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                    if wave_sub.empty or wave_sub[col_key].sum() == 0 or wave_sub['Q16_Base'].sum() == 0:
+                        if is_pct:
+                            val_cell.fill, val_cell.font = fill_na, font_na
+                curr_row += 1
+
+            ws_dash.merge_cells(start_row=curr_row, start_column=2, end_row=curr_row, end_column=start_col + len(sorted_wave_nums) - 1)
+            ws_dash.cell(row=curr_row, column=2, value="Q16a. Banks/Financial service providers considered").font, ws_dash.cell(row=curr_row, column=2).fill = font_sub_subheader, fill_light_teal
+            curr_row += 1
+
+            q16a_base_let = get_excel_col_letter("Q16A_Base")
+            ws_dash.cell(row=curr_row, column=2, value="Base (n)").font = font_bold
+            for idx, w_num in enumerate(sorted_wave_nums):
+                c = ws_dash.cell(row=curr_row, column=start_col + idx, value=f"={build_sumifs(q16a_base_let, w_num)}")
+                c.font, c.alignment, c.border, c.number_format = font_bold, align_center, border_cell, "#,##0"
+            curr_row += 1
+
+            for item_idx, (lbl_txt, flag_col) in enumerate(consideration_items):
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=lbl_txt)
+                lbl_cell.font, lbl_cell.alignment = font_regular, align_left
+                use_zebra = (item_idx % 2 == 0)
+                if use_zebra: lbl_cell.fill = fill_light_teal
+                flag_let = get_excel_col_letter(flag_col)
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    if use_zebra: val_cell.fill = fill_light_teal
+                    val_cell.value = f"=IFERROR(IF({build_sumifs(q16a_base_let, w_num)}=0, \"N/A\", {build_sumifs(flag_let, w_num)}/{build_sumifs(q16a_base_let, w_num)}), \"N/A\")"
+                    val_cell.number_format = "0%"
+                    
+                    wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                    if wave_sub.empty or wave_sub[flag_col].sum() == 0 or wave_sub['Q16A_Base'].sum() == 0:
+                        val_cell.fill, val_cell.font = fill_na, font_na
+                curr_row += 1
+
+            # Q5A Motivations
+            curr_row += 1
+            add_section_header(ws_dash, curr_row, "Motivations for Choosing In-Branch over Digital Channels/ Call centre", sorted_wave_nums)
+            curr_row += 1
+            q5a_base_let = get_excel_col_letter("Q5A_Base")
+            ws_dash.cell(row=curr_row, column=2, value="Base (n)").font = font_bold
+            for idx, w_num in enumerate(sorted_wave_nums):
+                c = ws_dash.cell(row=curr_row, column=start_col + idx, value=f"={build_sumifs(q5a_base_let, w_num)}")
+                c.font, c.alignment, c.border, c.number_format = font_bold, align_center, border_cell, "#,##0"
+            curr_row += 1
+
+            for item_idx, (label_text, flag_col) in enumerate(q5a_items):
+                lbl_cell = ws_dash.cell(row=curr_row, column=2, value=label_text)
+                lbl_cell.font, lbl_cell.alignment = font_regular, align_left
+                use_zebra = (item_idx % 2 == 0)
+                if use_zebra: lbl_cell.fill = fill_light_teal
+                flag_let = get_excel_col_letter(flag_col)
+                for idx, w_num in enumerate(sorted_wave_nums):
+                    val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
+                    val_cell.alignment, val_cell.border = align_center, border_cell
+                    if use_zebra: val_cell.fill = fill_light_teal
+                    val_cell.value = f"=IFERROR(IF({build_sumifs(q5a_base_let, w_num)}=0, \"N/A\", {build_sumifs(flag_let, w_num)}/{build_sumifs(q5a_base_let, w_num)}), \"N/A\")"
+                    val_cell.number_format = "0%"
+                    
+                    wave_sub = summary_data[summary_data['wave_num'] == w_num]
+                    if wave_sub.empty or wave_sub[flag_col].sum() == 0 or wave_sub['Q5A_Base'].sum() == 0:
+                        val_cell.fill, val_cell.font = fill_na, font_na
+                curr_row += 1
+
+            ws_dash.column_dimensions['B'].width = 75
+            for idx in range(len(sorted_wave_nums)):
+                ws_dash.column_dimensions[get_column_letter(start_col + idx)].width = 12
+
+            output_buffer = io.BytesIO()
+            wb_dash.save(output_buffer)
+            output_buffer.seek(0)
+            return output_buffer
+        except Exception as e:
+            st.error(f"❌ Error generating Yearly Dashboard: {e}")
+            return None
+        finally:
+            if os.path.exists(tmp_path): os.remove(tmp_path)
+
+    if st.button("🚀 Generate Yearly Dashboard Report", type="primary", key="run_yearly_dash_btn"):
+        if yearly_uploaded_file is None:
+            st.error("Please upload the yearly SPSS `.sav` file first!")
+        else:
+            with st.spinner("Processing multi-wave dataset and building dashboard..."):
+                yearly_excel_bytes = generate_yearly_dashboard_workbook(yearly_uploaded_file)
+                if yearly_excel_bytes:
+                    st.success("🎉 Yearly Dashboard report generated successfully!")
+                    st.download_button(
+                        label="💾 Download Formatted Excel Report (`Star_Yearly_Dashboard.xlsx`)",
+                        data=yearly_excel_bytes,
+                        file_name="Star_Yearly_Dashboard.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="download_yearly_dash_final"
+                    )
