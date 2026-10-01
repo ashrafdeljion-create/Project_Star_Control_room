@@ -5,21 +5,67 @@ from datetime import datetime, timedelta
 import os
 import tempfile
 import re
+import numpy as np
+from dateutil.relativedelta import relativedelta, FR
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 
 st.set_page_config(
-    page_title="Project Star: One-Stop Control Room",
+    page_title="Project Star: One-Stop Operations Hub",
     page_icon="⭐",
     layout="wide"
 )
 
+# --- MODERN STYLING FOR HIGH-VISIBILITY TABS ---
+st.markdown("""
+    <style>
+        /* Style the top navigation tab containers */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 12px;
+            background-color: #f8f9fa;
+            padding: 10px 10px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        /* Style individual tab buttons */
+        .stTabs [data-baseweb="tab"] {
+            height: 50px;
+            white-space: pre-wrap;
+            background-color: #ffffff;
+            border-radius: 8px;
+            gap: 8px;
+            padding-left: 20px;
+            padding-right: 20px;
+            font-weight: 700;
+            font-size: 16px;
+            color: #333333;
+            border: 1px solid #d0d0d0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        /* Active tab highlight */
+        .stTabs [aria-selected="true"] {
+            background: linear-gradient(135deg, #FF4B4B 0%, #FF6B6B 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(255, 75, 75, 0.3) !important;
+        }
+        .stTabs [aria-selected="true"] p {
+            color: #ffffff !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("⭐ Project Star: One-Stop Operations Hub")
-st.markdown("Your unified command center for Weekly 911's pipeline automation and NPS Excel Report generation.")
+st.markdown("Your unified command center for Weekly 911's pipeline automation, NPS Excel reports, and Q11 extractions.")
 
 # --- TABS FOR THE ONE-STOP SHOP ---
-tab1, tab2 = st.tabs(["⚡ Weekly 911's Control Room", "📊 BM/RM NPS Dashboard Portfolio & Data Generator"])
+tab1, tab2, tab3 = st.tabs([
+    "⚡ Weekly 911's Control Room", 
+    "📊 NPS Dashboard & Data Generator", 
+    "📈 Q11 Ratings & Reasons Extraction"
+])
 
 # ==========================================
 # TAB 1: WEEKLY 911'S CONTROL ROOM
@@ -314,7 +360,7 @@ with tab2:
     if "report_files" not in st.session_state:
         st.session_state.report_files = {}
 
-    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (Project Star_W? to W?.sav) for NPS Dashboard", type=["sav"], key="nps_file")
+    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (.sav) for NPS Dashboard", type=["sav"], key="nps_file")
 
     portfolio_mode = st.selectbox(
         "Select Portfolio Filter Mode:",
@@ -456,7 +502,7 @@ with tab2:
                 ws.cell(row=h1_row, column=c).font = WHITE_BOLD_FONT
                 ws.cell(row=h1_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
                 ws.cell(row=h2_row, column=c).fill = LIGHT_ORANGE_FILL
-                ws.cell(row=h2_row, column=c).font = BOLD_FONT
+                ws.cell(row=h1_row, column=c).font = BOLD_FONT
                 ws.cell(row=h2_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
 
             row_counter = 0
@@ -672,3 +718,190 @@ with tab2:
                     st.download_button(label=f"📥 Download {label} Excel Dashboard", data=files["excel_bytes"], file_name=files["excel_name"], mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key=f"excel_{label}")
                 with col_b:
                     st.download_button(label=f"📥 Download {label} .sav File", data=files["sav_bytes"], file_name=files["sav_name"], mime="application/octet-stream", key=f"sav_{label}")
+
+
+# ==========================================
+# TAB 3: Q11 RATINGS & REASONS EXTRACTION
+# ==========================================
+with tab3:
+    st.markdown("### 📈 Q11 Ratings & Reasons Extraction")
+    st.markdown("Upload your two SPSS datasets (**R10Mil / RMW** and **Growth / GROW**) below to automatically filter records since last Friday and generate the multi-tab Q11 extraction Excel workbook.")
+
+    col_q1, col_q2 = st.columns(2)
+    with col_q1:
+        file_q11_r10 = st.file_uploader("Upload R10Mil SPSS File (.sav)", type=["sav"], key="q11_r10")
+    with col_q2:
+        file_q11_grow = st.file_uploader("Upload Growth SPSS File (.sav)", type=["sav"], key="q11_grow")
+
+    def process_single_spss_dataset_streamlit(uploaded_file):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
+            tmp_file.write(uploaded_file.getvalue())
+            tmp_path = tmp_file.name
+
+        try:
+            df = pd.read_spss(tmp_path, convert_categoricals=False)
+            if df.empty or 'STIME' not in df.columns:
+                return pd.DataFrame()
+
+            df['STIME_CLEAN'] = pd.to_datetime(df['STIME'].astype(str).str.slice(0, 8), format='%Y%m%d', errors='coerce')
+            
+            today = pd.Timestamp.now().normalize()
+            if today.weekday() == 4:
+                last_friday_start = today - pd.Timedelta(days=7)
+            else:
+                last_friday_start = today + relativedelta(weekday=FR(-1))
+            
+            date_mask = (df['STIME_CLEAN'] >= last_friday_start) & (df['STIME_CLEAN'] <= pd.Timestamp.now())
+            df = df[date_mask].copy()
+            
+            if df.empty:
+                return pd.DataFrame()
+
+            df['STIME_STR'] = df['STIME'].astype(str)
+            nyear = df['STIME_STR'].str.slice(0, 4)
+            nmonth = df['STIME_STR'].str.slice(4, 6)
+            nday = df['STIME_STR'].str.slice(6, 8)
+            recorded_date = nyear + '/' + nmonth + '/' + nday
+            
+            mask = df['INTNR'] > 0 if 'INTNR' in df.columns else np.zeros(len(df), dtype=bool)
+            df_out = pd.DataFrame(index=df.index)
+            
+            df_out['Interview number'] = df['INTNR'] if 'INTNR' in df.columns else None
+            df_out['UCN Number'] = np.where(mask, df['V80116'], None) if 'V80116' in df.columns else None
+            df_out['Date'] = np.where(mask, recorded_date, None)
+            
+            rating_cols = {
+                'Q11.1 RATING - FNB Business Lending products (overdraft, loans, etc.)': 'Q11_1_1',
+                'Q11.2 RATING - FNB Business Transactional products (cheque, debit card, credit card etc.)': 'Q11_1_2',
+                'Q11.3 RATING - FNB Business Insurance products (business credit protection plan, law-on-call business plan, etc.)': 'Q11_1_3',
+                'Q11.4 RATING - FNB Business FNB Business Investment products': 'Q11_1_4',
+                'Q11.5 RATING - FNB Business FNB Business FOREX products': 'Q11_1_5'
+            }
+            for target, src in rating_cols.items():
+                if src in df.columns:
+                    df_out[target] = np.where(mask, pd.to_numeric(df[src], errors='coerce'), np.nan)
+                else:
+                    df_out[target] = np.nan
+
+            custom_label_mappings = {
+                'Q11 REASONS - Lending_1': {'src': 'Q11A_1_1', 'label': 'Overdraft'},
+                'Q11 REASONS - Lending_2': {'src': 'Q11A_1_2', 'label': 'Loans'},
+                'Q11 REASONS - Lending_3': {'src': 'Q11A_1_3', 'label': 'Other'},
+                'Q11 REASONS - Lending_4': {'src': None, 'label': 'Other'},  
+                'Q11 REASONS - Lending_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Transactional products_1': {'src': 'Q11A_2_1', 'label': 'Cheque card'},
+                'Q11 REASONS - Transactional products_2': {'src': 'Q11A_2_2', 'label': 'Debit card'},
+                'Q11 REASONS - Transactional products_3': {'src': 'Q11A_2_3', 'label': 'Credit Card'},
+                'Q11 REASONS - Transactional products_4': {'src': 'Q11A_2_4', 'label': 'Other'},
+                'Q11 REASONS - Transactional products_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Insurance_1': {'src': 'Q11A_3_1', 'label': 'Business credit protection plan'},
+                'Q11 REASONS - Insurance_2': {'src': 'Q11A_3_2', 'label': 'Law-on-call business plan'},
+                'Q11 REASONS - Insurance_3': {'src': 'Q11A_3_3', 'label': 'Other'},
+                'Q11 REASONS - Insurance_4': {'src': None, 'label': 'Other'},
+                'Q11 REASONS - Insurance_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Investment products_1': {'src': 'Q11A_4_1', 'label': 'Savings'},
+                'Q11 REASONS - Investment products_2': {'src': 'Q11A_4_2', 'label': 'Notice deposits'},
+                'Q11 REASONS - Investment products_3': {'src': 'Q11A_4_3', 'label': 'Other'},
+                'Q11 REASONS - Investment products_4': {'src': None, 'label': 'Other'},
+                'Q11 REASONS - Investment products_5': {'src': None, 'label': 'Other'},
+            }
+
+            forex_labels = {
+                1: 'Foreign Exchange', 2: 'Imports and Exports', 3: 'Structured Trade + Commodity Finance',
+                4: 'PayPal', 5: 'Trade (Trade Platform and Transacting)', 6: 'MoneyGram (TM)',
+                7: 'Global Payments (business global account)', 8: 'Travel card',
+                9: 'Trans-country Interbank Clearing', 10: 'Other'
+            }
+            for i, label_text in forex_labels.items():
+                custom_label_mappings[f'Q11 REASONS - FOREX products_{i}'] = {'src': f'Q11A_5_{i}', 'label': label_text}
+
+            for target_col, config in custom_label_mappings.items():
+                src_col = config['src']
+                if src_col is None or src_col not in df.columns:
+                    df_out[target_col] = None
+                    continue
+                numeric_src = pd.to_numeric(df[src_col], errors='coerce')
+                df_out[target_col] = np.where((mask) & (numeric_src == 1), config['label'], None)
+
+            open_ends = {
+                'Q11 REASONS - Lending OTHER': 'TQ11A_1C3',
+                'Q11 REASONS OTHER - Transactional products': 'TQ11A_2C4',
+                'Q11 REASONS - Insurance OTHER': 'TQ11A_3C3',
+                'Q11 REASONS - Investment products OTHER': 'TQ11A_4C3',
+                'Q11 REASONS - FOREX products OTHER': 'TQ11A_5C10'
+            }
+            for target, src in open_ends.items():
+                if src in df.columns:
+                    string_series = df[src].astype(str).replace(['nan', 'NaN', 'None'], None)
+                    df_out[target] = np.where(mask, string_series, None)
+                else:
+                    df_out[target] = None
+
+            final_column_order = [
+                'Interview number', 'UCN Number', 'Date',
+                'Q11.1 RATING - FNB Business Lending products (overdraft, loans, etc.)', 
+                'Q11 REASONS - Lending_1', 'Q11 REASONS - Lending_2', 'Q11 REASONS - Lending_3', 'Q11 REASONS - Lending_4', 'Q11 REASONS - Lending_5', 
+                'Q11 REASONS - Lending OTHER',
+                
+                'Q11.2 RATING - FNB Business Transactional products (cheque, debit card, credit card etc.)', 
+                'Q11 REASONS - Transactional products_1', 'Q11 REASONS - Transactional products_2', 'Q11 REASONS - Transactional products_3', 'Q11 REASONS - Transactional products_4', 'Q11 REASONS - Transactional products_5', 
+                'Q11 REASONS OTHER - Transactional products',
+                
+                'Q11.3 RATING - FNB Business Insurance products (business credit protection plan, law-on-call business plan, etc.)', 
+                'Q11 REASONS - Insurance_1', 'Q11 REASONS - Insurance_2', 'Q11 REASONS - Insurance_3', 'Q11 REASONS - Insurance_4', 'Q11 REASONS - Insurance_5', 
+                'Q11 REASONS - Insurance OTHER',
+                
+                'Q11.4 RATING - FNB Business FNB Business Investment products', 
+                'Q11 REASONS - Investment products_1', 'Q11 REASONS - Investment products_2', 'Q11 REASONS - Investment products_3', 'Q11 REASONS - Investment products_4', 'Q11 REASONS - Investment products_5', 
+                'Q11 REASONS - Investment products OTHER',
+                
+                'Q11.5 RATING - FNB Business FNB Business FOREX products', 
+                'Q11 REASONS - FOREX products_1', 'Q11 REASONS - FOREX products_2', 'Q11 REASONS - FOREX products_3', 'Q11 REASONS - FOREX products_4', 'Q11 REASONS - FOREX products_5', 'Q11 REASONS - FOREX products_6', 'Q11 REASONS - FOREX products_7', 'Q11 REASONS - FOREX products_8', 'Q11 REASONS - FOREX products_9', 'Q11 REASONS - FOREX products_10', 
+                'Q11 REASONS - FOREX products OTHER'
+            ]
+            
+            df_final = df_out[final_column_order]
+            clean_headers = [header.split('_')[0] for header in df_final.columns]
+            df_final.columns = clean_headers
+            return df_final
+        except Exception as e:
+            st.error(f"Error processing SPSS file: {e}")
+            return pd.DataFrame()
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    if st.button("🚀 Run Q11 Extraction & Generate Workbook", type="primary", key="run_q11"):
+        if file_q11_r10 is None and file_q11_grow is None:
+            st.error("Please upload at least one SPSS (.sav) file.")
+        else:
+            with st.spinner("Processing datasets and generating Q11 extraction workbook..."):
+                clean_df1 = process_single_spss_dataset_streamlit(file_q11_r10) if file_q11_r10 else pd.DataFrame()
+                clean_df2 = process_single_spss_dataset_streamlit(file_q11_grow) if file_q11_grow else pd.DataFrame()
+
+                output_excel_buffer = io.BytesIO() if 'io' in globals() else None
+                import io
+                output_excel_buffer = io.BytesIO()
+
+                with pd.ExcelWriter(output_excel_buffer, engine='openpyxl') as writer:
+                    if not clean_df1.empty:
+                        clean_df1.to_excel(writer, sheet_name='Enterprise-R10Mil', index=False)
+                    if not clean_df2.empty:
+                        clean_df2.to_excel(writer, sheet_name='Business-Growth', index=False)
+                    if clean_df1.empty and clean_df2.empty:
+                        pd.DataFrame({"Notice": ["No records found for active window"]}).to_excel(writer, sheet_name='No New Records Found', index=False)
+
+                output_excel_buffer.seek(0)
+                run_date_str = datetime.now().strftime("%Y-%m-%d")
+
+                st.success("🎉 Q11 Extraction Workbook generated successfully!")
+                st.download_button(
+                    label="📥 Download Q11 Extraction Excel Workbook",
+                    data=output_excel_buffer,
+                    file_name=f"Star W22 Q11 extraction {run_date_str}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="download_q11_excel"
+                )
