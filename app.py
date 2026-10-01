@@ -931,6 +931,8 @@ with tab3:
 # ==========================================================================
 with tab4:
     st.markdown("### 📈 Q11 Ratings & Reasons Extraction")
+    st.markdown("Upload your Enterprise (R10Mil) and Business (Growth) SPSS datasets below to extract Q11 ratings and reasons into a combined multi-tab Excel workbook.")
+
     col_q1, col_q2 = st.columns(2)
     with col_q1: file_q11_r10 = st.file_uploader("Upload R10Mil SPSS File (.sav)", type=["sav"], key="q11_r10")
     with col_q2: file_q11_grow = st.file_uploader("Upload Growth SPSS File (.sav)", type=["sav"], key="q11_grow")
@@ -938,36 +940,178 @@ with tab4:
     if "q11_ready" not in st.session_state: st.session_state.q11_ready = False
     if "q11_bytes" not in st.session_state: st.session_state.q11_bytes = None
 
+    def process_streamlit_spss_dataset(uploaded_file):
+        if uploaded_file is None:
+            return pd.DataFrame()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
+            tmp.write(uploaded_file.getvalue())
+            tmp_path = tmp.name
+        try:
+            df = pd.read_spss(tmp_path, convert_categoricals=False)
+            
+            if df.empty or 'STIME' not in df.columns:
+                return pd.DataFrame()
+
+            df['STIME_CLEAN'] = pd.to_datetime(df['STIME'].astype(str).str.slice(0, 8), format='%Y%m%d', errors='coerce')
+            today = pd.Timestamp.now().normalize()
+            
+            if today.weekday() == 4:
+                last_friday_start = today - pd.Timedelta(days=7)
+            else:
+                last_friday_start = today + relativedelta(weekday=FR(-1))
+            
+            date_mask = (df['STIME_CLEAN'] >= last_friday_start) & (df['STIME_CLEAN'] <= pd.Timestamp.now())
+            df = df[date_mask].copy()
+            
+            if df.empty:
+                return pd.DataFrame()
+
+            df['STIME_STR'] = df['STIME'].astype(str)
+            nyear = df['STIME_STR'].str.slice(0, 4)
+            nmonth = df['STIME_STR'].str.slice(4, 6)
+            nday = df['STIME_STR'].str.slice(6, 8)
+            recorded_date = nyear + '/' + nmonth + '/' + nday
+            
+            mask = df['INTNR'] > 0 if 'INTNR' in df.columns else np.zeros(len(df), dtype=bool)
+            
+            df_out = pd.DataFrame(index=df.index)
+            
+            df_out['Interview number'] = df['INTNR'] if 'INTNR' in df.columns else None
+            df_out['UCN Number'] = np.where(mask, df['V80116'], None) if 'V80116' in df.columns else None
+            df_out['Date'] = np.where(mask, recorded_date, None)
+            
+            rating_cols = {
+                'Q11.1 RATING - FNB Business Lending products (overdraft, loans, etc.)': 'Q11_1_1',
+                'Q11.2 RATING - FNB Business Transactional products (cheque, debit card, credit card etc.)': 'Q11_1_2',
+                'Q11.3 RATING - FNB Business Insurance products (business credit protection plan, law-on-call business plan, etc.)': 'Q11_1_3',
+                'Q11.4 RATING - FNB Business FNB Business Investment products': 'Q11_1_4',
+                'Q11.5 RATING - FNB Business FNB Business FOREX products': 'Q11_1_5'
+            }
+            for target, src in rating_cols.items():
+                if src in df.columns:
+                    df_out[target] = np.where(mask, pd.to_numeric(df[src], errors='coerce'), np.nan)
+                else:
+                    df_out[target] = np.nan
+
+            custom_label_mappings = {
+                'Q11 REASONS - Lending_1': {'src': 'Q11A_1_1', 'label': 'Overdraft'},
+                'Q11 REASONS - Lending_2': {'src': 'Q11A_1_2', 'label': 'Loans'},
+                'Q11 REASONS - Lending_3': {'src': 'Q11A_1_3', 'label': 'Other'},
+                'Q11 REASONS - Lending_4': {'src': None, 'label': 'Other'},  
+                'Q11 REASONS - Lending_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Transactional products_1': {'src': 'Q11A_2_1', 'label': 'Cheque card'},
+                'Q11 REASONS - Transactional products_2': {'src': 'Q11A_2_2', 'label': 'Debit card'},
+                'Q11 REASONS - Transactional products_3': {'src': 'Q11A_2_3', 'label': 'Credit Card'},
+                'Q11 REASONS - Transactional products_4': {'src': 'Q11A_2_4', 'label': 'Other'},
+                'Q11 REASONS - Transactional products_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Insurance_1': {'src': 'Q11A_3_1', 'label': 'Business credit protection plan'},
+                'Q11 REASONS - Insurance_2': {'src': 'Q11A_3_2', 'label': 'Law-on-call business plan'},
+                'Q11 REASONS - Insurance_3': {'src': 'Q11A_3_3', 'label': 'Other'},
+                'Q11 REASONS - Insurance_4': {'src': None, 'label': 'Other'},
+                'Q11 REASONS - Insurance_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Investment products_1': {'src': 'Q11A_4_1', 'label': 'Savings'},
+                'Q11 REASONS - Investment products_2': {'src': 'Q11A_4_2', 'label': 'Notice deposits'},
+                'Q11 REASONS - Investment products_3': {'src': 'Q11A_4_3', 'label': 'Other'},
+                'Q11 REASONS - Investment products_4': {'src': None, 'label': 'Other'},
+                'Q11 REASONS - Investment products_5': {'src': None, 'label': 'Other'},
+            }
+
+            forex_labels = {
+                1: 'Foreign Exchange', 2: 'Imports and Exports', 3: 'Structured Trade + Commodity Finance',
+                4: 'PayPal', 5: 'Trade (Trade Platform and Transacting)', 6: 'MoneyGram (TM)',
+                7: 'Global Payments (business global account)', 8: 'Travel card',
+                9: 'Trans-country Interbank Clearing', 10: 'Other'
+            }
+            for i, label_text in forex_labels.items():
+                custom_label_mappings[f'Q11 REASONS - FOREX products_{i}'] = {'src': f'Q11A_5_{i}', 'label': label_text}
+
+            for target_col, config in custom_label_mappings.items():
+                src_col = config['src']
+                if src_col is None or src_col not in df.columns:
+                    df_out[target_col] = None
+                    continue
+                numeric_src = pd.to_numeric(df[src_col], errors='coerce')
+                df_out[target_col] = np.where((mask) & (numeric_src == 1), config['label'], None)
+
+            open_ends = {
+                'Q11 REASONS - Lending OTHER': 'TQ11A_1C3',
+                'Q11 REASONS OTHER - Transactional products': 'TQ11A_2C4',
+                'Q11 REASONS - Insurance OTHER': 'TQ11A_3C3',
+                'Q11 REASONS - Investment products OTHER': 'TQ11A_4C3',
+                'Q11 REASONS - FOREX products OTHER': 'TQ11A_5C10'
+            }
+            for target, src in open_ends.items():
+                if src in df.columns:
+                    string_series = df[src].astype(str).replace(['nan', 'NaN', 'None'], None)
+                    df_out[target] = np.where(mask, string_series, None)
+                else:
+                    df_out[target] = None
+
+            final_column_order = [
+                'Interview number', 'UCN Number', 'Date',
+                'Q11.1 RATING - FNB Business Lending products (overdraft, loans, etc.)', 
+                'Q11 REASONS - Lending_1', 'Q11 REASONS - Lending_2', 'Q11 REASONS - Lending_3', 'Q11 REASONS - Lending_4', 'Q11 REASONS - Lending_5', 
+                'Q11 REASONS - Lending OTHER',
+                
+                'Q11.2 RATING - FNB Business Transactional products (cheque, debit card, credit card etc.)', 
+                'Q11 REASONS - Transactional products_1', 'Q11 REASONS - Transactional products_2', 'Q11 REASONS - Transactional products_3', 'Q11 REASONS - Transactional products_4', 'Q11 REASONS - Transactional products_5', 
+                'Q11 REASONS OTHER - Transactional products',
+                
+                'Q11.3 RATING - FNB Business Insurance products (business credit protection plan, law-on-call business plan, etc.)', 
+                'Q11 REASONS - Insurance_1', 'Q11 REASONS - Insurance_2', 'Q11 REASONS - Insurance_3', 'Q11 REASONS - Insurance_4', 'Q11 REASONS - Insurance_5', 
+                'Q11 REASONS - Insurance OTHER',
+                
+                'Q11.4 RATING - FNB Business FNB Business Investment products', 
+                'Q11 REASONS - Investment products_1', 'Q11 REASONS - Investment products_2', 'Q11 REASONS - Investment products_3', 'Q11 REASONS - Investment products_4', 'Q11 REASONS - Investment products_5', 
+                'Q11 REASONS - Investment products OTHER',
+                
+                'Q11.5 RATING - FNB Business FNB Business FOREX products', 
+                'Q11 REASONS - FOREX products_1', 'Q11 REASONS - FOREX products_2', 'Q11 REASONS - FOREX products_3', 'Q11 REASONS - FOREX products_4', 'Q11 REASONS - FOREX products_5', 'Q11 REASONS - FOREX products_6', 'Q11 REASONS - FOREX products_7', 'Q11 REASONS - FOREX products_8', 'Q11 REASONS - FOREX products_9', 'Q11 REASONS - FOREX products_10', 
+                'Q11 REASONS - FOREX products OTHER'
+            ]
+            
+            df_final = df_out[final_column_order].copy()
+            clean_headers = [header.split('_')[0] for header in df_final.columns]
+            df_final.columns = clean_headers
+            return df_final
+        except Exception as e:
+            st.error(f"❌ Error processing SPSS file: {e}")
+            return pd.DataFrame()
+        finally:
+            if os.path.exists(tmp_path): os.remove(tmp_path)
+
     if st.button("🚀 Run Q11 Extraction", type="primary", key="run_q11"):
-        with st.spinner("Extracting Q11 ratings and reasons..."):
-            out_buf = io.BytesIO()
-            wb_q11 = openpyxl.Workbook()
-            ws_q11 = wb_q11.active
-            ws_q11.title = "Q11 Extraction"
-            ws_q11.append(["Portfolio", "Question", "Rating Mean", "Reasons / Open-ended Feedback"])
-            ws_q11.cell(row=1, column=1).font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-            ws_q11.cell(row=1, column=1).fill = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
-            for c_idx in range(2, 5):
-                cell = ws_q11.cell(row=1, column=c_idx)
-                cell.font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-                cell.fill = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
-            
-            ws_q11.append(["Growth Portfolio", "Q11.1 Lending Products", 8.24, "Excellent turnaround times and competitive interest rates."])
-            ws_q11.append(["Growth Portfolio", "Q11.2 Transactional Products", 7.95, "App functionality is very smooth."])
-            ws_q11.append(["R10Mil Portfolio", "Q11.1 Lending Products", 8.50, "Dedicated banker provides exceptional support."])
-            
-            wb_q11.save(out_buf)
-            out_buf.seek(0)
-            st.session_state.q11_bytes = out_buf.getvalue()
-            st.session_state.q11_ready = True
-            st.success("Q11 Extraction complete! Download ready below.")
+        if file_q11_r10 is None and file_q11_grow is None:
+            st.error("Please upload at least one SPSS (.sav) file.")
+        else:
+            with st.spinner("Extracting Q11 ratings and reasons..."):
+                clean_df1 = process_streamlit_spss_dataset(file_q11_r10)
+                clean_df2 = process_streamlit_spss_dataset(file_q11_grow)
+
+                out_buf = io.BytesIO()
+                with pd.ExcelWriter(out_buf, engine='openpyxl') as writer:
+                    if not clean_df1.empty:
+                        clean_df1.to_excel(writer, sheet_name='Enterprise-R10Mil', index=False)
+                    if not clean_df2.empty:
+                        clean_df2.to_excel(writer, sheet_name='Business-Growth', index=False)
+                    if clean_df1.empty and clean_df2.empty:
+                        pd.DataFrame({"Notice": ["No records found for the selected date window."]}).to_excel(writer, sheet_name='No Data Found', index=False)
+                
+                out_buf.seek(0)
+                st.session_state.q11_bytes = out_buf.getvalue()
+                st.session_state.q11_ready = True
+                st.success("Q11 Extraction complete! Download ready below.")
 
     if st.session_state.q11_ready and st.session_state.q11_bytes:
         st.markdown("---")
+        run_date_str = datetime.now().strftime("%m-%d-%Y")
         st.download_button(
-            label="💾 Download Q11 Extraction Report (`Q11_Ratings_Extraction.xlsx`)",
+            label="💾 Download Q11 Extraction Report (`Star W22 Q11 extraction.xlsx`)",
             data=st.session_state.q11_bytes,
-            file_name="Q11_Ratings_Extraction.xlsx",
+            file_name=f"Star W22 Q11 extraction {run_date_str}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="dl_q11_final"
         )
