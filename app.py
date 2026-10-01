@@ -263,10 +263,10 @@ with tab1:
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
         ent_crosstab_df = pd.DataFrame({
             "Enterprise": [
-                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
-                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
-                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
-                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
+                "Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", 
+                "Gauteng Tshwane", "Gauteng West", "Greater Sandton", "Kzn Coastal", 
+                "Kzn Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", 
+                "Northern Cape", "Western Cape Inland", "Western Cape Metro"
             ],
             "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
             "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
