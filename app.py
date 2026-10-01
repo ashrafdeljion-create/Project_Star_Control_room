@@ -9,7 +9,6 @@ import os
 import tempfile
 import re
 import numpy as np
-from dateutil.relativedelta import relativedelta, FR
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -73,7 +72,7 @@ st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown("Your unified command center for Project Status, Weekly 911's pipeline automation, NPS Excel reports, and Q11 extractions.")
 
 # =========================================================================
-# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (Status First)
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS
 # =========================================================================
 tab1, tab2, tab3, tab4 = st.tabs([
     "📋 Project Status & Quotas Update",
@@ -90,15 +89,15 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # ==========================================================================
 with tab1:
     st.markdown("### 📋 Project Status & Quotas Update Hub")
-    st.markdown("Monitor sample quotas achieved, adjust segment-level targets dynamically in separate categories, and download the PM Project Status Update report.")
+    st.markdown("Monitor sample quotas achieved, adjust segment-level targets dynamically, and download the PM Project Status Update report.")
 
     st.markdown("---")
     st.subheader("⚙️ Live Segment-Level Quota & Target Adjustments")
     st.markdown("Adjust individual segment targets below. Portfolio totals and outstanding deficits will update automatically:")
 
-    # 🟢 Business Container
+    # 🟢 Business / Growth Container
     with st.container(border=True):
-        st.markdown("#### 🟢 Business (Growth) Segment Targets")
+        st.markdown("#### 🟢 Business / Growth Segment Targets")
         col_b1, col_b2, col_b3, col_b4 = st.columns(4)
         with col_b1: q_b1 = st.number_input("R0M-R1M Target", min_value=0, value=800, step=25)
         with col_b2: q_b2 = st.number_input("R1M-R5M Target", min_value=0, value=550, step=25)
@@ -106,20 +105,19 @@ with tab1:
         with col_b4: q_b4 = st.number_input("R10-R60M Target", min_value=0, value=550, step=25)
         target_business = q_b1 + q_b2 + q_b3 + q_b4
 
-    # 🔵 Enterprise Container
+    # 🔵 Enterprise / R10M Container
     with st.container(border=True):
-        st.markdown("#### 🔵 Enterprise (R10Mil) Segment Targets")
-        col_e1, col_e2, col_e3, _ = st.columns(4)
-        with col_e1: q_e1 = st.number_input("R10-R60M Target (Enterprise)", min_value=0, value=550, step=25)
-        with col_e2: q_e2 = st.number_input("R60-R150M Target", min_value=0, value=450, step=25)
-        with col_e3: q_e3 = st.number_input("R150M+ Target", min_value=0, value=250, step=25)
-        target_enterprise = q_e1 + q_e2 + q_e3
+        st.markdown("#### 🔵 Enterprise / R10M Segment Targets")
+        col_e1, col_e2, _ = st.columns(3)
+        with col_e1: q_e1 = st.number_input("R60-R150M Target", min_value=0, value=450, step=25)
+        with col_e2: q_e2 = st.number_input("R150M+ Target", min_value=0, value=250, step=25)
+        target_enterprise = q_e1 + q_e2
 
     # 🟠 PUBSC Container
     with st.container(border=True):
-        st.markdown("#### 🟠 Public Sector (PUBSC) Targets")
+        st.markdown("#### 🟠 PUBSC Targets")
         col_p1, _ = st.columns([1, 3])
-        with col_p1: target_pubsc = st.number_input("Overall PUBSC Target", min_value=0, value=500, step=25)
+        with col_p1: target_pubsc = st.number_input("PUBSC Target", min_value=0, value=500, step=25)
 
     total_target_val = target_business + target_enterprise + target_pubsc
 
@@ -178,8 +176,10 @@ with tab1:
         LIGHT_ORANGE = PatternFill(start_color="FDF3EC", end_color="FDF3EC", fill_type="solid")
         GRAY_HEADER = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
         RED_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+        YELLOW_FILL = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
         
         WHITE_BOLD_FONT = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        BLACK_BOLD_FONT = Font(name="Calibri", size=11, bold=True, color="000000")
         THIN_BORDER = Border(left=Side(style='thin', color='BFBFBF'), right=Side(style='thin', color='BFBFBF'), top=Side(style='thin', color='BFBFBF'), bottom=Side(style='thin', color='BFBFBF'))
         CENTER_ALIGN = Alignment(horizontal="center", vertical="center")
 
@@ -193,7 +193,9 @@ with tab1:
         for _, row in summary_df.iterrows():
             ws_sum.append(["", row["Segment"], row["TOTAL Target"], row["TOTAL Achieved"], row["Total Outstanding"]])
 
-        # Business Sheet
+        # -------------------------------------------------------------
+        # BUSINESS SHEET SETUP
+        # -------------------------------------------------------------
         ws_bus = wb.create_sheet(title='Update Business')
         ws_bus.cell(row=1, column=2, value="Region").fill = GRAY_HEADER
         ws_bus.merge_cells("B1:H1")
@@ -265,13 +267,33 @@ with tab1:
             
             q_c = ws_bus.cell(row=idx, column=17, value=quota_val)
             q_c.border = THIN_BORDER
-            q_c.fill = LIGHT_TEAL
+            q_c.fill = YELLOW_FILL
             
             r_c = ws_bus.cell(row=idx, column=18, value=f"=Q{idx}-P{idx}")
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
 
-        # Enterprise Sheet
+        b_q_row = 7
+        ws_bus.cell(row=b_q_row, column=10, value="Quota").fill = YELLOW_FILL
+        ws_bus.cell(row=b_q_row, column=10).font = BLACK_BOLD_FONT
+        for col_let in ['K', 'L', 'M', 'N', 'O', 'P']:
+            q_cell = ws_bus.cell(row=b_q_row, column=openpyxl.utils.column_index_from_string(col_let), value=470)
+            q_cell.fill = YELLOW_FILL
+            q_cell.border = THIN_BORDER
+            q_cell.alignment = CENTER_ALIGN
+
+        b_o_row = 8
+        ws_bus.cell(row=b_o_row, column=10, value="Outstanding").fill = RED_FILL
+        ws_bus.cell(row=b_o_row, column=10).font = WHITE_BOLD_FONT
+        for c_idx, col_let in enumerate(['K', 'L', 'M', 'N', 'O', 'P'], start=11):
+            o_cell = ws_bus.cell(row=b_o_row, column=c_idx, value=f"={col_let}$7-{col_let}6")
+            o_cell.fill = RED_FILL
+            o_cell.border = THIN_BORDER
+            o_cell.alignment = CENTER_ALIGN
+
+        # -------------------------------------------------------------
+        # ENTERPRISE SHEET SETUP
+        # -------------------------------------------------------------
         ws_ent = wb.create_sheet(title='Update Enterprise')
         ws_ent.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
         ws_ent.merge_cells("B1:H1")
@@ -326,9 +348,8 @@ with tab1:
             cell.font = WHITE_BOLD_FONT
 
         for idx, (s_name, s_vals, quota_val) in enumerate([
-            ("R10-R60M", [56, 105, 107, 109, 82], q_e1),
-            ("R60-R150M", [43, 38, 90, 55, 21], q_e2),
-            ("R150M+", [44, 29, 41, 37, 34], q_e3)
+            ("R60-R150M", [43, 38, 90, 55, 21], q_e1),
+            ("R150M+", [44, 29, 41, 37, 34], q_e2)
         ], start=3):
             ws_ent.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
             for v_idx, val in enumerate(s_vals, start=11):
@@ -341,13 +362,33 @@ with tab1:
             
             q_c = ws_ent.cell(row=idx, column=17, value=quota_val)
             q_c.border = THIN_BORDER
-            q_c.fill = LIGHT_TEAL
+            q_c.fill = YELLOW_FILL
             
             r_c = ws_ent.cell(row=idx, column=18, value=f"=Q{idx}-P{idx}")
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
 
-        # PUBSC Sheet
+        ent_q_row = 5
+        ws_ent.cell(row=ent_q_row, column=10, value="Quota").fill = YELLOW_FILL
+        ws_ent.cell(row=ent_q_row, column=10).font = BLACK_BOLD_FONT
+        for col_let in ['K', 'L', 'M', 'N', 'O', 'P']:
+            q_cell = ws_ent.cell(row=ent_q_row, column=openpyxl.utils.column_index_from_string(col_let), value=140)
+            q_cell.fill = YELLOW_FILL
+            q_cell.border = THIN_BORDER
+            q_cell.alignment = CENTER_ALIGN
+
+        ent_o_row = 6
+        ws_ent.cell(row=ent_o_row, column=10, value="Outstanding").fill = RED_FILL
+        ws_ent.cell(row=ent_o_row, column=10).font = WHITE_BOLD_FONT
+        for c_idx, col_let in enumerate(['K', 'L', 'M', 'N', 'O', 'P'], start=11):
+            o_cell = ws_ent.cell(row=ent_o_row, column=c_idx, value=f"={col_let}$5-{col_let}4")
+            o_cell.fill = RED_FILL
+            o_cell.border = THIN_BORDER
+            o_cell.alignment = CENTER_ALIGN
+
+        # -------------------------------------------------------------
+        # PUBSC SHEET SETUP
+        # -------------------------------------------------------------
         ws_pub = wb.create_sheet(title='Update PUBSC')
         ws_pub.append(["", "REGION"])
         ws_pub.append(["", "EASTERN CAPE", "FREE STATE", "GAUTENG", "KWAZULU-NATAL", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE", "WESTERN CAPE", "TOTAL"])
@@ -357,7 +398,7 @@ with tab1:
             cell.font = WHITE_BOLD_FONT
             cell.alignment = CENTER_ALIGN
 
-        for prow in [
+        pub_rows = [
             ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4, "=SUM(C4:K4)"],
             ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(C5:K5)"],
             ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0, "=SUM(C6:K6)"],
@@ -365,7 +406,8 @@ with tab1:
             ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(C8:K8)"],
             ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1, "=SUM(C9:K9)"],
             ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1, "=SUM(C10:K10)"]
-        ]:
+        ]
+        for prow in pub_rows:
             ws_pub.append([""] + prow)
 
         for sheet in wb.worksheets:
