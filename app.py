@@ -263,10 +263,10 @@ with tab1:
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
         ent_crosstab_df = pd.DataFrame({
             "Enterprise": [
-                "Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", 
-                "Gauteng Tshwane", "Gauteng West", "Greater Sandton", "Kzn Coastal", 
-                "Kzn Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", 
-                "Northern Cape", "Western Cape Inland", "Western Cape Metro"
+                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
+                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
+                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
+                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
             ],
             "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
             "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
@@ -573,26 +573,38 @@ with tab1:
             c.alignment = CENTER_ALIGN
 
 
-        # 4. Update PUBSC Sheet
+        # 4. Update PUBSC Sheet (Fixed Aligned Labels & Columns)
         ws_pub = wb.create_sheet(title='Update PUBSC')
-        ws_pub.append(["", "REGION"])
-        ws_pub.append(["", "EASTERN CAPE", "FREE STATE", "GAUTENG", "KWAZULU-NATAL", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE", "WESTERN CAPE", "TOTAL"])
-        for col_idx in range(2, 13):
-            cell = ws_pub.cell(row=2, column=col_idx)
+        ws_pub.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
+        ws_pub.merge_cells("B1:K1")
+        ws_pub.cell(row=1, column=2).alignment = CENTER_ALIGN
+
+        pub_headers = ["ORGANISATION TYPE", "EASTERN CAPE", "FREE STATE", "GAUTENG", "KWAZULU-NATAL", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE", "WESTERN CAPE", "TOTAL"]
+        for col_idx, h_text in enumerate(pub_headers, start=2):
+            cell = ws_pub.cell(row=2, column=col_idx, value=h_text)
             cell.fill = FNB_TEAL
             cell.font = WHITE_BOLD_FONT
             cell.alignment = CENTER_ALIGN
 
-        for prow in [
-            ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4, "=SUM(C4:K4)"],
-            ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(C5:K5)"],
-            ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0, "=SUM(C6:K6)"],
-            ["PUBLIC SECTOR LOCAL GOVERMENT", 0, 0, 1, 0, 0, 0, 0, 1, 0, "=SUM(C7:K7)"],
-            ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(C8:K8)"],
-            ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1, "=SUM(C9:K9)"],
-            ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1, "=SUM(C10:K10)"]
-        ]:
-            ws_pub.append([""] + prow)
+        pub_rows_data = [
+            ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4],
+            ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0],
+            ["PUBLIC SECTOR LOCAL GOVERMENT", 0, 0, 1, 0, 0, 0, 0, 1, 0],
+            ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1],
+            ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1]
+        ]
+        for row_offset, prow in enumerate(pub_rows_data, start=3):
+            ws_pub.cell(row=row_offset, column=2, value=prow[0]).border = THIN_BORDER
+            for val_idx, val in enumerate(prow[1:], start=3):
+                c = ws_pub.cell(row=row_offset, column=val_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            # Total Formula in Column L (index 12)
+            tot_c = ws_pub.cell(row=row_offset, column=12, value=f"=SUM(C{row_offset}:K{row_offset})")
+            tot_c.border = THIN_BORDER
+            tot_c.alignment = CENTER_ALIGN
 
         # --- AUTO-ADJUST COLUMN WIDTHS FOR ALL WORKSHEETS ---
         for sheet in wb.worksheets:
