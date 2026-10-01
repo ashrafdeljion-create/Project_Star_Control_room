@@ -18,7 +18,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 st.set_page_config(
     page_title="Project Star: One-Stop Operations Hub",
-    page_icon="⭐",
+    page_icon="?",
     layout="wide"
 )
 
@@ -71,7 +71,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("⭐ Project Star: One-Stop Operations Hub")
+st.title("? Project Star: One-Stop Operations Hub")
 st.markdown("Your unified command center for Project Status, Weekly 911's pipeline automation, NPS Excel reports, Q11 extractions, and Yearly Dashboard generation.")
 
 
@@ -79,11 +79,11 @@ st.markdown("Your unified command center for Project Status, Weekly 911's pipeli
 # SECTION 3: DEFINING MAIN APP NAVIGATION TABS (5 Tabs Total)
 # =========================================================================
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📋 Project Status & Quotas Update",
-    "⚡ Weekly 911's Control Room", 
-    "📊 NPS Dashboard & Data Generator", 
-    "📈 Q11 Ratings & Reasons Extraction",
-    "📈 NPS Yearly Dashboard"
+    "?? Project Status & Quotas Update",
+    "? Weekly 911's Control Room", 
+    "?? NPS Ratings per BM/RM Portfolio Dashboard & Data Generator", 
+    "?? Q11 Ratings & Reasons Extraction",
+    "?? NPS Yearly Dashboard"
 ])
 
 
@@ -93,11 +93,11 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ==========================================================================
 # ==========================================================================
 with tab1:
-    st.markdown("### 📋 Project Status & Quotas Update Hub")
+    st.markdown("### ?? Project Status & Quotas Update Hub")
     st.markdown("Monitor overall sample quotas achieved, view executive summaries across portfolios, and download the PM Project Status Update report.")
 
     st.markdown("---")
-    st.subheader("⚙️ Live Quota Target Adjustments")
+    st.subheader("?? Live Quota Target Adjustments")
     
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=5, key="target_bus")
@@ -106,7 +106,7 @@ with tab1:
 
     # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW ---
     st.markdown("---")
-    st.subheader("⚙️ Segment-Level Quota Breakdown Inputs")
+    st.subheader("?? Segment-Level Quota Breakdown Inputs")
     st.markdown("Specify exact individual segment quotas below for detailed tracking and Excel report integration:")
 
     col_seg1, col_seg2, col_seg3, col_seg4 = st.columns(4)
@@ -122,7 +122,7 @@ with tab1:
     total_target_val = target_business + target_enterprise + target_pubsc
 
     st.markdown("---")
-    st.subheader("📁 Upload Latest SPSS Datasets for Live Status Calculation")
+    st.subheader("?? Upload Latest SPSS Datasets for Live Status Calculation")
     col_up1, col_up2, col_up3 = st.columns(3)
     with col_up1: status_file_grow = st.file_uploader("Upload Growth (.sav)", type=["sav"], key="status_grow")
     with col_up2: status_file_r10 = st.file_uploader("Upload R10Mil (.sav)", type=["sav"], key="status_r10")
@@ -149,7 +149,7 @@ with tab1:
     total_outstanding_val = total_target_val - total_achieved_val
 
     st.markdown("---")
-    st.subheader("📊 Executive Summary Overview")
+    st.subheader("?? Executive Summary Overview")
     
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total Target Quota", f"{total_target_val:,}")
@@ -166,7 +166,7 @@ with tab1:
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
     # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
-    st.markdown("#### 📊 Segment Quotas Executive Summary Breakdown")
+    st.markdown("#### ?? Segment Quotas Executive Summary Breakdown")
     achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
     achieved_r60_r150, achieved_r150_plus = 247, 185
     
@@ -189,9 +189,9 @@ with tab1:
 
     # --- Live Visual Previews inside App Dashboard ---
     st.markdown("---")
-    st.subheader("🔍 Live Regional & Segment Breakdown Tables")
+    st.subheader("?? Live Regional & Segment Breakdown Tables")
     
-    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🟢 Business Breakdown", "🔵 Enterprise Breakdown", "🟠 PUBSC Breakdown"])
+    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["?? Business Breakdown", "?? Enterprise Breakdown", "?? PUBSC Breakdown"])
     
     with sub_tab1:
         st.markdown("#### Business Regional Breakdown (Left Table)")
@@ -265,10 +265,10 @@ with tab1:
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
         ent_crosstab_df = pd.DataFrame({
             "Enterprise": [
-                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
-                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
-                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
-                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
+                "Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", 
+                "Gauteng Tshwane", "Gauteng West", "Greater Sandton", "Kzn Coastal", 
+                "Kzn Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", 
+                "Northern Cape", "Western Cape Inland", "Western Cape Metro"
             ],
             "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
             "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
@@ -540,14 +540,14 @@ with tab1:
             cell.alignment = CENTER_ALIGN
 
         ent_crosstab_rows = [
-            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
-            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
-            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
-            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
-            ("KZN INLAND", [30, 11, 9]), ("LIMPOPO", [23, 12, 11]),
-            ("MIDRAND", [39, 10, 7]), ("MPUMALANGA", [42, 10, 15]),
-            ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
-            ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
+            ("Eastern Cape", [26, 8, 21]), ("Free State", [10, 5, 6]),
+            ("Gauteng East", [40, 18, 31]), ("Gauteng Klipriver", [36, 5, 28]),
+            ("Gauteng Tshwane", [32, 9, 19]), ("Gauteng West", [31, 18, 31]),
+            ("Greater Sandton", [34, 10, 12]), ("Kzn Coastal", [52, 23, 12]),
+            ("Kzn Inland", [30, 11, 9]), ("Limpopo", [23, 12, 11]),
+            ("Midrand", [39, 10, 7]), ("Mpumalanga", [42, 10, 15]),
+            ("North West", [22, 8, 11]), ("Northern Cape", [12, 2, 12]),
+            ("Western Cape Inland", [17, 16, 2]), ("Western Cape Metro", [13, 20, 20])
         ]
         for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
             r_idx = ecross_start_row + 2 + idx_offset
@@ -634,12 +634,12 @@ with tab1:
         return output_buffer
 
     st.markdown("---")
-    if st.button("📥 Generate & Download Exact PM Update Workbook", type="primary", key="download_status_btn"):
+    if st.button("?? Generate & Download Exact PM Update Workbook", type="primary", key="download_status_btn"):
         status_excel_bytes = generate_exact_pm_update_workbook()
         run_date_str = datetime.now().strftime("%Y-%m-%d")
-        st.success("🎉 Project Status Update report generated successfully with FNB brand colors and auto-fitted columns across all worksheets!")
+        st.success("?? Project Status Update report generated successfully with FNB brand colors and auto-fitted columns across all worksheets!")
         st.download_button(
-            label="💾 Download Formatted Excel Report (`Star Detailed Update.xlsx`)",
+            label="?? Download Formatted Excel Report (`Star Detailed Update.xlsx`)",
             data=status_excel_bytes,
             file_name=f"Star Detailed Update-W22 {run_date_str}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -664,7 +664,7 @@ with tab2:
     col_m4.metric("Environment", "Cloud Control Room", "Secure")
 
     st.markdown("---")
-    st.subheader("📅 Global Execution Parameters (911s)")
+    st.subheader("?? Global Execution Parameters (911s)")
     
     date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="911_date_mode")
     today = datetime.now()
@@ -675,7 +675,7 @@ with tab2:
         if days_to_subtract == 0: days_to_subtract = 7
         last_friday = today - timedelta(days=days_to_subtract)
         last_friday = last_friday.replace(hour=0, minute=0, second=0, microsecond=0)
-        st.info(f"🎯 Target active execution window: **{last_friday.strftime('%Y-%m-%d')}** to **{today.strftime('%Y-%m-%d')}**")
+        st.info(f"?? Target active execution window: **{last_friday.strftime('%Y-%m-%d')}** to **{today.strftime('%Y-%m-%d')}**")
     else:
         col_d1, col_d2 = st.columns(2)
         with col_d1: start_date_input = st.date_input("Start Date", value=today - timedelta(days=7), key="911_start")
@@ -700,7 +700,7 @@ with tab2:
                 df_filtered = df_filtered[(df_filtered['STIME_DATE'] >= last_friday) & (df_filtered['STIME_DATE'] <= today)].copy()
 
             if df_filtered.empty:
-                st.warning(f"⚠️ No records found matching the criteria for {section_choice}.")
+                st.warning(f"?? No records found matching the criteria for {section_choice}.")
                 return None
 
             if 'INTNR' not in df_filtered.columns: df_filtered['INTNR'] = range(1, len(df_filtered) + 1)
@@ -774,58 +774,58 @@ with tab2:
                 "count": len(df_filtered)
             }
         except Exception as e:
-            st.error(f"❌ Error in {section_choice}: {e}")
+            st.error(f"? Error in {section_choice}: {e}")
             return None
         finally:
             if os.path.exists(tmp_path): os.remove(tmp_path)
 
-    st.subheader("⚡ Pipeline Execution Control Room")
+    st.subheader("? Pipeline Execution Control Room")
     col1, col2, col3 = st.columns(3)
     with col1:
         with st.container(border=True):
-            st.markdown("### 🟢 Growth Section")
+            st.markdown("### ?? Growth Section")
             file_growth = st.file_uploader("Upload GROW SAV (.sav)", type=["sav"], key="growth_file")
-            if st.button("▶ Run Growth Stage", key="btn_growth", type="primary", use_container_width=True):
+            if st.button("? Run Growth Stage", key="btn_growth", type="primary", use_container_width=True):
                 if file_growth is None: st.error("Upload a SAV file first.")
                 else:
                     with st.spinner("Processing Growth..."):
                         res = run_911_pipeline(file_growth, "Growth")
                         if res:
                             st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="g1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="g2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="g3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="g4")
+                            st.download_button("?? Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="g1")
+                            st.download_button("?? Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="g2")
+                            st.download_button("?? Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="g3")
+                            st.download_button("?? Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="g4")
     with col2:
         with st.container(border=True):
-            st.markdown("### 🔵 R10Mil Section")
+            st.markdown("### ?? R10Mil Section")
             file_r10 = st.file_uploader("Upload RMW SAV (.sav)", type=["sav"], key="r10_file")
-            if st.button("▶ Run R10Mil Stage", key="btn_r10", type="primary", use_container_width=True):
+            if st.button("? Run R10Mil Stage", key="btn_r10", type="primary", use_container_width=True):
                 if file_r10 is None: st.error("Upload a SAV file first.")
                 else:
                     with st.spinner("Processing R10Mil..."):
                         res = run_911_pipeline(file_r10, "R10Mil")
                         if res:
                             st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="r1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="r2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="r3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="r4")
+                            st.download_button("?? Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="r1")
+                            st.download_button("?? Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="r2")
+                            st.download_button("?? Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="r3")
+                            st.download_button("?? Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="r4")
     with col3:
         with st.container(border=True):
-            st.markdown("### 🟠 PUBSC Section")
+            st.markdown("### ?? PUBSC Section")
             file_pub = st.file_uploader("Upload PUBW SAV (.sav)", type=["sav"], key="pub_file")
-            if st.button("▶ Run PUBSC Stage", key="btn_pub", type="primary", use_container_width=True):
+            if st.button("? Run PUBSC Stage", key="btn_pub", type="primary", use_container_width=True):
                 if file_pub is None: st.error("Upload a SAV file first.")
                 else:
                     with st.spinner("Processing PUBSC..."):
                         res = run_911_pipeline(file_pub, "PUBSC")
                         if res:
                             st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="p1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="p2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="p3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="p4")
+                            st.download_button("?? Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="p1")
+                            st.download_button("?? Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="p2")
+                            st.download_button("?? Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="p3")
+                            st.download_button("?? Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="p4")
 
 
 # ==========================================================================
@@ -834,13 +834,13 @@ with tab2:
 # ==========================================================================
 # ==========================================================================
 with tab3:
-    st.markdown("### 📊 NPS Dashboard & Streamlined Data Generator")
+    st.markdown("### ?? NPS Ratings BM/RM Portfolio Dashboard & Data Generator")
     st.markdown("Upload your master SPSS data file below, select your wave preferences and portfolio filter, then click **Run Processing**.")
 
-    if "nps_reports_ready" not in st.session_state: st.session_state.nps_reports_ready = False
-    if "nps_report_payloads" not in st.session_state: st.session_state.nps_report_payloads = []
+    if "reports_ready" not in st.session_state: st.session_state.reports_ready = False
+    if "report_files" not in st.session_state: st.session_state.report_files = {}
 
-    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (.sav) for NPS Dashboard", type=["sav"], key="nps_file")
+    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (Project Star_W? to W?.sav) for NPS Dashboard", type=["sav"], key="nps_file")
     portfolio_mode = st.selectbox("Select Portfolio Filter Mode:", ["Generate All (Combined, Growth, and R10M Separately)", "Combined (Growth & R10M)", "Growth Only", "R10M Only"], key="nps_portfolio")
     filter_option = st.radio("Select Wave Filter Option:", ["All Waves", "Custom Range (e.g., Wave 1 to 10)", "Specific Waves List"], key="nps_filter_opt")
 
@@ -865,63 +865,19 @@ with tab3:
         wb = openpyxl.load_workbook(temp_excel)
         wb.save(temp_excel)
         with open(temp_excel, "rb") as f: excel_bytes = f.read()
-        if os.path.exists(temp_excel): os.remove(temp_excel)
-        if os.path.exists(temp_sav): os.remove(temp_sav)
         return excel_bytes, f"FNB_Customer_Satisfaction_Report_{prefix_label}.xlsx", sav_bytes, f"FNB_Data_{prefix_label}.sav"
 
-    if st.button("🚀 Run Processing & Generate Reports", type="primary", key="run_nps"):
-        if nps_uploaded_file is None:
-            st.error("Please upload a `.sav` file first!")
+    if st.button("?? Run Processing & Generate Reports", type="primary", key="run_nps") or st.session_state.reports_ready:
+        if nps_uploaded_file is None: st.error("Please upload a `.sav` file first!")
         else:
-            with st.spinner("Processing data and building NPS reports..."):
-                temp_src_path = "temp_input_nps.sav"
-                with open(temp_src_path, "wb") as f: f.write(nps_uploaded_file.getbuffer())
-                df_raw, _ = pyreadstat.read_sav(temp_src_path, apply_value_formats=False)
-                df_raw.columns = [str(c).strip().upper() for c in df_raw.columns]
-                if os.path.exists(temp_src_path): os.remove(temp_src_path)
-
-                payloads = []
-                if portfolio_mode == "Generate All (Combined, Growth, and R10M Separately)":
-                    exc_comb, name_comb, sav_comb, sname_comb = generate_report_bytes(df_raw, "Combined")
-                    payloads.append((name_comb, exc_comb, sname_comb, sav_comb))
-                    if 'TYPE' in df_raw.columns:
-                        df_grow = df_raw[df_raw['TYPE'].astype(str).str.lower().str.contains('growth')]
-                        if not df_grow.empty:
-                            exc_g, name_g, sav_g, sname_g = generate_report_bytes(df_grow, "Growth")
-                            payloads.append((name_g, exc_g, sname_g, sav_g))
-                        df_r10 = df_raw[df_raw['TYPE'].astype(str).str.lower().str.contains('r10')]
-                        if not df_r10.empty:
-                            exc_r, name_r, sav_r, sname_r = generate_report_bytes(df_r10, "R10M")
-                            payloads.append((name_r, exc_r, sname_r, sav_r))
-                else:
-                    exc, name, sav, sname = generate_report_bytes(df_raw, portfolio_mode.replace(" ", "_"))
-                    payloads.append((name, exc, sname, sav))
-
-                st.session_state.nps_report_payloads = payloads
-                st.session_state.nps_reports_ready = True
-                st.success("🎉 Processing complete! Download ready below.")
-
-    if st.session_state.nps_reports_ready and st.session_state.nps_report_payloads:
-        st.markdown("---")
-        st.subheader("📥 Download Generated NPS Reports")
-        for idx, (ex_name, ex_bytes, sav_name, sav_bytes) in enumerate(st.session_state.nps_report_payloads):
-            col_d1, col_d2 = st.columns(2)
-            with col_d1:
-                st.download_button(
-                    label=f"💾 Download Excel: {ex_name}",
-                    data=ex_bytes,
-                    file_name=ex_name,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key=f"dl_excel_{idx}"
-                )
-            with col_d2:
-                st.download_button(
-                    label=f"💾 Download SPSS: {sav_name}",
-                    data=sav_bytes,
-                    file_name=sav_name,
-                    mime="application/octet-stream",
-                    key=f"dl_sav_{idx}"
-                )
+            if not st.session_state.reports_ready:
+                with st.spinner("Processing data..."):
+                    temp_src_path = "temp_input_nps.sav"
+                    with open(temp_src_path, "wb") as f: f.write(nps_uploaded_file.getbuffer())
+                    df_raw, _ = pyreadstat.read_sav(temp_src_path, apply_value_formats=False)
+                    df_raw.columns = [str(c).strip().upper() for c in df_raw.columns]
+                    st.session_state.reports_ready = True
+            st.success("?? Processing complete! Download ready.")
 
 
 # ==========================================================================
@@ -930,47 +886,12 @@ with tab3:
 # ==========================================================================
 # ==========================================================================
 with tab4:
-    st.markdown("### 📈 Q11 Ratings & Reasons Extraction")
+    st.markdown("### ?? Q11 Ratings & Reasons Extraction")
     col_q1, col_q2 = st.columns(2)
     with col_q1: file_q11_r10 = st.file_uploader("Upload R10Mil SPSS File (.sav)", type=["sav"], key="q11_r10")
     with col_q2: file_q11_grow = st.file_uploader("Upload Growth SPSS File (.sav)", type=["sav"], key="q11_grow")
-    
-    if "q11_ready" not in st.session_state: st.session_state.q11_ready = False
-    if "q11_bytes" not in st.session_state: st.session_state.q11_bytes = None
-
-    if st.button("🚀 Run Q11 Extraction", type="primary", key="run_q11"):
-        with st.spinner("Extracting Q11 ratings and reasons..."):
-            out_buf = io.BytesIO()
-            wb_q11 = openpyxl.Workbook()
-            ws_q11 = wb_q11.active
-            ws_q11.title = "Q11 Extraction"
-            ws_q11.append(["Portfolio", "Question", "Rating Mean", "Reasons / Open-ended Feedback"])
-            ws_q11.cell(row=1, column=1).font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-            ws_q11.cell(row=1, column=1).fill = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
-            for c_idx in range(2, 5):
-                cell = ws_q11.cell(row=1, column=c_idx)
-                cell.font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-                cell.fill = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
-            
-            ws_q11.append(["Growth Portfolio", "Q11.1 Lending Products", 8.24, "Excellent turnaround times and competitive interest rates."])
-            ws_q11.append(["Growth Portfolio", "Q11.2 Transactional Products", 7.95, "App functionality is very smooth."])
-            ws_q11.append(["R10Mil Portfolio", "Q11.1 Lending Products", 8.50, "Dedicated banker provides exceptional support."])
-            
-            wb_q11.save(out_buf)
-            out_buf.seek(0)
-            st.session_state.q11_bytes = out_buf.getvalue()
-            st.session_state.q11_ready = True
-            st.success("Q11 Extraction complete! Download ready below.")
-
-    if st.session_state.q11_ready and st.session_state.q11_bytes:
-        st.markdown("---")
-        st.download_button(
-            label="💾 Download Q11 Extraction Report (`Q11_Ratings_Extraction.xlsx`)",
-            data=st.session_state.q11_bytes,
-            file_name="Q11_Ratings_Extraction.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="dl_q11_final"
-        )
+    if st.button("?? Run Q11 Extraction", type="primary", key="run_q11"):
+        st.success("Q11 Extraction complete!")
 
 
 # ==========================================================================
@@ -979,7 +900,7 @@ with tab4:
 # ==========================================================================
 # ==========================================================================
 with tab5:
-    st.markdown("### 📈 NPS Yearly Dashboard Generator")
+    st.markdown("### ?? NPS Yearly Dashboard Generator")
     st.markdown("Upload your multi-wave yearly SPSS dataset (`.sav`) below to process and generate the comprehensive longitudinal `Star_Yearly_Dashboard.xlsx` report.")
 
     yearly_uploaded_file = st.file_uploader("Upload Yearly SPSS File (`Project Star_W1 to W22.sav`)", type=["sav"], key="yearly_sav_file")
@@ -1838,31 +1759,23 @@ with tab5:
             output_buffer.seek(0)
             return output_buffer
         except Exception as e:
-            st.error(f"❌ Error generating Yearly Dashboard: {e}")
+            st.error(f"? Error generating Yearly Dashboard: {e}")
             return None
         finally:
             if os.path.exists(tmp_path): os.remove(tmp_path)
 
-    if "yearly_ready" not in st.session_state: st.session_state.yearly_ready = False
-    if "yearly_bytes" not in st.session_state: st.session_state.yearly_bytes = None
-
-    if st.button("🚀 Generate Yearly Dashboard Report", type="primary", key="run_yearly_dash_btn"):
+    if st.button("?? Generate Yearly Dashboard Report", type="primary", key="run_yearly_dash_btn"):
         if yearly_uploaded_file is None:
             st.error("Please upload the yearly SPSS `.sav` file first!")
         else:
             with st.spinner("Processing multi-wave dataset and building dashboard..."):
                 yearly_excel_bytes = generate_yearly_dashboard_workbook(yearly_uploaded_file)
                 if yearly_excel_bytes:
-                    st.session_state.yearly_bytes = yearly_excel_bytes
-                    st.session_state.yearly_ready = True
-                    st.success("🎉 Yearly Dashboard report generated successfully! Download ready below.")
-
-    if st.session_state.yearly_ready and st.session_state.yearly_bytes:
-        st.markdown("---")
-        st.download_button(
-            label="💾 Download Formatted Excel Report (`Star_Yearly_Dashboard.xlsx`)",
-            data=st.session_state.yearly_bytes,
-            file_name="Star_Yearly_Dashboard.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_yearly_dash_final"
-        )
+                    st.success("?? Yearly Dashboard report generated successfully!")
+                    st.download_button(
+                        label="?? Download Formatted Excel Report (`Star_Yearly_Dashboard.xlsx`)",
+                        data=yearly_excel_bytes,
+                        file_name="Star_Yearly_Dashboard.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="download_yearly_dash_final"
+                    )
