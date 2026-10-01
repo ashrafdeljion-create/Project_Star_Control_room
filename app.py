@@ -323,7 +323,7 @@ with tab1:
         for _, row in summary_df.iterrows():
             ws_sum.append(["", row["Segment"], row["TOTAL Target"], row["TOTAL Achieved"], row["Total Outstanding"]])
 
-        # 2. Update Business Sheet
+        # 2. Update Business Sheet (Consolidated: Left Table, Right Matrix, and Crosstab below)
         ws_bus = wb.create_sheet(title='Update Business')
         ws_bus.cell(row=1, column=2, value="Region").fill = GRAY_HEADER
         ws_bus.merge_cells("B1:G1")
@@ -337,7 +337,6 @@ with tab1:
             cell.fill = FNB_TEAL
             cell.font = WHITE_BOLD_FONT
 
-        # Add header for the Total column (Column H / index 8)
         tot_hdr_bus = ws_bus.cell(row=2, column=8, value="Total")
         tot_hdr_bus.fill = FNB_TEAL
         tot_hdr_bus.font = WHITE_BOLD_FONT
@@ -401,7 +400,58 @@ with tab1:
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
 
-        # 3. Update Enterprise Sheet
+        # Business Crosstab placed below on Update Business sheet
+        bcross_start_row = tot_row_idx + 4
+        ws_bus.cell(row=bcross_start_row, column=2, value="SEGMENTS").fill = GRAY_HEADER
+        ws_bus.merge_cells(start_row=bcross_start_row, start_column=3, end_row=bcross_start_row, end_column=5)
+        ws_bus.cell(row=bcross_start_row, column=3).alignment = CENTER_ALIGN
+
+        ws_bus.cell(row=bcross_start_row+1, column=2, value="Busines").fill = FNB_TEAL
+        ws_bus.cell(row=bcross_start_row+1, column=2).font = WHITE_BOLD_FONT
+        for c_idx, seg_lbl in enumerate(["R0m-R1m", "R1m-R5m", "R5m-R10", "TOTAL"], start=3):
+            cell = ws_bus.cell(row=bcross_start_row+1, column=c_idx, value=seg_lbl)
+            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
+            cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
+            cell.alignment = CENTER_ALIGN
+
+        bus_crosstab_rows = [
+            ("Eastern Cape", [121, 44, 15]), ("Free State", [26, 23, 5]),
+            ("Gauteng East", [32, 22, 34]), ("Gauteng South Central", [50, 21, 22]),
+            ("Gauteng Midrand", [27, 15, 17]), ("Gauteng Tshwane East", [34, 18, 13]),
+            ("Gauteng Tshwane North", [24, 25, 14]), ("Gauteng West-Rand", [34, 17, 16]),
+            ("Greater Sandton", [42, 32, 41]), ("KZN North", [15, 15, 12]),
+            ("KZN South", [21, 10, 14]), ("KZN West", [21, 18, 11]),
+            ("Limpopo", [34, 22, 10]), ("Mpumalanga", [40, 19, 6]),
+            ("North West", [38, 22, 12]), ("Northern Cape", [19, 11, 3]),
+            ("Western Cape", [38, 37, 30])
+        ]
+        for idx_offset, (reg_name, vals) in enumerate(bus_crosstab_rows):
+            r_idx = bcross_start_row + 2 + idx_offset
+            ws_bus.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_bus.cell(row=r_idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            tot_c = ws_bus.cell(row=r_idx, column=6, value=f"=SUM(C{r_idx}:E{r_idx})")
+            tot_c.border = THIN_BORDER
+            tot_c.alignment = CENTER_ALIGN
+
+        bcross_tot_row = bcross_start_row + 2 + len(bus_crosstab_rows)
+        ws_bus.cell(row=bcross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
+        ws_bus.cell(row=bcross_tot_row, column=2).font = Font(name="Calibri", size=11, bold=True)
+        ws_bus.cell(row=bcross_tot_row, column=2).border = THIN_BORDER
+        for c_idx in range(3, 7):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            start_r = bcross_start_row + 2
+            end_r = bcross_tot_row - 1
+            c = ws_bus.cell(row=bcross_tot_row, column=c_idx, value=f"=SUM({col_let}{start_r}:{col_let}{end_r})")
+            c.fill = GRAY_HEADER
+            c.font = Font(name="Calibri", size=11, bold=True)
+            c.border = THIN_BORDER
+            c.alignment = CENTER_ALIGN
+
+
+        # 3. Update Enterprise Sheet (Consolidated: Left Table, Right Matrix, and Crosstab below)
         ws_ent = wb.create_sheet(title='Update Enterprise')
         ws_ent.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
         ws_ent.merge_cells("B1:G1")
@@ -412,7 +462,6 @@ with tab1:
             cell.fill = FNB_TEAL
             cell.font = WHITE_BOLD_FONT
 
-        # Add header for the Total column (Column H / index 8) on Enterprise sheet
         tot_hdr_ent = ws_ent.cell(row=2, column=8, value="Total")
         tot_hdr_ent.fill = FNB_TEAL
         tot_hdr_ent.font = WHITE_BOLD_FONT
@@ -474,6 +523,56 @@ with tab1:
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
 
+        # Enterprise Crosstab placed below on Update Enterprise sheet
+        ecross_start_row = ent_tot_row + 4
+        ws_ent.cell(row=ecross_start_row, column=2, value="SEGMENTS").fill = GRAY_HEADER
+        ws_ent.merge_cells(start_row=ecross_start_row, start_column=3, end_row=ecross_start_row, end_column=5)
+        ws_ent.cell(row=ecross_start_row, column=3).alignment = CENTER_ALIGN
+
+        ws_ent.cell(row=ecross_start_row+1, column=2, value="Enterprise").fill = FNB_TEAL
+        ws_ent.cell(row=ecross_start_row+1, column=2).font = WHITE_BOLD_FONT
+        for c_idx, seg_lbl in enumerate(["R10m-R60m", "R150m+", "R60m-R150", "TOTAL"], start=3):
+            cell = ws_ent.cell(row=ecross_start_row+1, column=c_idx, value=seg_lbl)
+            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
+            cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
+            cell.alignment = CENTER_ALIGN
+
+        ent_crosstab_rows = [
+            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
+            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
+            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
+            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
+            ("KZN INLAND", [30, 11, 9]), ("LIMPOPO", [23, 12, 11]),
+            ("MIDRAND", [39, 10, 7]), ("MPUMALANGA", [42, 10, 15]),
+            ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
+            ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
+        ]
+        for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
+            r_idx = ecross_start_row + 2 + idx_offset
+            ws_ent.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_ent.cell(row=r_idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            tot_c = ws_ent.cell(row=r_idx, column=6, value=f"=SUM(C{r_idx}:E{r_idx})")
+            tot_c.border = THIN_BORDER
+            tot_c.alignment = CENTER_ALIGN
+
+        ecross_tot_row = ecross_start_row + 2 + len(ent_crosstab_rows)
+        ws_ent.cell(row=ecross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
+        ws_ent.cell(row=ecross_tot_row, column=2).font = Font(name="Calibri", size=11, bold=True)
+        ws_ent.cell(row=ecross_tot_row, column=2).border = THIN_BORDER
+        for c_idx in range(3, 7):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            start_r = ecross_start_row + 2
+            end_r = ecross_tot_row - 1
+            c = ws_ent.cell(row=ecross_tot_row, column=c_idx, value=f"=SUM({col_let}{start_r}:{col_let}{end_r})")
+            c.fill = GRAY_HEADER
+            c.font = Font(name="Calibri", size=11, bold=True)
+            c.border = THIN_BORDER
+            c.alignment = CENTER_ALIGN
+
+
         # 4. Update PUBSC Sheet
         ws_pub = wb.create_sheet(title='Update PUBSC')
         ws_pub.append(["", "REGION"])
@@ -494,99 +593,6 @@ with tab1:
             ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1, "=SUM(C10:K10)"]
         ]:
             ws_pub.append([""] + prow)
-
-        # 5. Add Business Crosstab Sheet to Excel Workbook
-        ws_bcross = wb.create_sheet(title='Business Crosstab')
-        ws_bcross.cell(row=1, column=2, value="SEGMENTS").fill = GRAY_HEADER
-        ws_bcross.merge_cells("C1:E1")
-        ws_bcross.cell(row=1, column=2).alignment = CENTER_ALIGN
-        
-        ws_bcross.cell(row=2, column=2, value="Busines").fill = FNB_TEAL
-        ws_bcross.cell(row=2, column=2).font = WHITE_BOLD_FONT
-        for c_idx, seg_lbl in enumerate(["R0m-R1m", "R1m-R5m", "R5m-R10", "TOTAL"], start=3):
-            cell = ws_bcross.cell(row=2, column=c_idx, value=seg_lbl)
-            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
-            cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
-            cell.alignment = CENTER_ALIGN
-
-        bus_crosstab_rows = [
-            ("Eastern Cape", [121, 44, 15]), ("Free State", [26, 23, 5]),
-            ("Gauteng East", [32, 22, 34]), ("Gauteng South Central", [50, 21, 22]),
-            ("Gauteng Midrand", [27, 15, 17]), ("Gauteng Tshwane East", [34, 18, 13]),
-            ("Gauteng Tshwane North", [24, 25, 14]), ("Gauteng West-Rand", [34, 17, 16]),
-            ("Greater Sandton", [42, 32, 41]), ("KZN North", [15, 15, 12]),
-            ("KZN South", [21, 10, 14]), ("KZN West", [21, 18, 11]),
-            ("Limpopo", [34, 22, 10]), ("Mpumalanga", [40, 19, 6]),
-            ("North West", [38, 22, 12]), ("Northern Cape", [19, 11, 3]),
-            ("Western Cape", [38, 37, 30])
-        ]
-        for idx, (reg_name, vals) in enumerate(bus_crosstab_rows, start=3):
-            ws_bcross.cell(row=idx, column=2, value=reg_name).border = THIN_BORDER
-            for v_idx, val in enumerate(vals, start=3):
-                c = ws_bcross.cell(row=idx, column=v_idx, value=val)
-                c.border = THIN_BORDER
-                c.alignment = CENTER_ALIGN
-            tot_c = ws_bcross.cell(row=idx, column=6, value=f"=SUM(C{idx}:E{idx})")
-            tot_c.border = THIN_BORDER
-            tot_c.alignment = CENTER_ALIGN
-
-        bcross_tot_row = len(bus_crosstab_rows) + 3
-        ws_bcross.cell(row=bcross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
-        ws_bcross.cell(row=bcross_tot_row, column=2).font = Font(name="Calibri", size=11, bold=True)
-        ws_bcross.cell(row=bcross_tot_row, column=2).border = THIN_BORDER
-        for c_idx in range(3, 7):
-            col_let = openpyxl.utils.get_column_letter(c_idx)
-            c = ws_bcross.cell(row=bcross_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{bcross_tot_row-1})")
-            c.fill = GRAY_HEADER
-            c.font = Font(name="Calibri", size=11, bold=True)
-            c.border = THIN_BORDER
-            c.alignment = CENTER_ALIGN
-
-        # 6. Add Enterprise Crosstab Sheet to Excel Workbook
-        ws_ecross = wb.create_sheet(title='Enterprise Crosstab')
-        ws_ecross.cell(row=1, column=2, value="SEGMENTS").fill = GRAY_HEADER
-        ws_ecross.merge_cells("C1:E1")
-        ws_ecross.cell(row=1, column=2).alignment = CENTER_ALIGN
-        
-        ws_ecross.cell(row=2, column=2, value="Enterprise").fill = FNB_TEAL
-        ws_ecross.cell(row=2, column=2).font = WHITE_BOLD_FONT
-        for c_idx, seg_lbl in enumerate(["R10m-R60m", "R150m+", "R60m-R150", "TOTAL"], start=3):
-            cell = ws_ecross.cell(row=2, column=c_idx, value=seg_lbl)
-            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
-            cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
-            cell.alignment = CENTER_ALIGN
-
-        ent_crosstab_rows = [
-            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
-            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
-            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
-            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
-            ("KZN INLAND", [30, 11, 9]), ("LIMPOPO", [23, 12, 11]),
-            ("MIDRAND", [39, 10, 7]), ("MPUMALANGA", [42, 10, 15]),
-            ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
-            ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
-        ]
-        for idx, (reg_name, vals) in enumerate(ent_crosstab_rows, start=3):
-            ws_ecross.cell(row=idx, column=2, value=reg_name).border = THIN_BORDER
-            for v_idx, val in enumerate(vals, start=3):
-                c = ws_ecross.cell(row=idx, column=v_idx, value=val)
-                c.border = THIN_BORDER
-                c.alignment = CENTER_ALIGN
-            tot_c = ws_ecross.cell(row=idx, column=6, value=f"=SUM(C{idx}:E{idx})")
-            tot_c.border = THIN_BORDER
-            tot_c.alignment = CENTER_ALIGN
-
-        ecross_tot_row = len(ent_crosstab_rows) + 3
-        ws_ecross.cell(row=ecross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
-        ws_ecross.cell(row=ecross_tot_row, column=2).font = Font(name="Calibri", size=11, bold=True)
-        ws_ecross.cell(row=ecross_tot_row, column=2).border = THIN_BORDER
-        for c_idx in range(3, 7):
-            col_let = openpyxl.utils.get_column_letter(c_idx)
-            c = ws_ecross.cell(row=ecross_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{ecross_tot_row-1})")
-            c.fill = GRAY_HEADER
-            c.font = Font(name="Calibri", size=11, bold=True)
-            c.border = THIN_BORDER
-            c.alignment = CENTER_ALIGN
 
         # --- AUTO-ADJUST COLUMN WIDTHS FOR ALL WORKSHEETS ---
         for sheet in wb.worksheets:
