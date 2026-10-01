@@ -116,8 +116,8 @@ with tab1:
     with col_seg4: q_seg_r10_r60 = st.number_input("R10-R60M Quota", min_value=0, value=1100, step=5, key="q_r10_r60")
 
     col_seg5, col_seg6, _ = st.columns(3)
-    with col_seg5: q_seg_r60_r150 = st.number_input("R60-R150M Quota", min_value=0, value=900, step=5, key="q_r60_r150")
-    with col_seg6: q_seg_r150_plus = st.number_input("R150M+ Quota", min_value=0, value=500, step=5, key="q_r150_plus")
+    with col_seg5: q_seg_r60_r150 = st.number_input("R60-R150M Quota", min_value=0, value=900, step=5, key="q_seg_r60_r150")
+    with col_seg6: q_seg_r150_plus = st.number_input("R150M+ Quota", min_value=0, value=500, step=5, key="q_seg_r150_plus")
 
     total_target_val = target_business + target_enterprise + target_pubsc
 
@@ -299,7 +299,6 @@ with tab1:
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
-        # FNB Brand Colors Matching Logo & Palette
         FNB_TEAL = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
         LIGHT_TEAL = PatternFill(start_color="D9F2F4", end_color="D9F2F4", fill_type="solid")
         FNB_ORANGE = PatternFill(start_color="F58220", end_color="F58220", fill_type="solid")
@@ -307,11 +306,9 @@ with tab1:
         RED_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
         
         WHITE_BOLD_FONT = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-        REGULAR_FONT = Font(name="Calibri", size=11)
         THIN_BORDER = Border(left=Side(style='thin', color='BFBFBF'), right=Side(style='thin', color='BFBFBF'), top=Side(style='thin', color='BFBFBF'), bottom=Side(style='thin', color='BFBFBF'))
         CENTER_ALIGN = Alignment(horizontal="center", vertical="center")
 
-        # 1. Summary Sheet
         ws_sum = wb.create_sheet(title='Summary')
         ws_sum.append(["", "Segment", "TOTAL Target", "TOTAL Achieved", "Total Outstanding"])
         ws_sum['B1'].fill = FNB_TEAL
@@ -325,7 +322,6 @@ with tab1:
         for _, row in summary_df.iterrows():
             ws_sum.append(["", row["Segment"], row["TOTAL Target"], row["TOTAL Achieved"], row["Total Outstanding"]])
 
-        # 2. Update Business Sheet (Consolidated: Left Table, Right Matrix, and Crosstab below)
         ws_bus = wb.create_sheet(title='Update Business')
         ws_bus.cell(row=1, column=2, value="Region").fill = GRAY_HEADER
         ws_bus.merge_cells("B1:G1")
@@ -374,7 +370,6 @@ with tab1:
             c.font = WHITE_BOLD_FONT
             c.border = THIN_BORDER
 
-        # Business Right Side Table
         ws_bus.cell(row=1, column=11, value="Region").fill = GRAY_HEADER
         ws_bus.merge_cells("K1:P1")
         ws_bus.cell(row=2, column=10, value="Business").fill = FNB_TEAL
@@ -402,7 +397,6 @@ with tab1:
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
 
-        # Business Crosstab placed below on Update Business sheet
         bcross_start_row = tot_row_idx + 4
         ws_bus.cell(row=bcross_start_row, column=2, value="SEGMENTS").fill = GRAY_HEADER
         ws_bus.merge_cells(start_row=bcross_start_row, start_column=3, end_row=bcross_start_row, end_column=5)
@@ -452,8 +446,6 @@ with tab1:
             c.border = THIN_BORDER
             c.alignment = CENTER_ALIGN
 
-
-        # 3. Update Enterprise Sheet (Consolidated: Left Table, Right Matrix, and Crosstab below)
         ws_ent = wb.create_sheet(title='Update Enterprise')
         ws_ent.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
         ws_ent.merge_cells("B1:G1")
@@ -498,7 +490,6 @@ with tab1:
             c.font = WHITE_BOLD_FONT
             c.border = THIN_BORDER
 
-        # Enterprise Right Side Table
         ws_ent.cell(row=1, column=11, value="REGION").fill = GRAY_HEADER
         ws_ent.merge_cells("K1:P1")
         ws_ent.cell(row=2, column=10, value="Enterprise").fill = FNB_TEAL
@@ -525,7 +516,6 @@ with tab1:
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
 
-        # Enterprise Crosstab placed below on Update Enterprise sheet
         ecross_start_row = ent_tot_row + 4
         ws_ent.cell(row=ecross_start_row, column=2, value="SEGMENTS").fill = GRAY_HEADER
         ws_ent.merge_cells(start_row=ecross_start_row, start_column=3, end_row=ecross_start_row, end_column=5)
@@ -574,8 +564,6 @@ with tab1:
             c.border = THIN_BORDER
             c.alignment = CENTER_ALIGN
 
-
-        # 4. Update PUBSC Sheet (Fixed Aligned Labels, Columns, and Region Column Totals)
         ws_pub = wb.create_sheet(title='Update PUBSC')
         ws_pub.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
         ws_pub.merge_cells("B1:L1")
@@ -607,7 +595,6 @@ with tab1:
             tot_c.border = THIN_BORDER
             tot_c.alignment = CENTER_ALIGN
 
-        # Add Bottom Total Row for Region Columns & Total Column
         pub_tot_row = len(pub_rows_data) + 3
         ws_pub.cell(row=pub_tot_row, column=2, value="").border = THIN_BORDER
         for c_idx in range(3, 13):
@@ -617,7 +604,6 @@ with tab1:
             c.alignment = CENTER_ALIGN
             c.font = Font(name="Calibri", size=11, bold=True)
 
-        # --- AUTO-ADJUST COLUMN WIDTHS FOR ALL WORKSHEETS ---
         for sheet in wb.worksheets:
             for col in sheet.columns:
                 max_len = 0
@@ -933,6 +919,27 @@ with tab4:
     st.markdown("### 📈 Q11 Ratings & Reasons Extraction")
     st.markdown("Upload your Enterprise (R10Mil) and Business (Growth) SPSS datasets below to extract Q11 ratings and reasons into a combined multi-tab Excel workbook.")
 
+    st.markdown("---")
+    st.subheader("📅 Global Execution Parameters (Q11 Extraction)")
+    
+    q11_date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="q11_date_mode")
+    today_q11 = datetime.now()
+
+    if q11_date_mode == "Dynamic Past 7 Days (Auto Friday)":
+        curr_wkday = today_q11.weekday()
+        days_sub = 7 if curr_wkday == 4 else (curr_wkday - 4) % 7
+        if days_sub == 0: days_sub = 7
+        q11_last_friday = today_q11 - timedelta(days=days_sub)
+        q11_last_friday = q11_last_friday.replace(hour=0, minute=0, second=0, microsecond=0)
+        st.info(f"🎯 Target active execution window: **{q11_last_friday.strftime('%Y-%m-%d')}** to **{today_q11.strftime('%Y-%m-%d')}**")
+    else:
+        col_qd1, col_qd2 = st.columns(2)
+        with col_qd1: q11_start_input = st.date_input("Start Date", value=today_q11 - timedelta(days=7), key="q11_start")
+        with col_qd2: q11_end_input = st.date_input("End Date", value=today_q11, key="q11_end")
+        q11_last_friday = datetime.combine(q11_start_input, datetime.min.time())
+        today_q11 = datetime.combine(q11_end_input, datetime.max.time())
+
+    st.markdown("---")
     col_q1, col_q2 = st.columns(2)
     with col_q1: file_q11_r10 = st.file_uploader("Upload R10Mil SPSS File (.sav)", type=["sav"], key="q11_r10")
     with col_q2: file_q11_grow = st.file_uploader("Upload Growth SPSS File (.sav)", type=["sav"], key="q11_grow")
@@ -940,7 +947,7 @@ with tab4:
     if "q11_ready" not in st.session_state: st.session_state.q11_ready = False
     if "q11_bytes" not in st.session_state: st.session_state.q11_bytes = None
 
-    def process_streamlit_spss_dataset(uploaded_file):
+    def process_streamlit_spss_dataset(uploaded_file, start_dt, end_dt):
         if uploaded_file is None:
             return pd.DataFrame()
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
@@ -953,14 +960,8 @@ with tab4:
                 return pd.DataFrame()
 
             df['STIME_CLEAN'] = pd.to_datetime(df['STIME'].astype(str).str.slice(0, 8), format='%Y%m%d', errors='coerce')
-            today = pd.Timestamp.now().normalize()
             
-            if today.weekday() == 4:
-                last_friday_start = today - pd.Timedelta(days=7)
-            else:
-                last_friday_start = today + relativedelta(weekday=FR(-1))
-            
-            date_mask = (df['STIME_CLEAN'] >= last_friday_start) & (df['STIME_CLEAN'] <= pd.Timestamp.now())
+            date_mask = (df['STIME_CLEAN'] >= pd.Timestamp(start_dt)) & (df['STIME_CLEAN'] <= pd.Timestamp(end_dt))
             df = df[date_mask].copy()
             
             if df.empty:
@@ -1088,16 +1089,19 @@ with tab4:
             st.error("Please upload at least one SPSS (.sav) file.")
         else:
             with st.spinner("Extracting Q11 ratings and reasons..."):
-                clean_df1 = process_streamlit_spss_dataset(file_q11_r10)
-                clean_df2 = process_streamlit_spss_dataset(file_q11_grow)
+                clean_df1 = process_streamlit_spss_dataset(file_q11_r10, q11_last_friday, today_q11)
+                clean_df2 = process_streamlit_spss_dataset(file_q11_grow, q11_last_friday, today_q11)
 
                 out_buf = io.BytesIO()
                 with pd.ExcelWriter(out_buf, engine='openpyxl') as writer:
+                    has_data = False
                     if not clean_df1.empty:
                         clean_df1.to_excel(writer, sheet_name='Enterprise-R10Mil', index=False)
+                        has_data = True
                     if not clean_df2.empty:
                         clean_df2.to_excel(writer, sheet_name='Business-Growth', index=False)
-                    if clean_df1.empty and clean_df2.empty:
+                        has_data = True
+                    if not has_data:
                         pd.DataFrame({"Notice": ["No records found for the selected date window."]}).to_excel(writer, sheet_name='No Data Found', index=False)
                 
                 out_buf.seek(0)
@@ -1694,7 +1698,6 @@ with tab5:
 
             add_dashboard_section("LAST INTERACTION WITH YOUR RM/CPE/AE", rm_driver_cols, rm_labels)
 
-            # Channel Usage
             curr_row += 1
             add_section_header(ws_dash, curr_row, "CHANNEL USAGE", sorted_wave_nums)
             curr_row += 1
@@ -1711,7 +1714,6 @@ with tab5:
                 use_zebra = (item_idx % 2 == 0)
                 if use_zebra: lbl_cell.fill = fill_light_teal
                 flag_let = get_excel_col_letter(flag_col)
-                cnt_let = get_excel_col_letter(f"{flag_col}_count")
                 for idx, w_num in enumerate(sorted_wave_nums):
                     val_cell = ws_dash.cell(row=curr_row, column=start_col + idx)
                     val_cell.alignment, val_cell.border = align_center, border_cell
@@ -1724,7 +1726,6 @@ with tab5:
                         val_cell.fill, val_cell.font = fill_na, font_na
                 curr_row += 1
 
-            # Preferred Channel Usage
             curr_row += 1
             add_section_header(ws_dash, curr_row, "Preferred Channel usage", sorted_wave_nums)
             curr_row += 1
@@ -1756,7 +1757,6 @@ with tab5:
 
             add_dashboard_section("LOCAL BRANCH MEAN SCORES", branch_cols, branch_labels)
 
-            # Contact Centre Service Aspects & Q6
             curr_row += 1
             add_section_header(ws_dash, curr_row, "Contact Centre Service Aspects", sorted_wave_nums)
             curr_row += 1
@@ -1813,7 +1813,6 @@ with tab5:
             add_dashboard_section("Online Banking through laptop or desktop PC Service Aspects", online_cols, online_labels)
             add_dashboard_section("Banking App Service Aspects", app_cols, app_labels)
 
-            # Overall Ratings & Product Satisfaction
             curr_row += 1
             add_section_header(ws_dash, curr_row, "OVERALL ratings", sorted_wave_nums)
             curr_row += 1
@@ -1831,7 +1830,7 @@ with tab5:
             curr_row += 1
             add_section_header(ws_dash, curr_row, "Satisfaction with products", sorted_wave_nums)
             curr_row += 1
-            for idx_item, (label_text, var_code) in enumerate(explicit_product_sat_items):
+            for item_idx, (label_text, var_code) in enumerate(explicit_product_sat_items):
                 lbl_cell = ws_dash.cell(row=curr_row, column=2, value=label_text)
                 lbl_cell.font, lbl_cell.alignment = font_regular, align_left
                 use_zebra = (item_idx % 2 == 0)
@@ -1877,7 +1876,6 @@ with tab5:
 
             add_dashboard_section("Satisfaction: Quality of service and product solutions", expectations_items, {})
 
-            # Business Banking Consideration & Q5A
             curr_row += 1
             add_section_header(ws_dash, curr_row, "Business banking consideration", sorted_wave_nums)
             curr_row += 1
@@ -1944,7 +1942,6 @@ with tab5:
                         val_cell.fill, val_cell.font = fill_na, font_na
                 curr_row += 1
 
-            # Q5A Motivations
             curr_row += 1
             add_section_header(ws_dash, curr_row, "Motivations for Choosing In-Branch over Digital Channels/ Call centre", sorted_wave_nums)
             curr_row += 1
