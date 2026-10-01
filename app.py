@@ -7,6 +7,7 @@ import tempfile
 import re
 import numpy as np
 from dateutil.relativedelta import relativedelta, FR
+import io
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
@@ -17,16 +18,16 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- MODERN STYLING FOR HIGH-VISIBILITY TABS ---
+# --- FNB BRAND STYLING & HIGH-VISIBILITY TABS ---
 st.markdown("""
     <style>
         /* Style the top navigation tab containers */
         .stTabs [data-baseweb="tab-list"] {
             gap: 12px;
-            background-color: #f8f9fa;
+            background-color: #f4fbfa;
             padding: 10px 10px;
             border-radius: 12px;
-            border: 1px solid #e0e0e0;
+            border: 2px solid #00A3AD;
         }
         /* Style individual tab buttons */
         .stTabs [data-baseweb="tab"] {
@@ -38,21 +39,31 @@ st.markdown("""
             padding-left: 20px;
             padding-right: 20px;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 15px;
             color: #333333;
-            border: 1px solid #d0d0d0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #00A3AD;
+            box-shadow: 0 2px 4px rgba(0,163,173,0.1);
             transition: all 0.3s ease;
         }
-        /* Active tab highlight */
+        /* Active tab highlight using FNB Teal and Orange accents */
         .stTabs [aria-selected="true"] {
-            background: linear-gradient(135deg, #FF4B4B 0%, #FF6B6B 100%) !important;
+            background: linear-gradient(135deg, #00A3AD 0%, #00828a 100%) !important;
             color: #ffffff !important;
             border: none !important;
-            box-shadow: 0 4px 12px rgba(255, 75, 75, 0.3) !important;
+            box-shadow: 0 4px 12px rgba(0, 163, 173, 0.4) !important;
         }
         .stTabs [aria-selected="true"] p {
             color: #ffffff !important;
+        }
+        /* Primary button custom styling matching FNB Orange */
+        .stButton button[kind="primary"] {
+            background-color: #F58220 !important;
+            color: white !important;
+            border: none !important;
+            font-weight: bold !important;
+        }
+        .stButton button[kind="primary"]:hover {
+            background-color: #d96f12 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -725,7 +736,33 @@ with tab2:
 # ==========================================
 with tab3:
     st.markdown("### 📈 Q11 Ratings & Reasons Extraction")
-    st.markdown("Upload your two SPSS datasets (**R10Mil / RMW** and **Growth / GROW**) below to automatically filter records since last Friday and generate the multi-tab Q11 extraction Excel workbook.")
+    st.markdown("Upload your two SPSS datasets (**R10Mil / RMW** and **Growth / GROW**) below to extract Q11 variables based on your selected date filtering window.")
+
+    st.markdown("---")
+    st.subheader("📅 Global Execution Parameters (Q11 Extraction)")
+    q11_date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="q11_date_mode")
+
+    today_q11 = datetime.now()
+
+    if q11_date_mode == "Dynamic Past 7 Days (Auto Friday)":
+        current_weekday = today_q11.weekday()
+        days_to_subtract = 7 if current_weekday == 4 else (current_weekday - 4) % 7
+        if days_to_subtract == 0:
+            days_to_subtract = 7
+        q11_last_friday = today_q11 - timedelta(days=days_to_subtract)
+        q11_last_friday = q11_last_friday.replace(hour=0, minute=0, second=0, microsecond=0)
+        st.info(f"🎯 Target active execution window: **{q11_last_friday.strftime('%Y-%m-%d')}** to **{today_q11.strftime('%Y-%m-%d')}**")
+    else:
+        col_q11_1, col_q11_2 = st.columns(2)
+        with col_q11_1:
+            q11_start_input = st.date_input("Start Date", value=today_q11 - timedelta(days=7), key="q11_start_date")
+        with col_q11_2:
+            q11_end_input = st.date_input("End Date", value=today_q11, key="q11_end_date")
+        
+        q11_last_friday = datetime.combine(q11_start_input, datetime.min.time())
+        today_q11 = datetime.combine(q11_end_input, datetime.max.time())
+
+    st.markdown("---")
 
     col_q1, col_q2 = st.columns(2)
     with col_q1:
@@ -743,16 +780,16 @@ with tab3:
             if df.empty or 'STIME' not in df.columns:
                 return pd.DataFrame()
 
-            df['STIME_CLEAN'] = pd.to_datetime(df['STIME'].astype(str).str.slice(0, 8), format='%Y%m%d', errors='coerce')
-            
-            today = pd.Timestamp.now().normalize()
-            if today.weekday() == 4:
-                last_friday_start = today - pd.Timedelta(days=7)
-            else:
-                last_friday_start = today + relativedelta(weekday=FR(-1))
-            
-            date_mask = (df['STIME_CLEAN'] >= last_friday_start) & (df['STIME_CLEAN'] <= pd.Timestamp.now())
-            df = df[date_mask].copy()
+            df['STIME_CLEAN'] = df['STIME'].astype(str).str.strip().str[:8]
+            def parse_stime_date(x):
+                try: return datetime.strptime(x, "%Y%m%d")
+                except: return None
+            df['STIME_DATE'] = df['STIME_CLEAN'].apply(parse_stime_date)
+
+            df = df[
+                (df['STIME_DATE'] >= q11_last_friday) & 
+                (df['STIME_DATE'] <= today_q11)
+            ].copy()
             
             if df.empty:
                 return pd.DataFrame()
@@ -882,8 +919,6 @@ with tab3:
                 clean_df1 = process_single_spss_dataset_streamlit(file_q11_r10) if file_q11_r10 else pd.DataFrame()
                 clean_df2 = process_single_spss_dataset_streamlit(file_q11_grow) if file_q11_grow else pd.DataFrame()
 
-                output_excel_buffer = io.BytesIO() if 'io' in globals() else None
-                import io
                 output_excel_buffer = io.BytesIO()
 
                 with pd.ExcelWriter(output_excel_buffer, engine='openpyxl') as writer:
