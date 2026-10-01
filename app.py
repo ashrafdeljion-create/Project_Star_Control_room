@@ -1,3 +1,10 @@
+# =========================================================================
+# SECTION 1: IMPORTING PACKAGES & CONFIGURING PAGE LAYOUT
+# =========================================================================
+# What it does: Loads all necessary Python tools (Streamlit for the web UI, 
+# pandas for tables, pyreadstat for SPSS files, openpyxl for Excel styling).
+# Responsible for: Setting up the wide layout, page title, and core engine tools.
+# =========================================================================
 import streamlit as st
 import pandas as pd
 import pyreadstat
@@ -18,7 +25,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- FNB BRAND STYLING & HIGH-VISIBILITY TABS ---
+
+# =========================================================================
+# SECTION 2: CUSTOM UI STYLING (FNB BRAND & HIGH-VISIBILITY TABS)
+# =========================================================================
+# What it does: Applies custom CSS styling to your web app interface.
+# Responsible for: Transforming the top navigation tabs into high-visibility 
+# buttons and matching your FNB brand colors (Teal #00A3AD and Orange #F58220).
+# 👉 CHANGE COLORS HERE if you ever want to adjust your interface palette.
+# =========================================================================
 st.markdown("""
     <style>
         /* Style the top navigation tab containers */
@@ -45,7 +60,7 @@ st.markdown("""
             box-shadow: 0 2px 4px rgba(0,163,173,0.1);
             transition: all 0.3s ease;
         }
-        /* Active tab highlight using FNB Teal and Orange accents */
+        /* Active tab highlight using FNB Teal gradient */
         .stTabs [aria-selected="true"] {
             background: linear-gradient(135deg, #00A3AD 0%, #00828a 100%) !important;
             color: #ffffff !important;
@@ -71,21 +86,31 @@ st.markdown("""
 st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown("Your unified command center for Weekly 911's pipeline automation, NPS Excel reports, and Q11 extractions.")
 
-# --- TABS FOR THE ONE-STOP SHOP ---
+
+# =========================================================================
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS
+# =========================================================================
+# What it does: Splits your web application into three distinct interactive tabs.
+# Responsible for: Keeping everything inside one single window and taskbar shortcut.
+# =========================================================================
 tab1, tab2, tab3 = st.tabs([
     "⚡ Weekly 911's Control Room", 
     "📊 NPS Dashboard & Data Generator", 
     "📈 Q11 Ratings & Reasons Extraction"
 ])
 
-# ==========================================
+
+# ==========================================================================
+# ==========================================================================
 # TAB 1: WEEKLY 911'S CONTROL ROOM
-# ==========================================
+# ==========================================================================
+# ==========================================================================
 with tab1:
     st.markdown("### `[02 // CONTROL ROOM]` &nbsp;&nbsp;&nbsp; `SYS.READY // PIPELINE 2.2`")
     st.markdown("Execute and monitor each section of the Project Star 911 market research data pipeline.")
     st.markdown("---")
 
+    # Status Metrics Row
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.metric("Pipeline Status", "IDLE / READY", "Stable")
     col_m2.metric("Active Wave", "Wave 22", "2026")
@@ -94,6 +119,8 @@ with tab1:
 
     st.markdown("---")
     st.subheader("📅 Global Execution Parameters (911s)")
+    
+    # Date Filtering Mode Selection (Dynamic Auto-Friday vs Custom)
     date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="911_date_mode")
 
     today = datetime.now()
@@ -118,7 +145,9 @@ with tab1:
 
     st.markdown("---")
 
+    # --- 911 Pipeline Automation Function ---
     def run_911_pipeline(uploaded_file, section_choice):
+        # Creates a safe temporary file in cloud memory for the uploaded SPSS file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
             tmp_path = tmp_file.name
@@ -126,6 +155,7 @@ with tab1:
         try:
             df, meta = pyreadstat.read_sav(tmp_path)
             
+            # Filter for valid records and date windows
             if 'V9999' in df.columns:
                 df_filtered = df[df['V9999'] == 1].copy()
             else:
@@ -152,6 +182,7 @@ with tab1:
                 
             valid_intnr = df_filtered['INTNR'] > 0
 
+            # Assign standard case parameters and mappings
             df_filtered.loc[valid_intnr, 'PARENT_TYPE'] = "Juristic"
             df_filtered.loc[valid_intnr, 'WAVE'] = "22"
             if 'V80116' in df_filtered.columns:
@@ -307,6 +338,7 @@ with tab1:
     st.subheader("⚡ Pipeline Execution Control Room")
     col1, col2, col3 = st.columns(3)
 
+    # Growth Pipeline Section Card
     with col1:
         with st.container(border=True):
             st.markdown("### 🟢 Growth Section")
@@ -324,6 +356,7 @@ with tab1:
                             st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="g3")
                             st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="g4")
 
+    # R10Mil Pipeline Section Card
     with col2:
         with st.container(border=True):
             st.markdown("### 🔵 R10Mil Section")
@@ -341,6 +374,7 @@ with tab1:
                             st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="r3")
                             st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="r4")
 
+    # PUBSC Pipeline Section Card
     with col3:
         with st.container(border=True):
             st.markdown("### 🟠 PUBSC Section")
@@ -359,9 +393,11 @@ with tab1:
                             st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="p4")
 
 
-# ==========================================
+# ==========================================================================
+# ==========================================================================
 # TAB 2: NPS DASHBOARD & DATA GENERATOR
-# ==========================================
+# ==========================================================================
+# ==========================================================================
 with tab2:
     st.markdown("### 📊 NPS Dashboard & Streamlined Data Generator")
     st.markdown("Upload your master SPSS data file below, select your wave preferences and portfolio filter, then click **Run Processing**.")
@@ -397,6 +433,7 @@ with tab2:
         waves_input = st.text_input("Enter waves separated by commas:", "Wave 20, Wave 21, Wave 22", key="waves_input")
         selected_waves_filter = [w.strip() for w in waves_input.split(',')]
 
+    # --- Excel Dashboard Generation Function ---
     def generate_report_bytes(df_subset, prefix_label):
         is_combined = (prefix_label == "Combined")
         temp_excel = f"temp_{prefix_label}.xlsx"
@@ -513,7 +550,7 @@ with tab2:
                 ws.cell(row=h1_row, column=c).font = WHITE_BOLD_FONT
                 ws.cell(row=h1_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
                 ws.cell(row=h2_row, column=c).fill = LIGHT_ORANGE_FILL
-                ws.cell(row=h1_row, column=c).font = BOLD_FONT
+                ws.cell(row=h2_row, column=c).font = BOLD_FONT
                 ws.cell(row=h2_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
 
             row_counter = 0
@@ -731,15 +768,19 @@ with tab2:
                     st.download_button(label=f"📥 Download {label} .sav File", data=files["sav_bytes"], file_name=files["sav_name"], mime="application/octet-stream", key=f"sav_{label}")
 
 
-# ==========================================
+# ==========================================================================
+# ==========================================================================
 # TAB 3: Q11 RATINGS & REASONS EXTRACTION
-# ==========================================
+# ==========================================================================
+# ==========================================================================
 with tab3:
     st.markdown("### 📈 Q11 Ratings & Reasons Extraction")
     st.markdown("Upload your two SPSS datasets (**R10Mil / RMW** and **Growth / GROW**) below to extract Q11 variables based on your selected date filtering window.")
 
     st.markdown("---")
     st.subheader("📅 Global Execution Parameters (Q11 Extraction)")
+    
+    # Date Filtering Mode Selection for Q11 Extraction
     q11_date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="q11_date_mode")
 
     today_q11 = datetime.now()
@@ -770,6 +811,7 @@ with tab3:
     with col_q2:
         file_q11_grow = st.file_uploader("Upload Growth SPSS File (.sav)", type=["sav"], key="q11_grow")
 
+    # --- Q11 Dataset Processing Function ---
     def process_single_spss_dataset_streamlit(uploaded_file):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
@@ -780,11 +822,13 @@ with tab3:
             if df.empty or 'STIME' not in df.columns:
                 return pd.DataFrame()
 
-            df['STIME_CLEAN'] = df['STIME'].astype(str).str.strip().str[:8]
+            df['STIME_CLEAN'] = df['STIME'].astype(str).str.slice(0, 8), 
+            df['STIME_CLEAN'] = pd.to_datetime(df['STIME'].astype(str).str.slice(0, 8), format='%Y%m%d', errors='coerce')
+            
             def parse_stime_date(x):
-                try: return datetime.strptime(x, "%Y%m%d")
+                try: return datetime.strptime(str(x), "%Y%m%d")
                 except: return None
-            df['STIME_DATE'] = df['STIME_CLEAN'].apply(parse_stime_date)
+            df['STIME_DATE'] = df['STIME'].astype(str).str.slice(0, 8).apply(parse_stime_date)
 
             df = df[
                 (df['STIME_DATE'] >= q11_last_friday) & 
