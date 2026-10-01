@@ -371,7 +371,6 @@ with tab4:
         finally:
             if os.path.exists(tmp_path): os.remove(tmp_path)
 
-    # Fallback to exact values from the PM sample file if files not uploaded yet
     achieved_business = get_achieved_count(status_file_grow) if status_file_grow else 1721
     achieved_enterprise = get_achieved_count(status_file_r10) if status_file_r10 else 432
     achieved_pubsc = get_achieved_count(status_file_pub) if status_file_pub else 184
@@ -399,30 +398,39 @@ with tab4:
     def generate_exact_pm_update_workbook():
         output_buffer = io.BytesIO()
         wb = openpyxl.Workbook()
-        # Remove default sheet
-        wb.remove(wb.active)
+        wb.remove(wb.active) # Remove default sheet
 
-        TEAL_HEADER = PatternFill(start_color="C4D79B", end_color="C4D79B", fill_type="solid") # soft green/teal header
+        # Styles matching PM template
+        GREEN_HEADER = PatternFill(start_color="C4D79B", end_color="C4D79B", fill_type="solid")
         GRAY_HEADER = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
         RED_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
-        DARK_HEADER = PatternFill(start_color="333333", end_color="333333", fill_type="solid")
         THIN_BORDER = Border(left=Side(style='thin', color='BFBFBF'), right=Side(style='thin', color='BFBFBF'), top=Side(style='thin', color='BFBFBF'), bottom=Side(style='thin', color='BFBFBF'))
+        CENTER_ALIGN = Alignment(horizontal="center", vertical="center")
 
-        # 1. Summary Sheet
+        # -----------------------------------------------------------------
+        # 1. SUMMARY SHEET
+        # -----------------------------------------------------------------
         ws_sum = wb.create_sheet(title='Summary')
         ws_sum.append(["", "Segment", "TOTAL Target", "TOTAL Achieved", "Total Outstanding"])
-        for r_idx, row in summary_df.iterrows():
+        for _, row in summary_df.iterrows():
             ws_sum.append(["", row["Segment"], row["TOTAL Target"], row["TOTAL Achieved"], row["Total Outstanding"]])
 
-        # 2. Update Business Sheet (Side-by-side tables matching PM file)
+        # -----------------------------------------------------------------
+        # 2. UPDATE BUSINESS SHEET (Exact Side-by-Side Tables)
+        # -----------------------------------------------------------------
         ws_bus = wb.create_sheet(title='Update Business')
-        ws_bus.cell(row=2, column=2, value="Region").fill = GRAY_HEADER
-        ws_bus.merge_cells("B2:G2")
-        ws_bus.cell(row=3, column=2, value="Business")
-        regions = ["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"]
-        for c_idx, reg in enumerate(regions, start=3):
-            ws_bus.cell(row=3, column=c_idx, value=reg)
         
+        # Left Table Header (Region vs Regions)
+        ws_bus.cell(row=1, column=2, value="Region").fill = GRAY_HEADER
+        ws_bus.merge_cells("B1:G1")
+        ws_bus.cell(row=1, column=2).alignment = CENTER_ALIGN
+
+        ws_bus.cell(row=2, column=2, value="Business").fill = GREEN_HEADER
+        regions_bus = ["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"]
+        for c_idx, reg in enumerate(regions_bus, start=3):
+            cell = ws_bus.cell(row=2, column=c_idx, value=reg)
+            cell.fill = GREEN_HEADER
+
         bus_rows = [
             ("Eastern Cape", [180, 0, 0, 0, 0]),
             ("Free State", [0, 0, 0, 54, 0]),
@@ -443,60 +451,110 @@ with tab4:
             ("Northern Cape", [0, 0, 0, 33, 0]),
             ("Western Cape", [105, 0, 0, 0, 0])
         ]
-        for idx, (prov, vals) in enumerate(bus_rows, start=4):
-            ws_bus.cell(row=idx, column=2, value=prov)
+        
+        for idx, (prov, vals) in enumerate(bus_rows, start=3):
+            ws_bus.cell(row=idx, column=2, value=prov).border = THIN_BORDER
             for v_idx, val in enumerate(vals, start=3):
-                ws_bus.cell(row=idx, column=v_idx, value=val)
-            ws_bus.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})")
+                c = ws_bus.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            tot_c = ws_bus.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})")
+            tot_c.border = THIN_BORDER
+            tot_c.fill = GRAY_HEADER
 
-        # Right table on Update Business (Segments breakdown)
-        ws_bus.cell(row=2, column=11, value="Region").fill = GRAY_HEADER
-        ws_bus.merge_cells("K2:P2")
-        ws_bus.cell(row=3, column=10, value="Business")
-        seg_cols = ["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal", "Total"]
+        # Bottom Total Row for Left Table
+        tot_row_idx = len(bus_rows) + 3
+        ws_bus.cell(row=tot_row_idx, column=2, value="TOTAL INLC R10-R60MIL").fill = GREEN_HEADER
+        for c_idx in range(3, 8):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_bus.cell(row=tot_row_idx, column=c_idx, value=f"=SUM({col_let}3:{col_let}{tot_row_idx-1})")
+            c.fill = GREEN_HEADER
+            c.border = THIN_BORDER
+        ws_bus.cell(row=tot_row_idx, column=8, value=f"=SUM(H3:H{tot_row_idx-1})").fill = GREEN_HEADER
+
+        # Right Table Header on Update Business (Segments vs Quota/Outstanding)
+        ws_bus.cell(row=1, column=11, value="Region").fill = GRAY_HEADER
+        ws_bus.merge_cells("K1:P1")
+        
+        ws_bus.cell(row=2, column=10, value="Business").fill = GREEN_HEADER
+        seg_cols = ["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal", "Total", "Quota", "Outstanding"]
         for c_idx, sc in enumerate(seg_cols, start=11):
-            ws_bus.cell(row=3, column=c_idx, value=sc)
+            cell = ws_bus.cell(row=2, column=c_idx, value=sc)
+            cell.fill = GREEN_HEADER
 
         seg_rows = [
-            ("R0M-R1M", [159, 127, 116, 157, 57]),
-            ("R1M-R5M", [81, 90, 60, 97, 43]),
-            ("R5M-R10M", [45, 85, 72, 36, 37]),
-            ("R10-R60M", [56, 105, 107, 109, 82])
+            ("R0M-R1M", [159, 127, 116, 157, 57], 800),
+            ("R1M-R5M", [81, 90, 60, 97, 43], 550),
+            ("R5M-R10M", [45, 85, 72, 36, 37], 450),
+            ("R10-R60M", [56, 105, 107, 109, 82], 550)
         ]
-        for idx, (s_name, s_vals) in enumerate(seg_rows, start=4):
-            ws_bus.cell(row=idx, column=10, value=s_name)
+        for idx, (s_name, s_vals, quota_val) in enumerate(seg_rows, start=3):
+            ws_bus.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
             for v_idx, val in enumerate(s_vals, start=11):
-                ws_bus.cell(row=idx, column=v_idx, value=val)
-            ws_bus.cell(row=idx, column=16, value=f"=SUM(K{idx}:O{idx})")
-            ws_bus.cell(row=idx, column=17, value=800 if idx==4 else (550 if idx==5 else (450 if idx==6 else 550)))
-            ws_bus.cell(row=idx, column=18, value=f"=Q{idx}-P{idx}")
+                c = ws_bus.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            
+            # Total Col (P)
+            p_let = openpyxl.utils.get_column_letter(16)
+            tot_c = ws_bus.cell(row=idx, column=16, value=f"=SUM(K{idx}:O{idx})")
+            tot_c.border = THIN_BORDER
+            
+            # Quota Col (Q)
+            q_c = ws_bus.cell(row=idx, column=17, value=quota_val)
+            q_c.border = THIN_BORDER
+            
+            # Outstanding Col (R) - Quota minus Total
+            r_c = ws_bus.cell(row=idx, column=18, value=f"=Q{idx}-P{idx}")
+            r_c.border = THIN_BORDER
+            r_c.fill = RED_FILL
 
-        # 3. Update Enterprise Sheet
-        ws_ent = wb.create_sheet(title='Update Enterprise')
-        ws_ent.cell(row=2, column=2, value="REGION").fill = GRAY_HEADER
-        ws_ent.merge_cells("B2:G2")
-        ws_ent.cell(row=3, column=2, value="Enterprise")
-        ent_regs = ["Cape", "Gauteng South and Central", "Gauteng-North", "Inland", "KwaZulu-Natal"]
-        for c_idx, reg in enumerate(ent_regs, start=3):
-            ws_ent.cell(row=3, column=c_idx, value=reg)
+        # Right Table Totals & Quota/Outstanding rows
+        r_tot_row = 7
+        ws_bus.cell(row=r_tot_row, column=10, value="TOTAL INLC R10-R60MIL").fill = GREEN_HEADER
+        for c_idx in range(11, 16):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_bus.cell(row=r_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}6)")
+            c.fill = GREEN_HEADER
+            c.border = THIN_BORDER
+        ws_bus.cell(row=r_tot_row, column=16, value="=SUM(P3:P6)").fill = GREEN_HEADER
+        ws_bus.cell(row=r_tot_row, column=17, value="=SUM(Q3:Q6)").fill = GREEN_HEADER
+        ws_bus.cell(row=r_tot_row, column=18, value="=SUM(R3:R6)").fill = RED_FILL
 
-        # 4. Update PUBSC Sheet
+        # Quota row below right table
+        ws_bus.cell(row=8, column=10, value="Quota").fill = GREEN_HEADER
+        for c_idx in range(11, 17):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_bus.cell(row=8, column=c_idx, value=f"={col_let}{r_tot_row}")
+            c.fill = GREEN_HEADER
+            c.border = THIN_BORDER
+
+        # Outstanding row below quota
+        ws_bus.cell(row=9, column=10, value="Outstanding").fill = RED_FILL
+        for c_idx, col_let in enumerate(['K', 'L', 'M', 'N', 'O', 'P'], start=11):
+            c = ws_bus.cell(row=9, column=c_idx, value=f"=Q8-{col_let}{r_tot_row}")
+            c.fill = RED_FILL
+            c.border = THIN_BORDER
+
+        # -----------------------------------------------------------------
+        # 3. UPDATE PUBSC SHEET
+        # -----------------------------------------------------------------
         ws_pub = wb.create_sheet(title='Update PUBSC')
-        ws_pub.cell(row=2, column=2, value="EASTERN CAPE")
-        pub_headers = ["REGION", "EASTERN CAPE", "FREE STATE", "GAUTENG", "KWAZULU-NATAL", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE", "WESTERN CAPE", "TOTAL"]
-        ws_pub.append([])
+        ws_pub.append(["", "REGION"])
+        pub_headers = ["", "EASTERN CAPE", "FREE STATE", "GAUTENG", "KWAZULU-NATAL", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE", "WESTERN CAPE", "TOTAL"]
         ws_pub.append(pub_headers)
+        
         pub_rows = [
-            ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4, "=SUM(B4:J4)"],
-            ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(B5:J5)"],
-            ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0, "=SUM(B6:J6)"],
-            ["PUBLIC SECTOR LOCAL GOVERMENT", 0, 0, 1, 0, 0, 0, 0, 1, 0, "=SUM(B7:J7)"],
-            ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(B8:J8)"],
-            ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1, "=SUM(B9:J9)"],
-            ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1, "=SUM(B10:J10)"]
+            ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4, "=SUM(C4:K4)"],
+            ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(C5:K5)"],
+            ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0, "=SUM(C6:K6)"],
+            ["PUBLIC SECTOR LOCAL GOVERMENT", 0, 0, 1, 0, 0, 0, 0, 1, 0, "=SUM(C7:K7)"],
+            ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(C8:K8)"],
+            ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1, "=SUM(C9:K9)"],
+            ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1, "=SUM(C10:K10)"]
         ]
         for prow in pub_rows:
-            ws_pub.append(prow)
+            ws_pub.append([""] + prow)
 
         wb.save(output_buffer)
         output_buffer.seek(0)
@@ -504,7 +562,7 @@ with tab4:
 
     st.markdown("---")
     if st.button("📥 Generate & Download Exact PM Update Workbook", type="primary", key="download_status_btn"):
-        status_excel_bytes = generate_project_status_workbook()
+        status_excel_bytes = generate_exact_pm_update_workbook()
         run_date_str = datetime.now().strftime("%Y-%m-%d")
         st.success("🎉 Project Status Update report generated successfully with exact PM multi-table layout breaks!")
         st.download_button(
