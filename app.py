@@ -399,7 +399,7 @@ with tab4:
     st.markdown("---")
     st.subheader("🔍 Live Regional & Segment Breakdown Tables")
     
-    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🟢 Business Breakdown", "🔵 Enterprise Breakdown (Regional & Segments)", "🟠 PUBSC Breakdown"])
+    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🟢 Business Breakdown", "🔵 Enterprise Breakdown", "🟠 PUBSC Breakdown"])
     
     with sub_tab1:
         st.markdown("#### Business Regional Breakdown (Left Table)")
@@ -429,7 +429,7 @@ with tab4:
         st.dataframe(bus_seg_df, use_container_width=True, hide_index=True)
 
     with sub_tab2:
-        st.markdown("#### Enterprise Regional Breakdown (Left Table)")
+        st.markdown("#### Enterprise Regional Breakdown")
         ent_preview_df = pd.DataFrame({
             "REGION": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", "Gauteng South-West", "Gauteng Tshwane", "Greater Sandton", "KZN Coastal", "KZN Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", "Northern Cape", "Western Cape Inland", "Western Cape Metro"],
             "Cape": [55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 53],
@@ -441,7 +441,7 @@ with tab4:
         ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(ent_preview_df, use_container_width=True, hide_index=True)
 
-        st.markdown("#### Enterprise Segment Breakdown Matrix (Right Table with Quotas & Outstanding)")
+        st.markdown("#### Enterprise Segment Breakdown Matrix")
         ent_seg_df = pd.DataFrame({
             "Enterprise": ["R10-R60M", "R60-R150M", "R150M+"],
             "Cape": [56, 43, 44],
@@ -477,15 +477,29 @@ with tab4:
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
 
-        GREEN_HEADER = PatternFill(start_color="C4D79B", end_color="C4D79B", fill_type="solid")
+        # FNB Brand Colors Matching Logo & Palette
+        FNB_TEAL = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
+        LIGHT_TEAL = PatternFill(start_color="D9F2F4", end_color="D9F2F4", fill_type="solid")
+        FNB_ORANGE = PatternFill(start_color="F58220", end_color="F58220", fill_type="solid")
         GRAY_HEADER = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
         RED_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+        
+        WHITE_BOLD_FONT = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        REGULAR_FONT = Font(name="Calibri", size=11)
         THIN_BORDER = Border(left=Side(style='thin', color='BFBFBF'), right=Side(style='thin', color='BFBFBF'), top=Side(style='thin', color='BFBFBF'), bottom=Side(style='thin', color='BFBFBF'))
         CENTER_ALIGN = Alignment(horizontal="center", vertical="center")
 
         # 1. Summary Sheet
         ws_sum = wb.create_sheet(title='Summary')
         ws_sum.append(["", "Segment", "TOTAL Target", "TOTAL Achieved", "Total Outstanding"])
+        ws_sum['B1'].fill = FNB_TEAL
+        ws_sum['C1'].fill = FNB_TEAL
+        ws_sum['D1'].fill = FNB_TEAL
+        ws_sum['E1'].fill = FNB_TEAL
+        for col in ['B', 'C', 'D', 'E']:
+            ws_sum[f'{col}1'].font = WHITE_BOLD_FONT
+            ws_sum[f'{col}1'].alignment = CENTER_ALIGN
+        
         for _, row in summary_df.iterrows():
             ws_sum.append(["", row["Segment"], row["TOTAL Target"], row["TOTAL Achieved"], row["Total Outstanding"]])
 
@@ -493,9 +507,15 @@ with tab4:
         ws_bus = wb.create_sheet(title='Update Business')
         ws_bus.cell(row=1, column=2, value="Region").fill = GRAY_HEADER
         ws_bus.merge_cells("B1:G1")
-        ws_bus.cell(row=2, column=2, value="Business").fill = GREEN_HEADER
+        ws_bus.cell(row=1, column=2).alignment = CENTER_ALIGN
+        
+        ws_bus.cell(row=2, column=2, value="Business").fill = FNB_TEAL
+        ws_bus.cell(row=2, column=2).font = WHITE_BOLD_FONT
+        
         for c_idx, reg in enumerate(["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"], start=3):
-            ws_bus.cell(row=2, column=c_idx, value=reg).fill = GREEN_HEADER
+            cell = ws_bus.cell(row=2, column=c_idx, value=reg)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
 
         bus_rows = [
             ("Eastern Cape", [180, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 54, 0]),
@@ -517,18 +537,24 @@ with tab4:
             ws_bus.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
 
         tot_row_idx = len(bus_rows) + 3
-        ws_bus.cell(row=tot_row_idx, column=2, value="TOTAL INLC R10-R60MIL").fill = GREEN_HEADER
-        for c_idx in range(3, 8):
+        ws_bus.cell(row=tot_row_idx, column=2, value="TOTAL INLC R10-R60MIL").fill = FNB_TEAL
+        ws_bus.cell(row=tot_row_idx, column=2).font = WHITE_BOLD_FONT
+        for c_idx in range(3, 9):
             col_let = openpyxl.utils.get_column_letter(c_idx)
-            ws_bus.cell(row=tot_row_idx, column=c_idx, value=f"=SUM({col_let}3:{col_let}{tot_row_idx-1})").fill = GREEN_HEADER
-        ws_bus.cell(row=tot_row_idx, column=8, value=f"=SUM(H3:H{tot_row_idx-1})").fill = GREEN_HEADER
+            c = ws_bus.cell(row=tot_row_idx, column=c_idx, value=f"=SUM({col_let}3:{col_let}{tot_row_idx-1})")
+            c.fill = FNB_TEAL
+            c.font = WHITE_BOLD_FONT
+            c.border = THIN_BORDER
 
         # Business Right Side Table
         ws_bus.cell(row=1, column=11, value="Region").fill = GRAY_HEADER
         ws_bus.merge_cells("K1:P1")
-        ws_bus.cell(row=2, column=10, value="Business").fill = GREEN_HEADER
+        ws_bus.cell(row=2, column=10, value="Business").fill = FNB_TEAL
+        ws_bus.cell(row=2, column=10).font = WHITE_BOLD_FONT
         for c_idx, sc in enumerate(["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal", "Total", "Quota", "Outstanding"], start=11):
-            ws_bus.cell(row=2, column=c_idx, value=sc).fill = GREEN_HEADER
+            cell = ws_bus.cell(row=2, column=c_idx, value=sc)
+            cell.fill = FNB_TEAL if c_idx < 17 else (FNB_ORANGE if c_idx == 17 else RED_FILL)
+            cell.font = WHITE_BOLD_FONT
 
         for idx, (s_name, s_vals, quota_val) in enumerate([
             ("R0M-R1M", [159, 127, 116, 157, 57], 800),
@@ -543,6 +569,7 @@ with tab4:
                 c.alignment = CENTER_ALIGN
             ws_bus.cell(row=idx, column=16, value=f"=SUM(K{idx}:O{idx})").border = THIN_BORDER
             ws_bus.cell(row=idx, column=17, value=quota_val).border = THIN_BORDER
+            ws_bus.cell(row=idx, column=17).fill = LIGHT_TEAL
             r_c = ws_bus.cell(row=idx, column=18, value=f"=Q{idx}-P{idx}")
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
@@ -551,9 +578,12 @@ with tab4:
         ws_ent = wb.create_sheet(title='Update Enterprise')
         ws_ent.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
         ws_ent.merge_cells("B1:G1")
-        ws_ent.cell(row=2, column=2, value="Enterprise").fill = GREEN_HEADER
+        ws_ent.cell(row=2, column=2, value="Enterprise").fill = FNB_TEAL
+        ws_ent.cell(row=2, column=2).font = WHITE_BOLD_FONT
         for c_idx, reg in enumerate(["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal"], start=3):
-            ws_ent.cell(row=2, column=c_idx, value=reg).fill = GREEN_HEADER
+            cell = ws_ent.cell(row=2, column=c_idx, value=reg)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
 
         ent_rows = [
             ("Eastern Cape", [55, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 21, 0]),
@@ -574,18 +604,24 @@ with tab4:
             ws_ent.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
 
         ent_tot_row = len(ent_rows) + 3
-        ws_ent.cell(row=ent_tot_row, column=2, value="TOTAL EXCL R10 to R60MIL").fill = GREEN_HEADER
-        for c_idx in range(3, 8):
+        ws_ent.cell(row=ent_tot_row, column=2, value="TOTAL EXCL R10 to R60MIL").fill = FNB_TEAL
+        ws_ent.cell(row=ent_tot_row, column=2).font = WHITE_BOLD_FONT
+        for c_idx in range(3, 9):
             col_let = openpyxl.utils.get_column_letter(c_idx)
-            ws_ent.cell(row=ent_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{ent_tot_row-1})").fill = GREEN_HEADER
-        ws_ent.cell(row=ent_tot_row, column=8, value=f"=SUM(H3:H{ent_tot_row-1})").fill = GREEN_HEADER
+            c = ws_ent.cell(row=ent_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{ent_tot_row-1})")
+            c.fill = FNB_TEAL
+            c.font = WHITE_BOLD_FONT
+            c.border = THIN_BORDER
 
-        # Enterprise Right Side Table (Segments Breakdown)
+        # Enterprise Right Side Table
         ws_ent.cell(row=1, column=11, value="REGION").fill = GRAY_HEADER
         ws_ent.merge_cells("K1:P1")
-        ws_ent.cell(row=2, column=10, value="Enterprise").fill = GREEN_HEADER
+        ws_ent.cell(row=2, column=10, value="Enterprise").fill = FNB_TEAL
+        ws_ent.cell(row=2, column=10).font = WHITE_BOLD_FONT
         for c_idx, sc in enumerate(["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal", "Total", "Quota", "Outstanding"], start=11):
-            ws_ent.cell(row=2, column=c_idx, value=sc).fill = GREEN_HEADER
+            cell = ws_ent.cell(row=2, column=c_idx, value=sc)
+            cell.fill = FNB_TEAL if c_idx < 17 else (FNB_ORANGE if c_idx == 17 else RED_FILL)
+            cell.font = WHITE_BOLD_FONT
 
         for idx, (s_name, s_vals, quota_val) in enumerate([
             ("R10-R60M", [56, 105, 107, 109, 82], 550),
@@ -599,6 +635,7 @@ with tab4:
                 c.alignment = CENTER_ALIGN
             ws_ent.cell(row=idx, column=16, value=f"=SUM(K{idx}:O{idx})").border = THIN_BORDER
             ws_ent.cell(row=idx, column=17, value=quota_val).border = THIN_BORDER
+            ws_ent.cell(row=idx, column=17).fill = LIGHT_TEAL
             r_c = ws_ent.cell(row=idx, column=18, value=f"=Q{idx}-P{idx}")
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
@@ -607,6 +644,12 @@ with tab4:
         ws_pub = wb.create_sheet(title='Update PUBSC')
         ws_pub.append(["", "REGION"])
         ws_pub.append(["", "EASTERN CAPE", "FREE STATE", "GAUTENG", "KWAZULU-NATAL", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE", "WESTERN CAPE", "TOTAL"])
+        for col_idx in range(2, 13):
+            cell = ws_pub.cell(row=2, column=col_idx)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
+            cell.alignment = CENTER_ALIGN
+
         for prow in [
             ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4, "=SUM(C4:K4)"],
             ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0, "=SUM(C5:K5)"],
@@ -618,6 +661,18 @@ with tab4:
         ]:
             ws_pub.append([""] + prow)
 
+        # --- AUTO-ADJUST COLUMN WIDTHS FOR ALL WORKSHEETS ---
+        for sheet in wb.worksheets:
+            for col in sheet.columns:
+                max_len = 0
+                col_letter = openpyxl.utils.get_column_letter(col[0].column)
+                for cell in col:
+                    if cell.value is not None:
+                        val_str = str(cell.value)
+                        if len(val_str) > max_len:
+                            max_len = len(val_str)
+                sheet.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
         wb.save(output_buffer)
         output_buffer.seek(0)
         return output_buffer
@@ -626,7 +681,7 @@ with tab4:
     if st.button("📥 Generate & Download Exact PM Update Workbook", type="primary", key="download_status_btn"):
         status_excel_bytes = generate_exact_pm_update_workbook()
         run_date_str = datetime.now().strftime("%Y-%m-%d")
-        st.success("🎉 Project Status Update report generated successfully with exact PM multi-table layout breaks for both Business and Enterprise!")
+        st.success("🎉 Project Status Update report generated successfully with FNB brand colors and auto-fitted columns across all worksheets!")
         st.download_button(
             label="💾 Download Formatted Excel Report (`Star Detailed Update.xlsx`)",
             data=status_excel_bytes,
