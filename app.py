@@ -538,14 +538,14 @@ with tab1:
             cell.alignment = CENTER_ALIGN
 
         ent_crosstab_rows = [
-            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
-            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
-            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
-            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
-            ("KZN INLAND", [30, 11, 9]), ("LIMPOPO", [23, 12, 11]),
-            ("MIDRAND", [39, 10, 7]), ("MPUMALANGA", [42, 10, 15]),
-            ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
-            ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
+            ("Eastern Cape", [26, 8, 21]), ("Free State", [10, 5, 6]),
+            ("Gauteng East", [40, 18, 31]), ("Gauteng Klipriver", [36, 5, 28]),
+            ("Gauteng Tshwane", [32, 9, 19]), ("Gauteng West", [31, 18, 31]),
+            ("Greater Sandton", [34, 10, 12]), ("Kzn Coastal", [52, 23, 12]),
+            ("Kzn Inland", [30, 11, 9]), ("Limpopo", [23, 12, 11]),
+            ("Midrand", [39, 10, 7]), ("Mpumalanga", [42, 10, 15]),
+            ("North West", [22, 8, 11]), ("Northern Cape", [12, 2, 12]),
+            ("Western Cape Inland", [17, 16, 2]), ("Western Cape Metro", [13, 20, 20])
         ]
         for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
             r_idx = ecross_start_row + 2 + idx_offset
