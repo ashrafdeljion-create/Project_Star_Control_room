@@ -81,7 +81,7 @@ st.markdown("Your unified command center for Project Status, Weekly 911's pipeli
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📋 Project Status & Quotas Update",
     "⚡ Weekly 911's Control Room", 
-    "📊 NPS Ratings per BM/RM Portfolio Dashboard & Data Generator", 
+    "📊 NPS Dashboard & Data Generator", 
     "📈 Q11 Ratings & Reasons Extraction",
     "📈 NPS Yearly Dashboard"
 ])
@@ -265,10 +265,10 @@ with tab1:
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
         ent_crosstab_df = pd.DataFrame({
             "Enterprise": [
-                "Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", 
-                "Gauteng Tshwane", "Gauteng West", "Greater Sandton", "Kzn Coastal", 
-                "Kzn Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", 
-                "Northern Cape", "Western Cape Inland", "Western Cape Metro"
+                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
+                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
+                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
+                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
             ],
             "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
             "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
@@ -540,14 +540,14 @@ with tab1:
             cell.alignment = CENTER_ALIGN
 
         ent_crosstab_rows = [
-            ("Eastern Cape", [26, 8, 21]), ("Free State", [10, 5, 6]),
-            ("Gauteng East", [40, 18, 31]), ("Gauteng Klipriver", [36, 5, 28]),
-            ("Gauteng Tshwane", [32, 9, 19]), ("Gauteng West", [31, 18, 31]),
-            ("Greater Sandton", [34, 10, 12]), ("Kzn Coastal", [52, 23, 12]),
-            ("Kzn Inland", [30, 11, 9]), ("Limpopo", [23, 12, 11]),
-            ("Midrand", [39, 10, 7]), ("Mpumalanga", [42, 10, 15]),
-            ("North West", [22, 8, 11]), ("Northern Cape", [12, 2, 12]),
-            ("Western Cape Inland", [17, 16, 2]), ("Western Cape Metro", [13, 20, 20])
+            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
+            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
+            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
+            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
+            ("KZN INLAND", [30, 11, 9]), ("LIMPOPO", [23, 12, 11]),
+            ("MIDRAND", [39, 10, 7]), ("MPUMALANGA", [42, 10, 15]),
+            ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
+            ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
         ]
         for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
             r_idx = ecross_start_row + 2 + idx_offset
@@ -840,7 +840,7 @@ with tab3:
     if "nps_reports_ready" not in st.session_state: st.session_state.nps_reports_ready = False
     if "nps_report_payloads" not in st.session_state: st.session_state.nps_report_payloads = []
 
-    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (Project Star_W? to W?.sav) for NPS Dashboard", type=["sav"], key="nps_file")
+    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (.sav) for NPS Dashboard", type=["sav"], key="nps_file")
     portfolio_mode = st.selectbox("Select Portfolio Filter Mode:", ["Generate All (Combined, Growth, and R10M Separately)", "Combined (Growth & R10M)", "Growth Only", "R10M Only"], key="nps_portfolio")
     filter_option = st.radio("Select Wave Filter Option:", ["All Waves", "Custom Range (e.g., Wave 1 to 10)", "Specific Waves List"], key="nps_filter_opt")
 
