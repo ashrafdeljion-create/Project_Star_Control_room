@@ -75,7 +75,7 @@ st.markdown("Your unified command center for Project Status, Weekly 911's pipeli
 
 
 # =========================================================================
-# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (Project Status moved to Tab 1)
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (Project Status is Tab 1)
 # =========================================================================
 tab1, tab2, tab3, tab4 = st.tabs([
     "📋 Project Status & Quotas Update",
@@ -87,7 +87,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 # ==========================================================================
 # ==========================================================================
-# TAB 1: PROJECT STATUS & QUOTAS UPDATE (Formerly Tab 4)
+# TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
 # ==========================================================================
 with tab1:
@@ -101,6 +101,21 @@ with tab1:
     with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=50, key="target_bus")
     with col_t2: target_enterprise = st.number_input("Enterprise (R10Mil) Target", min_value=0, value=1400, step=50, key="target_ent")
     with col_t3: target_pubsc = st.number_input("PUBSC Target", min_value=0, value=500, step=25, key="target_pub")
+
+    # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW (Added as requested) ---
+    st.markdown("---")
+    st.subheader("⚙️ Segment-Level Quota Breakdown Inputs")
+    st.markdown("Specify exact individual segment quotas below for detailed tracking and Excel report integration:")
+
+    col_seg1, col_seg2, col_seg3, col_seg4 = st.columns(4)
+    with col_seg1: q_seg_r0_r1 = st.number_input("R0M-R1M Quota", min_value=0, value=800, step=25, key="q_r0_r1")
+    with col_seg2: q_seg_r1_r5 = st.number_input("R1M-R5M Quota", min_value=0, value=550, step=25, key="q_r1_r5")
+    with col_seg3: q_seg_r5_r10 = st.number_input("R5M-R10M Quota", min_value=0, value=450, step=25, key="q_r5_r10")
+    with col_seg4: q_seg_r10_r60 = st.number_input("R10-R60M Quota", min_value=0, value=550, step=25, key="q_r10_r60")
+
+    col_seg5, col_seg6, _ = st.columns(3)
+    with col_seg5: q_seg_r60_r150 = st.number_input("R60-R150M Quota", min_value=0, value=450, step=25, key="q_r60_r150")
+    with col_seg6: q_seg_r150_plus = st.number_input("R150M+ Quota", min_value=0, value=250, step=25, key="q_r150_plus")
 
     total_target_val = target_business + target_enterprise + target_pubsc
 
@@ -176,8 +191,8 @@ with tab1:
             "Inland": [157, 97, 36, 109],
             "KwaZulu-Natal": [57, 43, 37, 82],
             "Total": [616, 371, 275, 459],
-            "Quota": [800, 550, 450, 550],
-            "Outstanding": [184, 179, 175, 91]
+            "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
+            "Outstanding": [q_seg_r0_r1 - 616, q_seg_r1_r5 - 371, q_seg_r5_r10 - 275, q_seg_r10_r60 - 459]
         })
         st.dataframe(bus_seg_df, use_container_width=True, hide_index=True)
 
@@ -203,8 +218,8 @@ with tab1:
             "Inland": [109, 55, 37],
             "KwaZulu-Natal": [82, 21, 34],
             "Total": [459, 247, 185],
-            "Quota": [550, 450, 250],
-            "Outstanding": [91, 203, 65]
+            "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
+            "Outstanding": [q_seg_r10_r60 - 459, q_seg_r60_r150 - 247, q_seg_r150_plus - 185]
         })
         st.dataframe(ent_seg_df, use_container_width=True, hide_index=True)
 
@@ -310,10 +325,10 @@ with tab1:
             cell.font = WHITE_BOLD_FONT
 
         for idx, (s_name, s_vals, quota_val) in enumerate([
-            ("R0M-R1M", [159, 127, 116, 157, 57], 800),
-            ("R1M-R5M", [81, 90, 60, 97, 43], 550),
-            ("R5M-R10M", [45, 85, 72, 36, 37], 450),
-            ("R10-R60M", [56, 105, 107, 109, 82], 550)
+            ("R0M-R1M", [159, 127, 116, 157, 57], q_seg_r0_r1),
+            ("R1M-R5M", [81, 90, 60, 97, 43], q_seg_r1_r5),
+            ("R5M-R10M", [45, 85, 72, 36, 37], q_seg_r5_r10),
+            ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60)
         ], start=3):
             ws_bus.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
             for v_idx, val in enumerate(s_vals, start=11):
@@ -377,9 +392,9 @@ with tab1:
             cell.font = WHITE_BOLD_FONT
 
         for idx, (s_name, s_vals, quota_val) in enumerate([
-            ("R10-R60M", [56, 105, 107, 109, 82], 550),
-            ("R60-R150M", [43, 38, 90, 55, 21], 450),
-            ("R150M+", [44, 29, 41, 37, 34], 250)
+            ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60),
+            ("R60-R150M", [43, 38, 90, 55, 21], q_seg_r60_r150),
+            ("R150M+", [44, 29, 41, 37, 34], q_seg_r150_plus)
         ], start=3):
             ws_ent.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
             for v_idx, val in enumerate(s_vals, start=11):
@@ -446,7 +461,7 @@ with tab1:
 
 # ==========================================================================
 # ==========================================================================
-# TAB 2: WEEKLY 911'S CONTROL ROOM (Formerly Tab 1)
+# TAB 2: WEEKLY 911'S CONTROL ROOM
 # ==========================================================================
 # ==========================================================================
 with tab2:
