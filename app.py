@@ -98,9 +98,9 @@ with tab1:
     st.subheader("⚙️ Live Quota Target Adjustments")
     
     col_t1, col_t2, col_t3 = st.columns(3)
-    with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=50, key="target_bus")
-    with col_t2: target_enterprise = st.number_input("Enterprise (R10Mil) Target", min_value=0, value=1400, step=50, key="target_ent")
-    with col_t3: target_pubsc = st.number_input("PUBSC Target", min_value=0, value=500, step=25, key="target_pub")
+    with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=5, key="target_bus")
+    with col_t2: target_enterprise = st.number_input("Enterprise (R10Mil) Target", min_value=0, value=1400, step=5, key="target_ent")
+    with col_t3: target_pubsc = st.number_input("PUBSC Target", min_value=0, value=500, step=5, key="target_pub")
 
     # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW ---
     st.markdown("---")
@@ -108,14 +108,14 @@ with tab1:
     st.markdown("Specify exact individual segment quotas below for detailed tracking and Excel report integration:")
 
     col_seg1, col_seg2, col_seg3, col_seg4 = st.columns(4)
-    with col_seg1: q_seg_r0_r1 = st.number_input("R0M-R1M Quota", min_value=0, value=1600, step=25, key="q_r0_r1")
-    with col_seg2: q_seg_r1_r5 = st.number_input("R1M-R5M Quota", min_value=0, value=1100, step=25, key="q_r1_r5")
-    with col_seg3: q_seg_r5_r10 = st.number_input("R5M-R10M Quota", min_value=0, value=900, step=25, key="q_r5_r10")
-    with col_seg4: q_seg_r10_r60 = st.number_input("R10-R60M Quota", min_value=0, value=1100, step=25, key="q_r10_r60")
+    with col_seg1: q_seg_r0_r1 = st.number_input("R0M-R1M Quota", min_value=0, value=1600, step=5, key="q_r0_r1")
+    with col_seg2: q_seg_r1_r5 = st.number_input("R1M-R5M Quota", min_value=0, value=1100, step=5, key="q_r1_r5")
+    with col_seg3: q_seg_r5_r10 = st.number_input("R5M-R10M Quota", min_value=0, value=900, step=5, key="q_r5_r10")
+    with col_seg4: q_seg_r10_r60 = st.number_input("R10-R60M Quota", min_value=0, value=1100, step=5, key="q_r10_r60")
 
     col_seg5, col_seg6, _ = st.columns(3)
-    with col_seg5: q_seg_r60_r150 = st.number_input("R60-R150M Quota", min_value=0, value=900, step=25, key="q_r60_r150")
-    with col_seg6: q_seg_r150_plus = st.number_input("R150M+ Quota", min_value=0, value=500, step=25, key="q_r150_plus")
+    with col_seg5: q_seg_r60_r150 = st.number_input("R60-R150M Quota", min_value=0, value=900, step=5, key="q_r60_r150")
+    with col_seg6: q_seg_r150_plus = st.number_input("R150M+ Quota", min_value=0, value=500, step=5, key="q_r150_plus")
 
     total_target_val = target_business + target_enterprise + target_pubsc
 
@@ -163,7 +163,7 @@ with tab1:
     })
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
-    # --- ADDED SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE BELOW MAIN SUMMARY ---
+    # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
     st.markdown("#### 📊 Segment Quotas Executive Summary Breakdown")
     achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
     achieved_r60_r150, achieved_r150_plus = 247, 185
@@ -495,6 +495,99 @@ with tab1:
         ]:
             ws_pub.append([""] + prow)
 
+        # 5. Add Business Crosstab Sheet to Excel Workbook
+        ws_bcross = wb.create_sheet(title='Business Crosstab')
+        ws_bcross.cell(row=1, column=2, value="SEGMENTS").fill = GRAY_HEADER
+        ws_bcross.merge_cells("C1:E1")
+        ws_bcross.cell(row=1, column=2).alignment = CENTER_ALIGN
+        
+        ws_bcross.cell(row=2, column=2, value="Busines").fill = FNB_TEAL
+        ws_bcross.cell(row=2, column=2).font = WHITE_BOLD_FONT
+        for c_idx, seg_lbl in enumerate(["R0m-R1m", "R1m-R5m", "R5m-R10", "TOTAL"], start=3):
+            cell = ws_bcross.cell(row=2, column=c_idx, value=seg_lbl)
+            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
+            cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
+            cell.alignment = CENTER_ALIGN
+
+        bus_crosstab_rows = [
+            ("Eastern Cape", [121, 44, 15]), ("Free State", [26, 23, 5]),
+            ("Gauteng East", [32, 22, 34]), ("Gauteng South Central", [50, 21, 22]),
+            ("Gauteng Midrand", [27, 15, 17]), ("Gauteng Tshwane East", [34, 18, 13]),
+            ("Gauteng Tshwane North", [24, 25, 14]), ("Gauteng West-Rand", [34, 17, 16]),
+            ("Greater Sandton", [42, 32, 41]), ("KZN North", [15, 15, 12]),
+            ("KZN South", [21, 10, 14]), ("KZN West", [21, 18, 11]),
+            ("Limpopo", [34, 22, 10]), ("Mpumalanga", [40, 19, 6]),
+            ("North West", [38, 22, 12]), ("Northern Cape", [19, 11, 3]),
+            ("Western Cape", [38, 37, 30])
+        ]
+        for idx, (reg_name, vals) in enumerate(bus_crosstab_rows, start=3):
+            ws_bcross.cell(row=idx, column=2, value=reg_name).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_bcross.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            tot_c = ws_bcross.cell(row=idx, column=6, value=f"=SUM(C{idx}:E{idx})")
+            tot_c.border = THIN_BORDER
+            tot_c.alignment = CENTER_ALIGN
+
+        bcross_tot_row = len(bus_crosstab_rows) + 3
+        ws_bcross.cell(row=bcross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
+        ws_bcross.cell(row=bcross_tot_row, column=2).font = Font(name="Calibri", size=11, bold=True)
+        ws_bcross.cell(row=bcross_tot_row, column=2).border = THIN_BORDER
+        for c_idx in range(3, 7):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_bcross.cell(row=bcross_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{bcross_tot_row-1})")
+            c.fill = GRAY_HEADER
+            c.font = Font(name="Calibri", size=11, bold=True)
+            c.border = THIN_BORDER
+            c.alignment = CENTER_ALIGN
+
+        # 6. Add Enterprise Crosstab Sheet to Excel Workbook
+        ws_ecross = wb.create_sheet(title='Enterprise Crosstab')
+        ws_ecross.cell(row=1, column=2, value="SEGMENTS").fill = GRAY_HEADER
+        ws_ecross.merge_cells("C1:E1")
+        ws_ecross.cell(row=1, column=2).alignment = CENTER_ALIGN
+        
+        ws_ecross.cell(row=2, column=2, value="Enterprise").fill = FNB_TEAL
+        ws_ecross.cell(row=2, column=2).font = WHITE_BOLD_FONT
+        for c_idx, seg_lbl in enumerate(["R10m-R60m", "R150m+", "R60m-R150", "TOTAL"], start=3):
+            cell = ws_ecross.cell(row=2, column=c_idx, value=seg_lbl)
+            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
+            cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
+            cell.alignment = CENTER_ALIGN
+
+        ent_crosstab_rows = [
+            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
+            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
+            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
+            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
+            ("KZN INLAND", [30, 11, 9]), ("LIMPOPO", [23, 12, 11]),
+            ("MIDRAND", [39, 10, 7]), ("MPUMALANGA", [42, 10, 15]),
+            ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
+            ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
+        ]
+        for idx, (reg_name, vals) in enumerate(ent_crosstab_rows, start=3):
+            ws_ecross.cell(row=idx, column=2, value=reg_name).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_ecross.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            tot_c = ws_ecross.cell(row=idx, column=6, value=f"=SUM(C{idx}:E{idx})")
+            tot_c.border = THIN_BORDER
+            tot_c.alignment = CENTER_ALIGN
+
+        ecross_tot_row = len(ent_crosstab_rows) + 3
+        ws_ecross.cell(row=ecross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
+        ws_ecross.cell(row=ecross_tot_row, column=2).font = Font(name="Calibri", size=11, bold=True)
+        ws_ecross.cell(row=ecross_tot_row, column=2).border = THIN_BORDER
+        for c_idx in range(3, 7):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_ecross.cell(row=ecross_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{ecross_tot_row-1})")
+            c.fill = GRAY_HEADER
+            c.font = Font(name="Calibri", size=11, bold=True)
+            c.border = THIN_BORDER
+            c.alignment = CENTER_ALIGN
+
         # --- AUTO-ADJUST COLUMN WIDTHS FOR ALL WORKSHEETS ---
         for sheet in wb.worksheets:
             for col in sheet.columns:
@@ -525,11 +618,11 @@ with tab1:
         )
 
 
-# ==========================================================================
-# ==========================================================================
+# =========================================================================
+# =========================================================================
 # TAB 2: WEEKLY 911'S CONTROL ROOM
-# ==========================================================================
-# ==========================================================================
+# =========================================================================
+# =========================================================================
 with tab2:
     st.markdown("### `[02 // CONTROL ROOM]` &nbsp;&nbsp;&nbsp; `SYS.READY // PIPELINE 2.2`")
     st.markdown("Execute and monitor each section of the Project Star 911 market research data pipeline.")
