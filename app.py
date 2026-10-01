@@ -81,7 +81,7 @@ st.markdown("Your unified command center for Project Status, Weekly 911's pipeli
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📋 Project Status & Quotas Update",
     "⚡ Weekly 911's Control Room", 
-    "📊 NPS Dashboard & Data Generator", 
+    "📊 NPS Ratings per BM/RM Portfolio Dashboard & Data Generator", 
     "📈 Q11 Ratings & Reasons Extraction",
     "📈 NPS Yearly Dashboard"
 ])
