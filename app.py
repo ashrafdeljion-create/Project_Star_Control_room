@@ -838,7 +838,7 @@ with tab3:
     if "reports_ready" not in st.session_state: st.session_state.reports_ready = False
     if "report_files" not in st.session_state: st.session_state.report_files = {}
 
-    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (.sav) for NPS Dashboard", type=["sav"], key="nps_file")
+    nps_uploaded_file = st.file_uploader("Upload Master SPSS Data File (Project Star_W? to W?.sav) for NPS Dashboard", type=["sav"], key="nps_file")
     portfolio_mode = st.selectbox("Select Portfolio Filter Mode:", ["Generate All (Combined, Growth, and R10M Separately)", "Combined (Growth & R10M)", "Growth Only", "R10M Only"], key="nps_portfolio")
     filter_option = st.radio("Select Wave Filter Option:", ["All Waves", "Custom Range (e.g., Wave 1 to 10)", "Specific Waves List"], key="nps_filter_opt")
 
