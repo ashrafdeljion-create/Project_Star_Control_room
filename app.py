@@ -196,6 +196,22 @@ with tab1:
         })
         st.dataframe(bus_seg_df, use_container_width=True, hide_index=True)
 
+        # --- ADDED BUSINESS CROSSTAB (REGIONS x SEGMENTS R0m-R1m, R1m-R5m, R5m-R10) ---
+        st.markdown("#### Business Regional vs. Segments Crosstab")
+        bus_crosstab_df = pd.DataFrame({
+            "Busines": [
+                "Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", 
+                "Gauteng Midrand", "Gauteng Tshwane East", "Gauteng Tshwane North", 
+                "Gauteng West-Rand", "Greater Sandton", "KZN North", "KZN South", 
+                "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
+            ],
+            "R0m-R1m": [121, 26, 32, 50, 27, 34, 24, 34, 42, 15, 21, 21, 34, 40, 38, 19, 38],
+            "R1m-R5m": [44, 23, 22, 21, 15, 18, 25, 17, 32, 15, 10, 18, 22, 19, 22, 11, 37],
+            "R5m-R10": [15, 5, 34, 22, 17, 13, 14, 16, 41, 12, 14, 11, 10, 6, 12, 3, 30]
+        })
+        bus_crosstab_df["TOTAL"] = bus_crosstab_df["R0m-R1m"] + bus_crosstab_df["R1m-R5m"] + bus_crosstab_df["R5m-R10"]
+        st.dataframe(bus_crosstab_df, use_container_width=True, hide_index=True)
+
     with sub_tab2:
         st.markdown("#### Enterprise Regional Breakdown")
         ent_preview_df = pd.DataFrame({
@@ -222,6 +238,22 @@ with tab1:
             "Outstanding": [q_seg_r10_r60 - 459, q_seg_r60_r150 - 247, q_seg_r150_plus - 185]
         })
         st.dataframe(ent_seg_df, use_container_width=True, hide_index=True)
+
+        # --- ADDED ENTERPRISE CROSSTAB (REGIONS x SEGMENTS R10m-R60m, R150m+, R60m-R150) ---
+        st.markdown("#### Enterprise Regional vs. Segments Crosstab")
+        ent_crosstab_df = pd.DataFrame({
+            "Enterprise": [
+                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
+                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
+                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
+                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
+            ],
+            "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
+            "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
+            "R60m-R150": [21, 6, 31, 28, 19, 31, 12, 12, 9, 11, 7, 15, 11, 12, 2, 20]
+        })
+        ent_crosstab_df["TOTAL"] = ent_crosstab_df["R10m-R60m"] + ent_crosstab_df["R150m+"] + ent_crosstab_df["R60m-R150"]
+        st.dataframe(ent_crosstab_df, use_container_width=True, hide_index=True)
 
     with sub_tab3:
         st.markdown("#### Public Sector (PUBSC) Breakdown")
