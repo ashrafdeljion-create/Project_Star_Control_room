@@ -87,17 +87,17 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 
-# ==========================================================================
-# ==========================================================================
+# =========================================================================
+# =========================================================================
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
-# ==========================================================================
-# ==========================================================================
+# =========================================================================
+# =========================================================================
 with tab1:
     st.markdown("### 📋 Project Status & Quotas Update Hub")
     st.markdown("Monitor overall sample quotas achieved, view executive summaries across portfolios, and download the PM Project Status Update report.")
 
     st.markdown("---")
-    st.subheader("⚙️️ Live Quota Target Adjustments")
+    st.subheader("⚙ Live Quota Target Adjustments")
     
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=5, key="target_bus")
@@ -204,7 +204,7 @@ with tab1:
         achieved_r150_plus = seg_counts_ent.get('R150m+', seg_counts_ent.get('R150M+', 185))
     else:
         achieved_r60_r150, achieved_r150_plus = 247, 185
-    
+
     total_seg_target = q_seg_r0_r1 + q_seg_r1_r5 + q_seg_r5_r10 + q_seg_r10_r60 + q_seg_r60_r150 + q_seg_r150_plus
     total_seg_achieved = achieved_r0_r1 + achieved_r1_r5 + achieved_r5_r10 + achieved_r10_r60 + achieved_r60_r150 + achieved_r150_plus
     total_seg_outstanding = total_seg_target - total_seg_achieved
@@ -228,21 +228,11 @@ with tab1:
     
     sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🟢 Business Breakdown", "🔵 Enterprise Breakdown", "🟠 PUBSC Breakdown"])
     
-    standard_bus_regions = ["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"]
-    standard_ent_regions = ["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal"]
-
     with sub_tab1:
         st.markdown("#### Business Regional Breakdown (Left Table)")
         if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
-            temp_df = df_grow_live.copy()
-            # Map subregions dynamically into the 5 standard columns if needed
-            bus_crosstab_live = pd.crosstab(temp_df['V12290'], temp_df['V13290'])
-            for col in standard_bus_regions:
-                if col not in bus_crosstab_live.columns:
-                    bus_crosstab_live[col] = 0
-            bus_crosstab_live = bus_crosstab_live[standard_bus_regions]
-            bus_preview_df = bus_crosstab_live.reset_index().rename(columns={'V12290': 'Region'})
-            bus_preview_df["Total"] = bus_preview_df[standard_bus_regions].sum(axis=1)
+            bus_preview_df = pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290']).reset_index().rename(columns={'V12290': 'Region'})
+            bus_preview_df["Total"] = bus_preview_df.select_dtypes(include=['number']).sum(axis=1)
         else:
             bus_preview_df = pd.DataFrame({
                 "Region": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
@@ -257,16 +247,12 @@ with tab1:
 
         st.markdown("#### Business Segment Breakdown Matrix (Right Table with Quotas & Outstanding)")
         if df_grow_live is not None and 'V44011' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
-            bus_seg_crosstab = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290'])
-            for col in standard_bus_regions:
-                if col not in bus_seg_crosstab.columns:
-                    bus_seg_crosstab[col] = 0
-            bus_seg_crosstab = bus_seg_crosstab[standard_bus_regions]
-            bus_seg_df = bus_seg_crosstab.reset_index().rename(columns={'V44011': 'Business'})
-            bus_seg_df["Total"] = bus_seg_df[standard_bus_regions].sum(axis=1)
+            bus_seg_crosstab = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290']).reset_index().rename(columns={'V44011': 'Business'})
+            bus_seg_crosstab["Total"] = bus_seg_crosstab.select_dtypes(include=['number']).sum(axis=1)
             quotas_list = [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60]
-            bus_seg_df["Quota"] = [quotas_list[i] if i < len(quotas_list) else 1000 for i in range(len(bus_seg_df))]
-            bus_seg_df["Outstanding"] = bus_seg_df["Quota"] - bus_seg_df["Total"]
+            bus_seg_crosstab["Quota"] = [quotas_list[i] if i < len(quotas_list) else 1000 for i in range(len(bus_seg_crosstab))]
+            bus_seg_crosstab["Outstanding"] = bus_seg_crosstab["Quota"] - bus_seg_crosstab["Total"]
+            bus_seg_df = bus_seg_crosstab
         else:
             bus_seg_df = pd.DataFrame({
                 "Business": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M"],
@@ -284,8 +270,7 @@ with tab1:
         st.markdown("#### Business Regional vs. Segments Crosstab")
         if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V44011' in df_grow_live.columns:
             bus_crosstab_df = pd.crosstab(df_grow_live['V12290'], df_grow_live['V44011']).reset_index().rename(columns={'V12290': 'Busines'})
-            numeric_cols = [c for c in bus_crosstab_df.columns if c != 'Busines']
-            bus_crosstab_df["TOTAL"] = bus_crosstab_df[numeric_cols].sum(axis=1)
+            bus_crosstab_df["TOTAL"] = bus_crosstab_df.select_dtypes(include=['number']).sum(axis=1)
         else:
             bus_crosstab_df = pd.DataFrame({
                 "Busines": [
@@ -304,13 +289,8 @@ with tab1:
     with sub_tab2:
         st.markdown("#### Enterprise Regional Breakdown")
         if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
-            ent_crosstab_live = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290'])
-            for col in standard_ent_regions:
-                if col not in ent_crosstab_live.columns:
-                    ent_crosstab_live[col] = 0
-            ent_crosstab_live = ent_crosstab_live[standard_ent_regions]
-            ent_preview_df = ent_crosstab_live.reset_index().rename(columns={'V12290': 'REGION'})
-            ent_preview_df["Total"] = ent_preview_df[standard_ent_regions].sum(axis=1)
+            ent_preview_df = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290']).reset_index().rename(columns={'V12290': 'REGION'})
+            ent_preview_df["Total"] = ent_preview_df.select_dtypes(include=['number']).sum(axis=1)
         else:
             ent_preview_df = pd.DataFrame({
                 "REGION": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", "Gauteng South-West", "Gauteng Tshwane", "Greater Sandton", "KZN Coastal", "KZN Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", "Northern Cape", "Western Cape Inland", "Western Cape Metro"],
@@ -325,16 +305,12 @@ with tab1:
 
         st.markdown("#### Enterprise Segment Breakdown Matrix")
         if df_r10_live is not None and 'V44011' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
-            ent_seg_crosstab = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290'])
-            for col in standard_ent_regions:
-                if col not in ent_seg_crosstab.columns:
-                    ent_seg_crosstab[col] = 0
-            ent_seg_crosstab = ent_seg_crosstab[standard_ent_regions]
-            ent_seg_df = ent_seg_crosstab.reset_index().rename(columns={'V44011': 'Enterprise'})
-            ent_seg_df["Total"] = ent_seg_df[standard_ent_regions].sum(axis=1)
+            ent_seg_crosstab = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290']).reset_index().rename(columns={'V44011': 'Enterprise'})
+            ent_seg_crosstab["Total"] = ent_seg_crosstab.select_dtypes(include=['number']).sum(axis=1)
             quotas_list_ent = [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus]
-            ent_seg_df["Quota"] = [quotas_list_ent[i] if i < len(quotas_list_ent) else 1000 for i in range(len(ent_seg_df))]
-            ent_seg_df["Outstanding"] = ent_seg_df["Quota"] - ent_seg_df["Total"]
+            ent_seg_crosstab["Quota"] = [quotas_list_ent[i] if i < len(quotas_list_ent) else 1000 for i in range(len(ent_seg_crosstab))]
+            ent_seg_crosstab["Outstanding"] = ent_seg_crosstab["Quota"] - ent_seg_crosstab["Total"]
+            ent_seg_df = ent_seg_crosstab
         else:
             ent_seg_df = pd.DataFrame({
                 "Enterprise": ["R10-R60M", "R60-R150M", "R150M+"],
@@ -352,8 +328,7 @@ with tab1:
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
         if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V44011' in df_r10_live.columns:
             ent_crosstab_df = pd.crosstab(df_r10_live['V12290'], df_r10_live['V44011']).reset_index().rename(columns={'V12290': 'Enterprise'})
-            numeric_cols_ent = [c for c in ent_crosstab_df.columns if c != 'Enterprise']
-            ent_crosstab_df["TOTAL"] = ent_crosstab_df[numeric_cols_ent].sum(axis=1)
+            ent_crosstab_df["TOTAL"] = ent_crosstab_df.select_dtypes(include=['number']).sum(axis=1)
         else:
             ent_crosstab_df = pd.DataFrame({
                 "Enterprise": [
@@ -372,9 +347,8 @@ with tab1:
     with sub_tab3:
         st.markdown("#### Public Sector (PUBSC) Breakdown")
         if df_pub_live is not None and 'V12290' in df_pub_live.columns and 'V13290' in df_pub_live.columns:
-            pub_crosstab_live = pd.crosstab(df_pub_live['V13290'], df_pub_live['V12290'])
-            pub_preview_df = pub_crosstab_live.reset_index().rename(columns={'V13290': 'Organization Type'})
-            pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
+            pub_preview_df = pd.crosstab(df_pub_live['V13290'], df_pub_live['V12290']).reset_index().rename(columns={'V13290': 'Organization Type'})
+            pub_preview_df["Total"] = pub_preview_df.select_dtypes(include=['number']).sum(axis=1)
         else:
             pub_preview_df = pd.DataFrame({
                 "Organization Type": ["Non-Profit Organisation", "Public Sector Colleges & FET's", "Public Sector Embassies", "Public Sector Local Government", "Public Sector Provincial Government", "Public Sector Public Schools", "Public Sector Unions & Politics"],
@@ -427,46 +401,21 @@ with tab1:
         ws_bus.cell(row=2, column=2, value="Business").fill = FNB_TEAL
         ws_bus.cell(row=2, column=2).font = WHITE_BOLD_FONT
         
+        for c_idx, reg in enumerate(["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"], start=3):
+            cell = ws_bus.cell(row=2, column=c_idx, value=reg)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
+
+        tot_hdr_bus = ws_bus.cell(row=2, column=8, value="Total")
+        tot_hdr_bus.fill = FNB_TEAL
+        tot_hdr_bus.font = WHITE_BOLD_FONT
+        tot_hdr_bus.alignment = CENTER_ALIGN
+        tot_hdr_bus.border = THIN_BORDER
+
         if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
             b_cross_live = pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290'])
-            for col in standard_bus_regions:
-                if col not in b_cross_live.columns:
-                    b_cross_live[col] = 0
-            b_cross_live = b_cross_live[standard_bus_regions]
-            reg_cols = standard_bus_regions
-            for c_idx, reg_name in enumerate(reg_cols, start=3):
-                cell = ws_bus.cell(row=2, column=c_idx, value=str(reg_name))
-                cell.fill = FNB_TEAL
-                cell.font = WHITE_BOLD_FONT
-            tot_hdr_bus = ws_bus.cell(row=2, column=len(reg_cols) + 3, value="Total")
-            tot_hdr_bus.fill = FNB_TEAL
-            tot_hdr_bus.font = WHITE_BOLD_FONT
-            tot_hdr_bus.alignment = CENTER_ALIGN
-            tot_hdr_bus.border = THIN_BORDER
-
-            for idx, (prov, r_row) in enumerate(b_cross_live.iterrows(), start=3):
-                ws_bus.cell(row=idx, column=2, value=str(prov)).border = THIN_BORDER
-                for v_idx, val in enumerate(r_row, start=3):
-                    c = ws_bus.cell(row=idx, column=v_idx, value=int(val))
-                    c.border = THIN_BORDER
-                    c.alignment = CENTER_ALIGN
-                last_c_idx = len(reg_cols) + 3
-                first_let = openpyxl.utils.get_column_letter(3)
-                last_let = openpyxl.utils.get_column_letter(last_c_idx - 1)
-                ws_bus.cell(row=idx, column=last_c_idx, value=f"=SUM({first_let}{idx}:{last_let}{idx})").border = THIN_BORDER
-            tot_row_idx = len(b_cross_live) + 3
+            bus_rows = [(str(idx), list(row.values[:5])) for idx, row in b_cross_live.iterrows()]
         else:
-            for c_idx, reg in enumerate(["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"], start=3):
-                cell = ws_bus.cell(row=2, column=c_idx, value=reg)
-                cell.fill = FNB_TEAL
-                cell.font = WHITE_BOLD_FONT
-
-            tot_hdr_bus = ws_bus.cell(row=2, column=8, value="Total")
-            tot_hdr_bus.fill = FNB_TEAL
-            tot_hdr_bus.font = WHITE_BOLD_FONT
-            tot_hdr_bus.alignment = CENTER_ALIGN
-            tot_hdr_bus.border = THIN_BORDER
-
             bus_rows = [
                 ("Eastern Cape", [180, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 54, 0]),
                 ("Gauteng East", [0, 0, 88, 0, 0]), ("Gauteng South Central", [0, 0, 93, 0, 0]),
@@ -478,19 +427,18 @@ with tab1:
                 ("Mpumalanga", [0, 0, 0, 65, 0]), ("North West", [0, 0, 0, 72, 0]),
                 ("Northern Cape", [0, 0, 0, 33, 0]), ("Western Cape", [105, 0, 0, 0, 0])
             ]
-            for idx, (prov, vals) in enumerate(bus_rows, start=3):
-                ws_bus.cell(row=idx, column=2, value=prov).border = THIN_BORDER
-                for v_idx, val in enumerate(vals, start=3):
-                    c = ws_bus.cell(row=idx, column=v_idx, value=val)
-                    c.border = THIN_BORDER
-                    c.alignment = CENTER_ALIGN
-                ws_bus.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
-            tot_row_idx = len(bus_rows) + 3
+        for idx, (prov, vals) in enumerate(bus_rows, start=3):
+            ws_bus.cell(row=idx, column=2, value=prov).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_bus.cell(row=idx, column=v_idx, value=int(val))
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            ws_bus.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
 
+        tot_row_idx = len(bus_rows) + 3
         ws_bus.cell(row=tot_row_idx, column=2, value="TOTAL INLC R10-R60MIL").fill = FNB_TEAL
         ws_bus.cell(row=tot_row_idx, column=2).font = WHITE_BOLD_FONT
-        max_col_bus_left = 8 if df_grow_live is None or 'V13290' not in df_grow_live.columns else len(standard_bus_regions) + 3
-        for c_idx in range(3, max_col_bus_left + 1):
+        for c_idx in range(3, 9):
             col_let = openpyxl.utils.get_column_letter(c_idx)
             c = ws_bus.cell(row=tot_row_idx, column=c_idx, value=f"=SUM({col_let}3:{col_let}{tot_row_idx-1})")
             c.fill = FNB_TEAL
@@ -506,26 +454,19 @@ with tab1:
             cell.fill = FNB_TEAL if c_idx < 17 else (FNB_ORANGE if c_idx == 17 else RED_FILL)
             cell.font = WHITE_BOLD_FONT
 
-        bus_seg_matrix_data = [
-            ("R0M-R1M", [159, 127, 116, 157, 57], q_seg_r0_r1),
-            ("R1M-R5M", [81, 90, 60, 97, 43], q_seg_r1_r5),
-            ("R5M-R10M", [45, 85, 72, 36, 37], q_seg_r5_r10),
-            ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60)
-        ]
         if df_grow_live is not None and 'V44011' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
-            live_seg_tab = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290'])
-            for col in standard_bus_regions:
-                if col not in live_seg_tab.columns:
-                    live_seg_tab[col] = 0
-            live_seg_tab = live_seg_tab[standard_bus_regions]
-            quotas_map = {'R0m-R1m': q_seg_r0_r1, 'R0M-R1M': q_seg_r0_r1, 'R1m-R5m': q_seg_r1_r5, 'R1M-R5M': q_seg_r1_r5, 'R5m-R10': q_seg_r5_r10, 'R5M-R10M': q_seg_r5_r10, 'R10-R60M': q_seg_r10_r60, 'R10m-R60m': q_seg_r10_r60}
-            bus_seg_matrix_data = []
-            for s_name, s_row in live_seg_tab.iterrows():
-                vals_list = list(s_row.values[:5])
-                while len(vals_list) < 5: vals_list.append(0)
-                bus_seg_matrix_data.append((str(s_name), vals_list, quotas_map.get(str(s_name), 1000)))
+            b_seg_live = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290'])
+            quotas_map_b = {'R0m-R1m': q_seg_r0_r1, 'R0M-R1M': q_seg_r0_r1, 'R1m-R5m': q_seg_r1_r5, 'R1M-R5M': q_seg_r1_r5, 'R5m-R10': q_seg_r5_r10, 'R5M-R10M': q_seg_r5_r10, 'R10-R60M': q_seg_r10_r60, 'R10m-R60m': q_seg_r10_r60}
+            bus_matrix_rows = [(str(s_name), list(s_row.values[:5]), quotas_map_b.get(str(s_name), 1000)) for s_name, s_row in b_seg_live.iterrows()]
+        else:
+            bus_matrix_rows = [
+                ("R0M-R1M", [159, 127, 116, 157, 57], q_seg_r0_r1),
+                ("R1M-R5M", [81, 90, 60, 97, 43], q_seg_r1_r5),
+                ("R5M-R10M", [45, 85, 72, 36, 37], q_seg_r5_r10),
+                ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60)
+            ]
 
-        for idx, (s_name, s_vals, quota_val) in enumerate(bus_seg_matrix_data, start=3):
+        for idx, (s_name, s_vals, quota_val) in enumerate(bus_matrix_rows, start=3):
             ws_bus.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
             for v_idx, val in enumerate(s_vals, start=11):
                 c = ws_bus.cell(row=idx, column=v_idx, value=int(val))
@@ -551,25 +492,21 @@ with tab1:
             cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
             cell.alignment = CENTER_ALIGN
 
-        bus_crosstab_rows = [
-            ("Eastern Cape", [121, 44, 15]), ("Free State", [26, 23, 5]),
-            ("Gauteng East", [32, 22, 34]), ("Gauteng South Central", [50, 21, 22]),
-            ("Gauteng Midrand", [27, 15, 17]), ("Gauteng Tshwane East", [34, 18, 13]),
-            ("Gauteng Tshwane North", [24, 25, 14]), ("Gauteng West-Rand", [34, 17, 16]),
-            ("Greater Sandton", [42, 32, 41]), ("KZN North", [15, 15, 12]),
-            ("KZN South", [21, 10, 14]), ("KZN West", [21, 18, 11]),
-            ("Limpopo", [34, 22, 10]), ("Mpumalanga", [40, 19, 6]),
-            ("North West", [38, 22, 12]), ("Northern Cape", [19, 11, 3]),
-            ("Western Cape", [38, 37, 30])
-        ]
         if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V44011' in df_grow_live.columns:
             live_b_cross = pd.crosstab(df_grow_live['V12290'], df_grow_live['V44011'])
-            bus_crosstab_rows = []
-            for r_name, r_vals in live_b_cross.iterrows():
-                vals_list = list(r_vals.values[:3])
-                while len(vals_list) < 3: vals_list.append(0)
-                bus_crosstab_rows.append((str(r_name), vals_list))
-
+            bus_crosstab_rows = [(str(r_name), list(r_vals.values[:3])) for r_name, r_vals in live_b_cross.iterrows()]
+        else:
+            bus_crosstab_rows = [
+                ("Eastern Cape", [121, 44, 15]), ("Free State", [26, 23, 5]),
+                ("Gauteng East", [32, 22, 34]), ("Gauteng South Central", [50, 21, 22]),
+                ("Gauteng Midrand", [27, 15, 17]), ("Gauteng Tshwane East", [34, 18, 13]),
+                ("Gauteng Tshwane North", [24, 25, 14]), ("Gauteng West-Rand", [34, 17, 16]),
+                ("Greater Sandton", [42, 32, 41]), ("KZN North", [15, 15, 12]),
+                ("KZN South", [21, 10, 14]), ("KZN West", [21, 18, 11]),
+                ("Limpopo", [34, 22, 10]), ("Mpumalanga", [40, 19, 6]),
+                ("North West", [38, 22, 12]), ("Northern Cape", [19, 11, 3]),
+                ("Western Cape", [38, 37, 30])
+            ]
         for idx_offset, (reg_name, vals) in enumerate(bus_crosstab_rows):
             r_idx = bcross_start_row + 2 + idx_offset
             ws_bus.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
@@ -600,47 +537,21 @@ with tab1:
         ws_ent.merge_cells("B1:G1")
         ws_ent.cell(row=2, column=2, value="Enterprise").fill = FNB_TEAL
         ws_ent.cell(row=2, column=2).font = WHITE_BOLD_FONT
-        
+        for c_idx, reg in enumerate(["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal"], start=3):
+            cell = ws_ent.cell(row=2, column=c_idx, value=reg)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
+
+        tot_hdr_ent = ws_ent.cell(row=2, column=8, value="Total")
+        tot_hdr_ent.fill = FNB_TEAL
+        tot_hdr_ent.font = WHITE_BOLD_FONT
+        tot_hdr_ent.alignment = CENTER_ALIGN
+        tot_hdr_ent.border = THIN_BORDER
+
         if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
-            ent_cross_live = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290'])
-            for col in standard_ent_regions:
-                if col not in ent_cross_live.columns:
-                    ent_cross_live[col] = 0
-            ent_cross_live = ent_cross_live[standard_ent_regions]
-            ent_reg_cols = standard_ent_regions
-            for c_idx, reg_name in enumerate(ent_reg_cols, start=3):
-                cell = ws_ent.cell(row=2, column=c_idx, value=str(reg_name))
-                cell.fill = FNB_TEAL
-                cell.font = WHITE_BOLD_FONT
-            tot_hdr_ent = ws_ent.cell(row=2, column=len(ent_reg_cols) + 3, value="Total")
-            tot_hdr_ent.fill = FNB_TEAL
-            tot_hdr_ent.font = WHITE_BOLD_FONT
-            tot_hdr_ent.alignment = CENTER_ALIGN
-            tot_hdr_ent.border = THIN_BORDER
-
-            for idx, (prov, r_row) in enumerate(ent_cross_live.iterrows(), start=3):
-                ws_ent.cell(row=idx, column=2, value=str(prov)).border = THIN_BORDER
-                for v_idx, val in enumerate(r_row, start=3):
-                    c = ws_ent.cell(row=idx, column=v_idx, value=int(val))
-                    c.border = THIN_BORDER
-                    c.alignment = CENTER_ALIGN
-                last_c_idx = len(ent_reg_cols) + 3
-                first_let = openpyxl.utils.get_column_letter(3)
-                last_let = openpyxl.utils.get_column_letter(last_c_idx - 1)
-                ws_ent.cell(row=idx, column=last_c_idx, value=f"=SUM({first_let}{idx}:{last_let}{idx})").border = THIN_BORDER
-            ent_tot_row = len(ent_cross_live) + 3
+            e_cross_live = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290'])
+            ent_rows = [(str(idx), list(row.values[:5])) for idx, row in e_cross_live.iterrows()]
         else:
-            for c_idx, reg in enumerate(["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal"], start=3):
-                cell = ws_ent.cell(row=2, column=c_idx, value=reg)
-                cell.fill = FNB_TEAL
-                cell.font = WHITE_BOLD_FONT
-
-            tot_hdr_ent = ws_ent.cell(row=2, column=8, value="Total")
-            tot_hdr_ent.fill = FNB_TEAL
-            tot_hdr_ent.font = WHITE_BOLD_FONT
-            tot_hdr_ent.alignment = CENTER_ALIGN
-            tot_hdr_ent.border = THIN_BORDER
-
             ent_rows = [
                 ("Eastern Cape", [55, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 21, 0]),
                 ("Gauteng East", [0, 89, 0, 0, 0]), ("Gauteng Klipriver", [0, 69, 0, 0, 0]),
@@ -651,19 +562,18 @@ with tab1:
                 ("North West", [0, 0, 0, 41, 0]), ("Northern Cape", [0, 0, 0, 26, 0]),
                 ("Western Cape Inland", [35, 0, 0, 0, 0]), ("Western Cape Metro", [53, 0, 0, 0, 0])
             ]
-            for idx, (prov, vals) in enumerate(ent_rows, start=3):
-                ws_ent.cell(row=idx, column=2, value=prov).border = THIN_BORDER
-                for v_idx, val in enumerate(vals, start=3):
-                    c = ws_ent.cell(row=idx, column=v_idx, value=val)
-                    c.border = THIN_BORDER
-                    c.alignment = CENTER_ALIGN
-                ws_ent.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
-            ent_tot_row = len(ent_rows) + 3
+        for idx, (prov, vals) in enumerate(ent_rows, start=3):
+            ws_ent.cell(row=idx, column=2, value=prov).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_ent.cell(row=idx, column=v_idx, value=int(val))
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            ws_ent.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
 
+        ent_tot_row = len(ent_rows) + 3
         ws_ent.cell(row=ent_tot_row, column=2, value="TOTAL EXCL R10 to R60MIL").fill = FNB_TEAL
         ws_ent.cell(row=ent_tot_row, column=2).font = WHITE_BOLD_FONT
-        max_col_ent_left = 8 if df_r10_live is None or 'V13290' not in df_r10_live.columns else len(standard_ent_regions) + 3
-        for c_idx in range(3, max_col_ent_left + 1):
+        for c_idx in range(3, 9):
             col_let = openpyxl.utils.get_column_letter(c_idx)
             c = ws_ent.cell(row=ent_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{ent_tot_row-1})")
             c.fill = FNB_TEAL
@@ -679,25 +589,18 @@ with tab1:
             cell.fill = FNB_TEAL if c_idx < 17 else (FNB_ORANGE if c_idx == 17 else RED_FILL)
             cell.font = WHITE_BOLD_FONT
 
-        ent_seg_matrix_data = [
-            ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60),
-            ("R60-R150M", [43, 38, 90, 55, 21], q_seg_r60_r150),
-            ("R150M+", [44, 29, 41, 37, 34], q_seg_r150_plus)
-        ]
         if df_r10_live is not None and 'V44011' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
-            live_ent_seg_tab = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290'])
-            for col in standard_ent_regions:
-                if col not in live_ent_seg_tab.columns:
-                    live_ent_seg_tab[col] = 0
-            live_ent_seg_tab = live_ent_seg_tab[standard_ent_regions]
-            quotas_map_ent = {'R10-R60M': q_seg_r10_r60, 'R10m-R60m': q_seg_r10_r60, 'R60-R150M': q_seg_r60_r150, 'R60m-R150': q_seg_r60_r150, 'R150M+': q_seg_r150_plus, 'R150m+': q_seg_r150_plus}
-            ent_seg_matrix_data = []
-            for s_name, s_row in live_ent_seg_tab.iterrows():
-                vals_list = list(s_row.values[:5])
-                while len(vals_list) < 5: vals_list.append(0)
-                ent_seg_matrix_data.append((str(s_name), vals_list, quotas_map_ent.get(str(s_name), 1000)))
+            e_seg_live = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290'])
+            quotas_map_e = {'R10-R60M': q_seg_r10_r60, 'R10m-R60m': q_seg_r10_r60, 'R60-R150M': q_seg_r60_r150, 'R60m-R150': q_seg_r60_r150, 'R150M+': q_seg_r150_plus, 'R150m+': q_seg_r150_plus}
+            ent_matrix_rows = [(str(s_name), list(s_row.values[:5]), quotas_map_e.get(str(s_name), 1000)) for s_name, s_row in e_seg_live.iterrows()]
+        else:
+            ent_matrix_rows = [
+                ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60),
+                ("R60-R150M", [43, 38, 90, 55, 21], q_seg_r60_r150),
+                ("R150M+", [44, 29, 41, 37, 34], q_seg_r150_plus)
+            ]
 
-        for idx, (s_name, s_vals, quota_val) in enumerate(ent_seg_matrix_data, start=3):
+        for idx, (s_name, s_vals, quota_val) in enumerate(ent_matrix_rows, start=3):
             ws_ent.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
             for v_idx, val in enumerate(s_vals, start=11):
                 c = ws_ent.cell(row=idx, column=v_idx, value=int(val))
@@ -723,29 +626,25 @@ with tab1:
             cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
             cell.alignment = CENTER_ALIGN
 
-        ent_crosstab_rows = [
-            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
-            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
-            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
-            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
-            ("KZN INLAND", [30, 11, 9]), ("LIMPOPO", [23, 12, 11]),
-            ("MIDRAND", [39, 10, 7]), ("MPUMALANGA", [42, 10, 15]),
-            ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
-            ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
-        ]
         if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V44011' in df_r10_live.columns:
             live_e_cross = pd.crosstab(df_r10_live['V12290'], df_r10_live['V44011'])
-            ent_crosstab_rows = []
-            for r_name, r_vals in live_e_cross.iterrows():
-                vals_list = list(r_vals.values[:3])
-                while len(vals_list) < 3: vals_list.append(0)
-                ent_crosstab_rows.append((str(r_name), vals_list))
-
+            ent_crosstab_rows = [(str(r_name), list(r_vals.values[:3])) for r_name, r_vals in live_e_cross.iterrows()]
+        else:
+            ent_crosstab_rows = [
+                ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
+                ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
+                ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
+                ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
+                ("KZN INLAND", [30, 11, 9]), ("LIMPOPO", [23, 12, 11]),
+                ("MIDRAND", [39, 10, 7]), ("MPUMALANGA", [42, 10, 15]),
+                ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
+                ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
+            ]
         for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
             r_idx = ecross_start_row + 2 + idx_offset
             ws_ent.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
             for v_idx, val in enumerate(vals, start=3):
-                c = ws_ent.cell(row=r_idx, column=v_idx, value=int(val))
+                c = ws_ent.cell(row=r_idx, column=v_idx, value=val)
                 c.border = THIN_BORDER
                 c.alignment = CENTER_ALIGN
             tot_c = ws_ent.cell(row=r_idx, column=6, value=f"=SUM(C{r_idx}:E{r_idx})")
@@ -778,38 +677,32 @@ with tab1:
             cell.font = WHITE_BOLD_FONT
             cell.alignment = CENTER_ALIGN
 
-        pub_rows_data = [
-            ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4],
-            ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0],
-            ["PUBLIC SECTOR LOCAL GOVERMENT", 0, 0, 1, 0, 0, 0, 0, 1, 0],
-            ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1],
-            ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1]
-        ]
         if df_pub_live is not None and 'V12290' in df_pub_live.columns and 'V13290' in df_pub_live.columns:
-            live_p_cross = pd.crosstab(df_pub_live['V13290'], df_pub_live['V12290'])
-            pub_rows_data = []
-            for r_name, r_vals in live_p_cross.iterrows():
-                vals_list = list(r_vals.values[:9])
-                while len(vals_list) < 9: vals_list.append(0)
-                pub_rows_data.append([str(r_name)] + [int(v) for v in vals_list])
-
+            p_cross_live = pd.crosstab(df_pub_live['V13290'], df_pub_live['V12290'])
+            pub_rows_data = [[str(r_name)] + list(r_vals.values[:9]) for r_name, r_vals in p_cross_live.iterrows()]
+        else:
+            pub_rows_data = [
+                ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4],
+                ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0],
+                ["PUBLIC SECTOR LOCAL GOVERMENT", 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1],
+                ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1]
+            ]
         for row_offset, prow in enumerate(pub_rows_data, start=3):
             ws_pub.cell(row=row_offset, column=2, value=prow[0]).border = THIN_BORDER
             for val_idx, val in enumerate(prow[1:], start=3):
-                c = ws_pub.cell(row=row_offset, column=val_idx, value=val)
+                c = ws_pub.cell(row=row_offset, column=val_idx, value=int(val))
                 c.border = THIN_BORDER
                 c.alignment = CENTER_ALIGN
-            last_let_pub = openpyxl.utils.get_column_letter(len(prow) + 1)
-            tot_c = ws_pub.cell(row=row_offset, column=len(prow) + 2, value=f"=SUM(C{row_offset}:{last_let_pub}{row_offset})")
+            tot_c = ws_pub.cell(row=row_offset, column=12, value=f"=SUM(C{row_offset}:K{row_offset})")
             tot_c.border = THIN_BORDER
             tot_c.alignment = CENTER_ALIGN
 
         pub_tot_row = len(pub_rows_data) + 3
         ws_pub.cell(row=pub_tot_row, column=2, value="").border = THIN_BORDER
-        max_pub_col = len(pub_headers) + 1
-        for c_idx in range(3, max_pub_col + 1):
+        for c_idx in range(3, 13):
             col_let = openpyxl.utils.get_column_letter(c_idx)
             c = ws_pub.cell(row=pub_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{pub_tot_row-1})")
             c.border = THIN_BORDER
@@ -843,7 +736,6 @@ with tab1:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_status_excel_final"
         )
-
 
 # =========================================================================
 # =========================================================================
