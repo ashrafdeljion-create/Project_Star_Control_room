@@ -97,7 +97,7 @@ with tab1:
     st.markdown("Monitor overall sample quotas achieved, view executive summaries across portfolios, and download the PM Project Status Update report.")
 
     st.markdown("---")
-    st.subheader("⚙️ Live Quota Target Adjustments")
+    st.subheader("⚙️️ Live Quota Target Adjustments")
     
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=5, key="target_bus")
@@ -228,12 +228,21 @@ with tab1:
     
     sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🟢 Business Breakdown", "🔵 Enterprise Breakdown", "🟠 PUBSC Breakdown"])
     
+    standard_bus_regions = ["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"]
+    standard_ent_regions = ["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal"]
+
     with sub_tab1:
         st.markdown("#### Business Regional Breakdown (Left Table)")
         if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
-            bus_crosstab_live = pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290'])
+            temp_df = df_grow_live.copy()
+            # Map subregions dynamically into the 5 standard columns if needed
+            bus_crosstab_live = pd.crosstab(temp_df['V12290'], temp_df['V13290'])
+            for col in standard_bus_regions:
+                if col not in bus_crosstab_live.columns:
+                    bus_crosstab_live[col] = 0
+            bus_crosstab_live = bus_crosstab_live[standard_bus_regions]
             bus_preview_df = bus_crosstab_live.reset_index().rename(columns={'V12290': 'Region'})
-            bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
+            bus_preview_df["Total"] = bus_preview_df[standard_bus_regions].sum(axis=1)
         else:
             bus_preview_df = pd.DataFrame({
                 "Region": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
@@ -249,8 +258,12 @@ with tab1:
         st.markdown("#### Business Segment Breakdown Matrix (Right Table with Quotas & Outstanding)")
         if df_grow_live is not None and 'V44011' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
             bus_seg_crosstab = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290'])
+            for col in standard_bus_regions:
+                if col not in bus_seg_crosstab.columns:
+                    bus_seg_crosstab[col] = 0
+            bus_seg_crosstab = bus_seg_crosstab[standard_bus_regions]
             bus_seg_df = bus_seg_crosstab.reset_index().rename(columns={'V44011': 'Business'})
-            bus_seg_df["Total"] = bus_seg_df.iloc[:, 1:].sum(axis=1)
+            bus_seg_df["Total"] = bus_seg_df[standard_bus_regions].sum(axis=1)
             quotas_list = [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60]
             bus_seg_df["Quota"] = [quotas_list[i] if i < len(quotas_list) else 1000 for i in range(len(bus_seg_df))]
             bus_seg_df["Outstanding"] = bus_seg_df["Quota"] - bus_seg_df["Total"]
@@ -292,8 +305,12 @@ with tab1:
         st.markdown("#### Enterprise Regional Breakdown")
         if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
             ent_crosstab_live = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290'])
+            for col in standard_ent_regions:
+                if col not in ent_crosstab_live.columns:
+                    ent_crosstab_live[col] = 0
+            ent_crosstab_live = ent_crosstab_live[standard_ent_regions]
             ent_preview_df = ent_crosstab_live.reset_index().rename(columns={'V12290': 'REGION'})
-            ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
+            ent_preview_df["Total"] = ent_preview_df[standard_ent_regions].sum(axis=1)
         else:
             ent_preview_df = pd.DataFrame({
                 "REGION": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", "Gauteng South-West", "Gauteng Tshwane", "Greater Sandton", "KZN Coastal", "KZN Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", "Northern Cape", "Western Cape Inland", "Western Cape Metro"],
@@ -309,8 +326,12 @@ with tab1:
         st.markdown("#### Enterprise Segment Breakdown Matrix")
         if df_r10_live is not None and 'V44011' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
             ent_seg_crosstab = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290'])
+            for col in standard_ent_regions:
+                if col not in ent_seg_crosstab.columns:
+                    ent_seg_crosstab[col] = 0
+            ent_seg_crosstab = ent_seg_crosstab[standard_ent_regions]
             ent_seg_df = ent_seg_crosstab.reset_index().rename(columns={'V44011': 'Enterprise'})
-            ent_seg_df["Total"] = ent_seg_df.iloc[:, 1:].sum(axis=1)
+            ent_seg_df["Total"] = ent_seg_df[standard_ent_regions].sum(axis=1)
             quotas_list_ent = [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus]
             ent_seg_df["Quota"] = [quotas_list_ent[i] if i < len(quotas_list_ent) else 1000 for i in range(len(ent_seg_df))]
             ent_seg_df["Outstanding"] = ent_seg_df["Quota"] - ent_seg_df["Total"]
@@ -408,7 +429,11 @@ with tab1:
         
         if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
             b_cross_live = pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290'])
-            reg_cols = list(b_cross_live.columns)
+            for col in standard_bus_regions:
+                if col not in b_cross_live.columns:
+                    b_cross_live[col] = 0
+            b_cross_live = b_cross_live[standard_bus_regions]
+            reg_cols = standard_bus_regions
             for c_idx, reg_name in enumerate(reg_cols, start=3):
                 cell = ws_bus.cell(row=2, column=c_idx, value=str(reg_name))
                 cell.fill = FNB_TEAL
@@ -464,7 +489,7 @@ with tab1:
 
         ws_bus.cell(row=tot_row_idx, column=2, value="TOTAL INLC R10-R60MIL").fill = FNB_TEAL
         ws_bus.cell(row=tot_row_idx, column=2).font = WHITE_BOLD_FONT
-        max_col_bus_left = 8 if df_grow_live is None or 'V13290' not in df_grow_live.columns else len(pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290']).columns) + 3
+        max_col_bus_left = 8 if df_grow_live is None or 'V13290' not in df_grow_live.columns else len(standard_bus_regions) + 3
         for c_idx in range(3, max_col_bus_left + 1):
             col_let = openpyxl.utils.get_column_letter(c_idx)
             c = ws_bus.cell(row=tot_row_idx, column=c_idx, value=f"=SUM({col_let}3:{col_let}{tot_row_idx-1})")
@@ -489,6 +514,10 @@ with tab1:
         ]
         if df_grow_live is not None and 'V44011' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
             live_seg_tab = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290'])
+            for col in standard_bus_regions:
+                if col not in live_seg_tab.columns:
+                    live_seg_tab[col] = 0
+            live_seg_tab = live_seg_tab[standard_bus_regions]
             quotas_map = {'R0m-R1m': q_seg_r0_r1, 'R0M-R1M': q_seg_r0_r1, 'R1m-R5m': q_seg_r1_r5, 'R1M-R5M': q_seg_r1_r5, 'R5m-R10': q_seg_r5_r10, 'R5M-R10M': q_seg_r5_r10, 'R10-R60M': q_seg_r10_r60, 'R10m-R60m': q_seg_r10_r60}
             bus_seg_matrix_data = []
             for s_name, s_row in live_seg_tab.iterrows():
@@ -574,7 +603,11 @@ with tab1:
         
         if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
             ent_cross_live = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290'])
-            ent_reg_cols = list(ent_cross_live.columns)
+            for col in standard_ent_regions:
+                if col not in ent_cross_live.columns:
+                    ent_cross_live[col] = 0
+            ent_cross_live = ent_cross_live[standard_ent_regions]
+            ent_reg_cols = standard_ent_regions
             for c_idx, reg_name in enumerate(ent_reg_cols, start=3):
                 cell = ws_ent.cell(row=2, column=c_idx, value=str(reg_name))
                 cell.fill = FNB_TEAL
@@ -629,7 +662,7 @@ with tab1:
 
         ws_ent.cell(row=ent_tot_row, column=2, value="TOTAL EXCL R10 to R60MIL").fill = FNB_TEAL
         ws_ent.cell(row=ent_tot_row, column=2).font = WHITE_BOLD_FONT
-        max_col_ent_left = 8 if df_r10_live is None or 'V13290' not in df_r10_live.columns else len(pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290']).columns) + 3
+        max_col_ent_left = 8 if df_r10_live is None or 'V13290' not in df_r10_live.columns else len(standard_ent_regions) + 3
         for c_idx in range(3, max_col_ent_left + 1):
             col_let = openpyxl.utils.get_column_letter(c_idx)
             c = ws_ent.cell(row=ent_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{ent_tot_row-1})")
@@ -653,6 +686,10 @@ with tab1:
         ]
         if df_r10_live is not None and 'V44011' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
             live_ent_seg_tab = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290'])
+            for col in standard_ent_regions:
+                if col not in live_ent_seg_tab.columns:
+                    live_ent_seg_tab[col] = 0
+            live_ent_seg_tab = live_ent_seg_tab[standard_ent_regions]
             quotas_map_ent = {'R10-R60M': q_seg_r10_r60, 'R10m-R60m': q_seg_r10_r60, 'R60-R150M': q_seg_r60_r150, 'R60m-R150': q_seg_r60_r150, 'R150M+': q_seg_r150_plus, 'R150m+': q_seg_r150_plus}
             ent_seg_matrix_data = []
             for s_name, s_row in live_ent_seg_tab.iterrows():
