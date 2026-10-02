@@ -193,9 +193,9 @@ with tab1:
     sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🟢 Business Breakdown", "🔵 Enterprise Breakdown", "🟠 PUBSC Breakdown"])
     
     with sub_tab1:
-        st.markdown("#### Business Regional Breakdown (Swapped: Sub-regions as Columns)")
+        st.markdown("#### Business Regional Breakdown")
         bus_preview_df = pd.DataFrame({
-            "Business": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng Tshwane South", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
+            "Region": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng Tshwane South", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
             "Cape": [181, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105],
             "Gauteng North": [0, 0, 0, 0, 65, 63, 0, 0, 148, 59, 0, 0, 0, 0, 0, 0, 0, 0],
             "Gauteng South Central": [0, 0, 88, 93, 0, 0, 0, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -205,7 +205,7 @@ with tab1:
         bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(bus_preview_df, use_container_width=True, hide_index=True)
 
-        st.markdown("#### Business Segment Breakdown Matrix (Right Table with Quotas & Outstanding)")
+        st.markdown("#### Business Segment Breakdown Matrix")
         bus_seg_df = pd.DataFrame({
             "Business": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M"],
             "Cape": [159, 81, 45, 56],
@@ -219,23 +219,29 @@ with tab1:
         })
         st.dataframe(bus_seg_df, use_container_width=True, hide_index=True)
 
-        st.markdown("#### Business Regional vs. Segments Crosstab (Swapped: Sub-regions as Columns)")
+        st.markdown("#### Business Regional vs. Segments Crosstab (Regions as Rows, Segments as Columns)")
         bus_crosstab_df = pd.DataFrame({
-            "Busines": ["R0m-R1m", "R1m-R5m", "R5m-R10"],
-            "Eastern Cape": [121, 45, 15],
-            "Free State": [29, 26, 5],
-            "Gauteng East": [32, 22, 34],
-            "Gauteng South Central": [50, 21, 22],
-            "Gauteng Midrand": [27, 15, 17],
-            "Gauteng Tshwane East": [34, 18, 13],
-            "Gauteng Tshwane North": [24, 25, 14],
-            "Gauteng West-Rand": [34, 17, 16],
-            "Greater Sandton": [42, 32, 41],
-            "KZN North": [15, 15, 12],
-            "KZN South": [21, 10, 14],
-            "KZN West": [21, 18, 11]
+            "Busines": [
+                "Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", 
+                "Gauteng Midrand", "Gauteng Tshwane East", "Gauteng Tshwane North", 
+                "Gauteng West-Rand", "Greater Sandton", "KZN North", "KZN South", 
+                "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
+            ],
+            "R0m-R1m": [121, 29, 32, 50, 27, 34, 24, 34, 65, 15, 21, 21, 34, 40, 38, 19, 38],
+            "R1m-R5m": [45, 26, 22, 21, 15, 18, 25, 17, 42, 15, 10, 18, 22, 19, 22, 11, 37],
+            "R5m-R10": [15, 5, 34, 22, 17, 13, 14, 16, 41, 12, 14, 11, 10, 6, 12, 3, 30]
         })
-        bus_crosstab_df["TOTAL"] = bus_crosstab_df.iloc[:, 1:].sum(axis=1)
+        bus_crosstab_df["TOTAL"] = bus_crosstab_df["R0m-R1m"] + bus_crosstab_df["R1m-R5m"] + bus_crosstab_df["R5m-R10"]
+        
+        # Add TOTAL row at the bottom
+        total_row = pd.DataFrame({
+            "Busines": ["TOTAL"],
+            "R0m-R1m": [bus_crosstab_df["R0m-R1m"].sum()],
+            "R1m-R5m": [bus_crosstab_df["R1m-R5m"].sum()],
+            "R5m-R10": [bus_crosstab_df["R5m-R10"].sum()],
+            "TOTAL": [bus_crosstab_df["TOTAL"].sum()]
+        })
+        bus_crosstab_df = pd.concat([bus_crosstab_df, total_row], ignore_index=True)
         st.dataframe(bus_crosstab_df, use_container_width=True, hide_index=True)
 
     with sub_tab2:
@@ -265,20 +271,28 @@ with tab1:
         })
         st.dataframe(ent_seg_df, use_container_width=True, hide_index=True)
 
-        st.markdown("#### Enterprise Regional vs. Segments Crosstab (Swapped: Sub-regions as Columns)")
+        st.markdown("#### Enterprise Regional vs. Segments Crosstab (Regions as Rows, Segments as Columns)")
         ent_crosstab_df = pd.DataFrame({
-            "Enterprise": ["R10m-R60m", "R150m+", "R60m-R150"],
-            "EASTERN CAPE": [26, 8, 21],
-            "FREE STATE": [10, 5, 6],
-            "GAUTENG EAST": [40, 18, 31],
-            "GAUTENG KLIPRIVER": [36, 5, 28],
-            "GAUTENG TSHWANE": [32, 9, 19],
-            "GAUTENG WEST": [31, 18, 31],
-            "GREATER SANDTON": [34, 10, 12],
-            "KZN COASTAL": [52, 23, 12],
-            "KZN INLAND": [30, 11, 9]
+            "Enterprise": [
+                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
+                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
+                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
+                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
+            ],
+            "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
+            "R60m-R150": [21, 6, 31, 28, 19, 31, 12, 12, 9, 11, 7, 15, 11, 12, 2, 20],
+            "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20]
         })
-        ent_crosstab_df["TOTAL"] = ent_crosstab_df.iloc[:, 1:].sum(axis=1)
+        ent_crosstab_df["TOTAL"] = ent_crosstab_df["R10m-R60m"] + ent_crosstab_df["R60m-R150"] + ent_crosstab_df["R150m+"]
+        
+        ent_total_row = pd.DataFrame({
+            "Enterprise": ["TOTAL"],
+            "R10m-R60m": [ent_crosstab_df["R10m-R60m"].sum()],
+            "R60m-R150": [ent_crosstab_df["R60m-R150"].sum()],
+            "R150m+": [ent_crosstab_df["R150m+"].sum()],
+            "TOTAL": [ent_crosstab_df["TOTAL"].sum()]
+        })
+        ent_crosstab_df = pd.concat([ent_crosstab_df, ent_total_row], ignore_index=True)
         st.dataframe(ent_crosstab_df, use_container_width=True, hide_index=True)
 
     with sub_tab3:
@@ -419,8 +433,11 @@ with tab1:
             ("Gauteng East", [32, 22, 34]), ("Gauteng South Central", [50, 21, 22]),
             ("Gauteng Midrand", [27, 15, 17]), ("Gauteng Tshwane East", [34, 18, 13]),
             ("Gauteng Tshwane North", [24, 25, 14]), ("Gauteng West-Rand", [34, 17, 16]),
-            ("Greater Sandton", [42, 32, 41]), ("KZN North", [15, 15, 12]),
-            ("KZN South", [21, 10, 14]), ("KZN West", [21, 18, 11])
+            ("Greater Sandton", [65, 42, 41]), ("KZN North", [15, 15, 12]),
+            ("KZN South", [21, 10, 14]), ("KZN West", [21, 18, 11]),
+            ("Limpopo", [34, 22, 10]), ("Mpumalanga", [40, 19, 6]),
+            ("North West", [38, 22, 12]), ("Northern Cape", [19, 11, 3]),
+            ("Western Cape", [38, 37, 30])
         ]
         for idx_offset, (reg_name, vals) in enumerate(bus_crosstab_rows):
             r_idx = bcross_start_row + 2 + idx_offset
@@ -531,11 +548,14 @@ with tab1:
             cell.alignment = CENTER_ALIGN
 
         ent_crosstab_rows = [
-            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
-            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
-            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
-            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
-            ("KZN INLAND", [30, 11, 9])
+            ("EASTERN CAPE", [26, 21, 8]), ("FREE STATE", [10, 6, 5]),
+            ("GAUTENG EAST", [40, 31, 18]), ("GAUTENG KLIPRIVER", [36, 28, 5]),
+            ("GAUTENG TSHWANE", [32, 19, 9]), ("GAUTENG WEST", [31, 31, 18]),
+            ("GREATER SANDTON", [34, 12, 10]), ("KZN COASTAL", [52, 12, 23]),
+            ("KZN INLAND", [30, 9, 11]), ("LIMPOPO", [23, 11, 12]),
+            ("MIDRAND", [39, 7, 10]), ("MPUMALANGA", [42, 15, 10]),
+            ("NORTH WEST", [22, 11, 8]), ("NORTHERN CAPE", [12, 12, 2]),
+            ("WESTERN CAPE INLAND", [17, 2, 16]), ("WESTERN CAPE METRO", [13, 20, 20])
         ]
         for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
             r_idx = ecross_start_row + 2 + idx_offset
@@ -629,7 +649,6 @@ with tab1:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_status_excel_final"
         )
-
 
 # =========================================================================
 # =========================================================================
