@@ -18,7 +18,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 st.set_page_config(
     page_title="Project Star: One-Stop Operations Hub",
-    page_icon="⭐",
+    page_icon="?",
     layout="wide"
 )
 
@@ -71,7 +71,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("⭐ Project Star: One-Stop Operations Hub")
+st.title("? Project Star: One-Stop Operations Hub")
 st.markdown("Your unified command center for Project Status, Weekly 911's pipeline automation, NPS Excel reports, Q11 extractions, and Yearly Dashboard generation.")
 
 
@@ -79,11 +79,11 @@ st.markdown("Your unified command center for Project Status, Weekly 911's pipeli
 # SECTION 3: DEFINING MAIN APP NAVIGATION TABS (5 Tabs Total)
 # =========================================================================
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📋 Project Status & Quotas Update",
-    "⚡ Weekly 911's Control Room", 
-    "📊 NPS Dashboard & Data Generator", 
-    "📈 Q11 Ratings & Reasons Extraction",
-    "📈 NPS Yearly Dashboard"
+    "?? Project Status & Quotas Update",
+    "? Weekly 911's Control Room", 
+    "?? NPS Dashboard & Data Generator", 
+    "?? Q11 Ratings & Reasons Extraction",
+    "?? NPS Yearly Dashboard"
 ])
 
 
@@ -93,11 +93,11 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ==========================================================================
 # ==========================================================================
 with tab1:
-    st.markdown("### 📋 Project Status & Quotas Update Hub")
+    st.markdown("### ?? Project Status & Quotas Update Hub")
     st.markdown("Monitor overall sample quotas achieved, view executive summaries across portfolios, and download the PM Project Status Update report.")
 
     st.markdown("---")
-    st.subheader("⚙️ Live Quota Target Adjustments")
+    st.subheader("?? Live Quota Target Adjustments")
     
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=5, key="target_bus")
@@ -106,7 +106,7 @@ with tab1:
 
     # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW ---
     st.markdown("---")
-    st.subheader("⚙️ Segment-Level Quota Breakdown Inputs")
+    st.subheader("?? Segment-Level Quota Breakdown Inputs")
     st.markdown("Specify exact individual segment quotas below for detailed tracking and Excel report integration:")
 
     col_seg1, col_seg2, col_seg3, col_seg4 = st.columns(4)
@@ -122,42 +122,34 @@ with tab1:
     total_target_val = target_business + target_enterprise + target_pubsc
 
     st.markdown("---")
-    st.subheader("📁 Upload Latest SPSS Datasets for Live Status Calculation")
+    st.subheader("?? Upload Latest SPSS Datasets for Live Status Calculation")
     col_up1, col_up2, col_up3 = st.columns(3)
     with col_up1: status_file_grow = st.file_uploader("Upload Growth (.sav)", type=["sav"], key="status_grow")
     with col_up2: status_file_r10 = st.file_uploader("Upload R10Mil (.sav)", type=["sav"], key="status_r10")
     with col_up3: status_file_pub = st.file_uploader("Upload PUBW (.sav)", type=["sav"], key="status_pub")
 
-    def load_spss_df(uploaded_file):
+    def get_achieved_count(uploaded_file):
         if uploaded_file is None: return None
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
             tmp.write(uploaded_file.getvalue())
             tmp_path = tmp.name
         try:
-            df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
-            return df
+            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
+            return len(df)
         except:
-            try:
-                df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
-                return df
-            except:
-                return None
+            return 0
         finally:
             if os.path.exists(tmp_path): os.remove(tmp_path)
 
-    df_grow_live = load_spss_df(status_file_grow)
-    df_r10_live = load_spss_df(status_file_r10)
-    df_pub_live = load_spss_df(status_file_pub)
-
-    achieved_business = len(df_grow_live) if df_grow_live is not None else 1721
-    achieved_enterprise = len(df_r10_live) if df_r10_live is not None else 432
-    achieved_pubsc = len(df_pub_live) if df_pub_live is not None else 184
+    achieved_business = get_achieved_count(status_file_grow) if status_file_grow else 1721
+    achieved_enterprise = get_achieved_count(status_file_r10) if status_file_r10 else 432
+    achieved_pubsc = get_achieved_count(status_file_pub) if status_file_pub else 184
 
     total_achieved_val = achieved_business + achieved_enterprise + achieved_pubsc
     total_outstanding_val = total_target_val - total_achieved_val
 
     st.markdown("---")
-    st.subheader("📊 Executive Summary Overview")
+    st.subheader("?? Executive Summary Overview")
     
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total Target Quota", f"{total_target_val:,}")
@@ -174,23 +166,9 @@ with tab1:
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
     # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
-    st.markdown("#### 📊 Segment Quotas Executive Summary Breakdown")
-    
-    if df_grow_live is not None and 'V44011' in df_grow_live.columns:
-        seg_counts = df_grow_live['V44011'].astype(str).value_counts()
-        achieved_r0_r1 = seg_counts.get('R0m-R1m', seg_counts.get('R0M-R1M', 616))
-        achieved_r1_r5 = seg_counts.get('R1m-R5m', seg_counts.get('R1M-R5M', 371))
-        achieved_r5_r10 = seg_counts.get('R5m-R10', seg_counts.get('R5M-R10M', 275))
-        achieved_r10_r60 = seg_counts.get('R10-R60M', seg_counts.get('R10m-R60m', 459))
-    else:
-        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
-
-    if df_r10_live is not None and 'V44011' in df_r10_live.columns:
-        seg_counts_ent = df_r10_live['V44011'].astype(str).value_counts()
-        achieved_r60_r150 = seg_counts_ent.get('R60m-R150', seg_counts_ent.get('R60-R150M', 247))
-        achieved_r150_plus = seg_counts_ent.get('R150m+', seg_counts_ent.get('R150M+', 185))
-    else:
-        achieved_r60_r150, achieved_r150_plus = 247, 185
+    st.markdown("#### ?? Segment Quotas Executive Summary Breakdown")
+    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
+    achieved_r60_r150, achieved_r150_plus = 247, 185
     
     total_seg_target = q_seg_r0_r1 + q_seg_r1_r5 + q_seg_r5_r10 + q_seg_r10_r60 + q_seg_r60_r150 + q_seg_r150_plus
     total_seg_achieved = achieved_r0_r1 + achieved_r1_r5 + achieved_r5_r10 + achieved_r10_r60 + achieved_r60_r150 + achieved_r150_plus
@@ -211,150 +189,109 @@ with tab1:
 
     # --- Live Visual Previews inside App Dashboard ---
     st.markdown("---")
-    st.subheader("🔍 Live Regional & Segment Breakdown Tables")
+    st.subheader("?? Live Regional & Segment Breakdown Tables")
     
-    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🟢 Business Breakdown", "🔵 Enterprise Breakdown", "🟠 PUBSC Breakdown"])
+    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["?? Business Breakdown", "?? Enterprise Breakdown", "?? PUBSC Breakdown"])
     
     with sub_tab1:
         st.markdown("#### Business Regional Breakdown (Left Table)")
-        if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
-            bus_crosstab_live = pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290'])
-            bus_preview_df = bus_crosstab_live.reset_index().rename(columns={'V12290': 'Region'})
-            bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
-        else:
-            bus_preview_df = pd.DataFrame({
-                "Region": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
-                "Cape": [180, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105],
-                "Gauteng North": [0, 0, 0, 0, 65, 63, 0, 115, 59, 0, 0, 0, 0, 0, 0, 0, 0],
-                "Gauteng South Central": [0, 0, 88, 93, 0, 0, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                "Inland": [0, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 65, 72, 33, 0],
-                "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 45, 50, 0, 0, 0, 0, 0]
-            })
-            bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
+        bus_preview_df = pd.DataFrame({
+            "Region": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
+            "Cape": [180, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105],
+            "Gauteng North": [0, 0, 0, 0, 65, 63, 0, 115, 59, 0, 0, 0, 0, 0, 0, 0, 0],
+            "Gauteng South Central": [0, 0, 88, 93, 0, 0, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "Inland": [0, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 65, 72, 33, 0],
+            "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 45, 50, 0, 0, 0, 0, 0]
+        })
+        bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(bus_preview_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Business Segment Breakdown Matrix (Right Table with Quotas & Outstanding)")
-        if df_grow_live is not None and 'V44011' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
-            bus_seg_crosstab = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290'])
-            bus_seg_df = bus_seg_crosstab.reset_index().rename(columns={'V44011': 'Business'})
-            bus_seg_df["Total"] = bus_seg_df.iloc[:, 1:].sum(axis=1)
-            quotas_list = [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60]
-            bus_seg_df["Quota"] = [quotas_list[i] if i < len(quotas_list) else 1000 for i in range(len(bus_seg_df))]
-            bus_seg_df["Outstanding"] = bus_seg_df["Quota"] - bus_seg_df["Total"]
-        else:
-            bus_seg_df = pd.DataFrame({
-                "Business": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M"],
-                "Cape": [159, 81, 45, 56],
-                "Gauteng North": [127, 90, 85, 105],
-                "Gauteng South Central": [116, 60, 72, 107],
-                "Inland": [157, 97, 36, 109],
-                "KwaZulu-Natal": [57, 43, 37, 82],
-                "Total": [616, 371, 275, 459],
-                "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
-                "Outstanding": [q_seg_r0_r1 - 616, q_seg_r1_r5 - 371, q_seg_r5_r10 - 275, q_seg_r10_r60 - 459]
-            })
+        bus_seg_df = pd.DataFrame({
+            "Business": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M"],
+            "Cape": [159, 81, 45, 56],
+            "Gauteng North": [127, 90, 85, 105],
+            "Gauteng South Central": [116, 60, 72, 107],
+            "Inland": [157, 97, 36, 109],
+            "KwaZulu-Natal": [57, 43, 37, 82],
+            "Total": [616, 371, 275, 459],
+            "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
+            "Outstanding": [q_seg_r0_r1 - 616, q_seg_r1_r5 - 371, q_seg_r5_r10 - 275, q_seg_r10_r60 - 459]
+        })
         st.dataframe(bus_seg_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Business Regional vs. Segments Crosstab")
-        if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V44011' in df_grow_live.columns:
-            bus_crosstab_df = pd.crosstab(df_grow_live['V12290'], df_grow_live['V44011']).reset_index().rename(columns={'V12290': 'Busines'})
-            numeric_cols = [c for c in bus_crosstab_df.columns if c != 'Busines']
-            bus_crosstab_df["TOTAL"] = bus_crosstab_df[numeric_cols].sum(axis=1)
-        else:
-            bus_crosstab_df = pd.DataFrame({
-                "Busines": [
-                    "Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", 
-                    "Gauteng Midrand", "Gauteng Tshwane East", "Gauteng Tshwane North", 
-                    "Gauteng West-Rand", "Greater Sandton", "KZN North", "KZN South", 
-                    "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
-                ],
-                "R0m-R1m": [121, 26, 32, 50, 27, 34, 24, 34, 42, 15, 21, 21, 34, 40, 38, 19, 38],
-                "R1m-R5m": [44, 23, 22, 21, 15, 18, 25, 17, 32, 15, 10, 18, 22, 19, 22, 11, 37],
-                "R5m-R10": [15, 5, 34, 22, 17, 13, 14, 16, 41, 12, 14, 11, 10, 6, 12, 3, 30]
-            })
-            bus_crosstab_df["TOTAL"] = bus_crosstab_df["R0m-R1m"] + bus_crosstab_df["R1m-R5m"] + bus_crosstab_df["R5m-R10"]
+        bus_crosstab_df = pd.DataFrame({
+            "Busines": [
+                "Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", 
+                "Gauteng Midrand", "Gauteng Tshwane East", "Gauteng Tshwane North", 
+                "Gauteng West-Rand", "Greater Sandton", "KZN North", "KZN South", 
+                "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
+            ],
+            "R0m-R1m": [121, 26, 32, 50, 27, 34, 24, 34, 42, 15, 21, 21, 34, 40, 38, 19, 38],
+            "R1m-R5m": [44, 23, 22, 21, 15, 18, 25, 17, 32, 15, 10, 18, 22, 19, 22, 11, 37],
+            "R5m-R10": [15, 5, 34, 22, 17, 13, 14, 16, 41, 12, 14, 11, 10, 6, 12, 3, 30]
+        })
+        bus_crosstab_df["TOTAL"] = bus_crosstab_df["R0m-R1m"] + bus_crosstab_df["R1m-R5m"] + bus_crosstab_df["R5m-R10"]
         st.dataframe(bus_crosstab_df, use_container_width=True, hide_index=True)
 
     with sub_tab2:
         st.markdown("#### Enterprise Regional Breakdown")
-        if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
-            ent_crosstab_live = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290'])
-            ent_preview_df = ent_crosstab_live.reset_index().rename(columns={'V12290': 'REGION'})
-            ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
-        else:
-            ent_preview_df = pd.DataFrame({
-                "REGION": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", "Gauteng South-West", "Gauteng Tshwane", "Greater Sandton", "KZN Coastal", "KZN Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", "Northern Cape", "Western Cape Inland", "Western Cape Metro"],
-                "Cape": [55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 53],
-                "Gauteng South & Central": [0, 0, 0, 0, 0, 60, 56, 0, 0, 0, 56, 0, 0, 0, 0, 0],
-                "Gauteng-North": [0, 0, 89, 69, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                "Inland": [0, 21, 0, 0, 0, 0, 0, 0, 0, 46, 0, 67, 41, 26, 0, 0],
-                "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 87, 50, 0, 0, 0, 0, 0, 0, 0]
-            })
-            ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
+        ent_preview_df = pd.DataFrame({
+            "REGION": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", "Gauteng South-West", "Gauteng Tshwane", "Greater Sandton", "KZN Coastal", "KZN Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", "Northern Cape", "Western Cape Inland", "Western Cape Metro"],
+            "Cape": [55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 53],
+            "Gauteng South & Central": [0, 0, 0, 0, 0, 60, 56, 0, 0, 0, 56, 0, 0, 0, 0, 0],
+            "Gauteng-North": [0, 0, 89, 69, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "Inland": [0, 21, 0, 0, 0, 0, 0, 0, 0, 46, 0, 67, 41, 26, 0, 0],
+            "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 87, 50, 0, 0, 0, 0, 0, 0, 0]
+        })
+        ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(ent_preview_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Enterprise Segment Breakdown Matrix")
-        if df_r10_live is not None and 'V44011' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
-            ent_seg_crosstab = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290'])
-            ent_seg_df = ent_seg_crosstab.reset_index().rename(columns={'V44011': 'Enterprise'})
-            ent_seg_df["Total"] = ent_seg_df.iloc[:, 1:].sum(axis=1)
-            quotas_list_ent = [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus]
-            ent_seg_df["Quota"] = [quotas_list_ent[i] if i < len(quotas_list_ent) else 1000 for i in range(len(ent_seg_df))]
-            ent_seg_df["Outstanding"] = ent_seg_df["Quota"] - ent_seg_df["Total"]
-        else:
-            ent_seg_df = pd.DataFrame({
-                "Enterprise": ["R10-R60M", "R60-R150M", "R150M+"],
-                "Cape": [56, 43, 44],
-                "Gauteng-North": [105, 38, 29],
-                "Gauteng South and Central": [107, 90, 41],
-                "Inland": [109, 55, 37],
-                "KwaZulu-Natal": [82, 21, 34],
-                "Total": [459, 247, 185],
-                "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
-                "Outstanding": [q_seg_r10_r60 - 459, q_seg_r60_r150 - 247, q_seg_r150_plus - 185]
-            })
+        ent_seg_df = pd.DataFrame({
+            "Enterprise": ["R10-R60M", "R60-R150M", "R150M+"],
+            "Cape": [56, 43, 44],
+            "Gauteng-North": [105, 38, 29],
+            "Gauteng South and Central": [107, 90, 41],
+            "Inland": [109, 55, 37],
+            "KwaZulu-Natal": [82, 21, 34],
+            "Total": [459, 247, 185],
+            "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
+            "Outstanding": [q_seg_r10_r60 - 459, q_seg_r60_r150 - 247, q_seg_r150_plus - 185]
+        })
         st.dataframe(ent_seg_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
-        if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V44011' in df_r10_live.columns:
-            ent_crosstab_df = pd.crosstab(df_r10_live['V12290'], df_r10_live['V44011']).reset_index().rename(columns={'V12290': 'Enterprise'})
-            numeric_cols_ent = [c for c in ent_crosstab_df.columns if c != 'Enterprise']
-            ent_crosstab_df["TOTAL"] = ent_crosstab_df[numeric_cols_ent].sum(axis=1)
-        else:
-            ent_crosstab_df = pd.DataFrame({
-                "Enterprise": [
-                    "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
-                    "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
-                    "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
-                    "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
-                ],
-                "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
-                "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
-                "R60m-R150": [21, 6, 31, 28, 19, 31, 12, 12, 9, 11, 7, 15, 11, 12, 2, 20]
-            })
-            ent_crosstab_df["TOTAL"] = ent_crosstab_df["R10m-R60m"] + ent_crosstab_df["R150m+"] + ent_crosstab_df["R60m-R150"]
+        ent_crosstab_df = pd.DataFrame({
+            "Enterprise": [
+                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
+                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
+                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
+                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
+            ],
+            "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
+            "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
+            "R60m-R150": [21, 6, 31, 28, 19, 31, 12, 12, 9, 11, 7, 15, 11, 12, 2, 20]
+        })
+        ent_crosstab_df["TOTAL"] = ent_crosstab_df["R10m-R60m"] + ent_crosstab_df["R150m+"] + ent_crosstab_df["R60m-R150"]
         st.dataframe(ent_crosstab_df, use_container_width=True, hide_index=True)
 
     with sub_tab3:
         st.markdown("#### Public Sector (PUBSC) Breakdown")
-        if df_pub_live is not None and 'V12290' in df_pub_live.columns and 'V13290' in df_pub_live.columns:
-            pub_crosstab_live = pd.crosstab(df_pub_live['V13290'], df_pub_live['V12290'])
-            pub_preview_df = pub_crosstab_live.reset_index().rename(columns={'V13290': 'Organization Type'})
-            pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
-        else:
-            pub_preview_df = pd.DataFrame({
-                "Organization Type": ["Non-Profit Organisation", "Public Sector Colleges & FET's", "Public Sector Embassies", "Public Sector Local Government", "Public Sector Provincial Government", "Public Sector Public Schools", "Public Sector Unions & Politics"],
-                "Eastern Cape": [4, 0, 0, 0, 0, 8, 0],
-                "Free State": [1, 0, 0, 0, 0, 1, 0],
-                "Gauteng": [80, 1, 2, 1, 1, 34, 1],
-                "KwaZulu-Natal": [5, 0, 0, 0, 0, 12, 0],
-                "Limpopo": [5, 0, 0, 0, 0, 7, 0],
-                "Mpumalanga": [2, 0, 0, 0, 0, 5, 0],
-                "North West": [3, 0, 0, 0, 0, 2, 0],
-                "Northern Cape": [2, 0, 0, 1, 0, 0, 0],
-                "Western Cape": [4, 0, 0, 0, 0, 1, 1]
-            })
-            pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
+        pub_preview_df = pd.DataFrame({
+            "Organization Type": ["Non-Profit Organisation", "Public Sector Colleges & FET's", "Public Sector Embassies", "Public Sector Local Government", "Public Sector Provincial Government", "Public Sector Public Schools", "Public Sector Unions & Politics"],
+            "Eastern Cape": [4, 0, 0, 0, 0, 8, 0],
+            "Free State": [1, 0, 0, 0, 0, 1, 0],
+            "Gauteng": [80, 1, 2, 1, 1, 34, 1],
+            "KwaZulu-Natal": [5, 0, 0, 0, 0, 12, 0],
+            "Limpopo": [5, 0, 0, 0, 0, 7, 0],
+            "Mpumalanga": [2, 0, 0, 0, 0, 5, 0],
+            "North West": [3, 0, 0, 0, 0, 2, 0],
+            "Northern Cape": [2, 0, 0, 1, 0, 0, 0],
+            "Western Cape": [4, 0, 0, 0, 0, 1, 1]
+        })
+        pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(pub_preview_df, use_container_width=True, hide_index=True)
 
     def generate_exact_pm_update_workbook():
@@ -385,7 +322,6 @@ with tab1:
         for _, row in summary_df.iterrows():
             ws_sum.append(["", row["Segment"], row["TOTAL Target"], row["TOTAL Achieved"], row["Total Outstanding"]])
 
-        # --- UPDATE BUSINESS SHEET ---
         ws_bus = wb.create_sheet(title='Update Business')
         ws_bus.cell(row=1, column=2, value="Region").fill = GRAY_HEADER
         ws_bus.merge_cells("B1:G1")
@@ -393,74 +329,47 @@ with tab1:
         
         ws_bus.cell(row=2, column=2, value="Business").fill = FNB_TEAL
         ws_bus.cell(row=2, column=2).font = WHITE_BOLD_FONT
+        
+        for c_idx, reg in enumerate(["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"], start=3):
+            cell = ws_bus.cell(row=2, column=c_idx, value=reg)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
 
-        # Populate Business Left Table Dynamically or Fallback
-        if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
-            b_cross_live = pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290'])
-            reg_cols = list(b_cross_live.columns)
-            for c_idx, reg_name in enumerate(reg_cols, start=3):
-                cell = ws_bus.cell(row=2, column=c_idx, value=str(reg_name))
-                cell.fill = FNB_TEAL
-                cell.font = WHITE_BOLD_FONT
-            tot_hdr_bus = ws_bus.cell(row=2, column=len(reg_cols) + 3, value="Total")
-            tot_hdr_bus.fill = FNB_TEAL
-            tot_hdr_bus.font = WHITE_BOLD_FONT
-            tot_hdr_bus.alignment = CENTER_ALIGN
-            tot_hdr_bus.border = THIN_BORDER
+        tot_hdr_bus = ws_bus.cell(row=2, column=8, value="Total")
+        tot_hdr_bus.fill = FNB_TEAL
+        tot_hdr_bus.font = WHITE_BOLD_FONT
+        tot_hdr_bus.alignment = CENTER_ALIGN
+        tot_hdr_bus.border = THIN_BORDER
 
-            for idx, (prov, r_row) in enumerate(b_cross_live.iterrows(), start=3):
-                ws_bus.cell(row=idx, column=2, value=str(prov)).border = THIN_BORDER
-                for v_idx, val in enumerate(r_row, start=3):
-                    c = ws_bus.cell(row=idx, column=v_idx, value=int(val))
-                    c.border = THIN_BORDER
-                    c.alignment = CENTER_ALIGN
-                last_c_idx = len(reg_cols) + 3
-                first_let = openpyxl.utils.get_column_letter(3)
-                last_let = openpyxl.utils.get_column_letter(last_c_idx - 1)
-                ws_bus.cell(row=idx, column=last_c_idx, value=f"=SUM({first_let}{idx}:{last_let}{idx})").border = THIN_BORDER
-            tot_row_idx = len(b_cross_live) + 3
-        else:
-            for c_idx, reg in enumerate(["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"], start=3):
-                cell = ws_bus.cell(row=2, column=c_idx, value=reg)
-                cell.fill = FNB_TEAL
-                cell.font = WHITE_BOLD_FONT
-            tot_hdr_bus = ws_bus.cell(row=2, column=8, value="Total")
-            tot_hdr_bus.fill = FNB_TEAL
-            tot_hdr_bus.font = WHITE_BOLD_FONT
-            tot_hdr_bus.alignment = CENTER_ALIGN
-            tot_hdr_bus.border = THIN_BORDER
+        bus_rows = [
+            ("Eastern Cape", [180, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 54, 0]),
+            ("Gauteng East", [0, 0, 88, 0, 0]), ("Gauteng South Central", [0, 0, 93, 0, 0]),
+            ("Gauteng Tshwane East", [0, 65, 0, 0, 0]), ("Gauteng Tshwane North", [0, 63, 0, 0, 0]),
+            ("Gauteng Tshwane South", [0, 0, 0, 0, 0]), ("Gauteng West-Rand", [0, 0, 67, 0, 0]),
+            ("Greater Sandton", [0, 115, 0, 0, 0]), ("Gauteng Midrand", [0, 59, 0, 0, 0]),
+            ("KZN North", [0, 0, 0, 0, 42]), ("KZN South", [0, 0, 0, 0, 45]),
+            ("KZN West", [0, 0, 0, 0, 50]), ("Limpopo", [0, 0, 0, 66, 0]),
+            ("Mpumalanga", [0, 0, 0, 65, 0]), ("North West", [0, 0, 0, 72, 0]),
+            ("Northern Cape", [0, 0, 0, 33, 0]), ("Western Cape", [105, 0, 0, 0, 0])
+        ]
+        for idx, (prov, vals) in enumerate(bus_rows, start=3):
+            ws_bus.cell(row=idx, column=2, value=prov).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_bus.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            ws_bus.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
 
-            bus_rows = [
-                ("Eastern Cape", [180, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 54, 0]),
-                ("Gauteng East", [0, 0, 88, 0, 0]), ("Gauteng South Central", [0, 0, 93, 0, 0]),
-                ("Gauteng Tshwane East", [0, 65, 0, 0, 0]), ("Gauteng Tshwane North", [0, 63, 0, 0, 0]),
-                ("Gauteng Tshwane South", [0, 0, 0, 0, 0]), ("Gauteng West-Rand", [0, 0, 67, 0, 0]),
-                ("Greater Sandton", [0, 115, 0, 0, 0]), ("Gauteng Midrand", [0, 59, 0, 0, 0]),
-                ("KZN North", [0, 0, 0, 0, 42]), ("KZN South", [0, 0, 0, 0, 45]),
-                ("KZN West", [0, 0, 0, 0, 50]), ("Limpopo", [0, 0, 0, 66, 0]),
-                ("Mpumalanga", [0, 0, 0, 65, 0]), ("North West", [0, 0, 0, 72, 0]),
-                ("Northern Cape", [0, 0, 0, 33, 0]), ("Western Cape", [105, 0, 0, 0, 0])
-            ]
-            for idx, (prov, vals) in enumerate(bus_rows, start=3):
-                ws_bus.cell(row=idx, column=2, value=prov).border = THIN_BORDER
-                for v_idx, val in enumerate(vals, start=3):
-                    c = ws_bus.cell(row=idx, column=v_idx, value=val)
-                    c.border = THIN_BORDER
-                    c.alignment = CENTER_ALIGN
-                ws_bus.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
-            tot_row_idx = len(bus_rows) + 3
-
+        tot_row_idx = len(bus_rows) + 3
         ws_bus.cell(row=tot_row_idx, column=2, value="TOTAL INLC R10-R60MIL").fill = FNB_TEAL
         ws_bus.cell(row=tot_row_idx, column=2).font = WHITE_BOLD_FONT
-        max_col_bus_left = 8 if df_grow_live is None or 'V13290' not in df_grow_live.columns else len(pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290']).columns) + 3
-        for c_idx in range(3, max_col_bus_left + 1):
+        for c_idx in range(3, 9):
             col_let = openpyxl.utils.get_column_letter(c_idx)
             c = ws_bus.cell(row=tot_row_idx, column=c_idx, value=f"=SUM({col_let}3:{col_let}{tot_row_idx-1})")
             c.fill = FNB_TEAL
             c.font = WHITE_BOLD_FONT
             c.border = THIN_BORDER
 
-        # Populate Business Right Matrix
         ws_bus.cell(row=1, column=11, value="Region").fill = GRAY_HEADER
         ws_bus.merge_cells("K1:P1")
         ws_bus.cell(row=2, column=10, value="Business").fill = FNB_TEAL
@@ -470,25 +379,15 @@ with tab1:
             cell.fill = FNB_TEAL if c_idx < 17 else (FNB_ORANGE if c_idx == 17 else RED_FILL)
             cell.font = WHITE_BOLD_FONT
 
-        bus_seg_matrix_data = [
+        for idx, (s_name, s_vals, quota_val) in enumerate([
             ("R0M-R1M", [159, 127, 116, 157, 57], q_seg_r0_r1),
             ("R1M-R5M", [81, 90, 60, 97, 43], q_seg_r1_r5),
             ("R5M-R10M", [45, 85, 72, 36, 37], q_seg_r5_r10),
             ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60)
-        ]
-        if df_grow_live is not None and 'V44011' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
-            live_seg_tab = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290'])
-            quotas_map = {'R0m-R1m': q_seg_r0_r1, 'R0M-R1M': q_seg_r0_r1, 'R1m-R5m': q_seg_r1_r5, 'R1M-R5M': q_seg_r1_r5, 'R5m-R10': q_seg_r5_r10, 'R5M-R10M': q_seg_r5_r10, 'R10-R60M': q_seg_r10_r60, 'R10m-R60m': q_seg_r10_r60}
-            bus_seg_matrix_data = []
-            for s_name, s_row in live_seg_tab.iterrows():
-                vals_list = list(s_row.values[:5])
-                while len(vals_list) < 5: vals_list.append(0)
-                bus_seg_matrix_data.append((str(s_name), vals_list, quotas_map.get(str(s_name), 1000)))
-
-        for idx, (s_name, s_vals, quota_val) in enumerate(bus_seg_matrix_data, start=3):
+        ], start=3):
             ws_bus.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
             for v_idx, val in enumerate(s_vals, start=11):
-                c = ws_bus.cell(row=idx, column=v_idx, value=int(val))
+                c = ws_bus.cell(row=idx, column=v_idx, value=val)
                 c.border = THIN_BORDER
                 c.alignment = CENTER_ALIGN
             ws_bus.cell(row=idx, column=16, value=f"=SUM(K{idx}:O{idx})").border = THIN_BORDER
@@ -498,7 +397,6 @@ with tab1:
             r_c.border = THIN_BORDER
             r_c.fill = RED_FILL
 
-        # Business Crosstab Bottom
         bcross_start_row = tot_row_idx + 4
         ws_bus.cell(row=bcross_start_row, column=2, value="SEGMENTS").fill = GRAY_HEADER
         ws_bus.merge_cells(start_row=bcross_start_row, start_column=3, end_row=bcross_start_row, end_column=5)
@@ -523,19 +421,11 @@ with tab1:
             ("North West", [38, 22, 12]), ("Northern Cape", [19, 11, 3]),
             ("Western Cape", [38, 37, 30])
         ]
-        if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V44011' in df_grow_live.columns:
-            live_b_cross = pd.crosstab(df_grow_live['V12290'], df_grow_live['V44011'])
-            bus_crosstab_rows = []
-            for r_name, r_vals in live_b_cross.iterrows():
-                vals_list = list(r_vals.values[:3])
-                while len(vals_list) < 3: vals_list.append(0)
-                bus_crosstab_rows.append((str(r_name), vals_list))
-
         for idx_offset, (reg_name, vals) in enumerate(bus_crosstab_rows):
             r_idx = bcross_start_row + 2 + idx_offset
             ws_bus.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
             for v_idx, val in enumerate(vals, start=3):
-                c = ws_bus.cell(row=r_idx, column=v_idx, value=int(val))
+                c = ws_bus.cell(row=r_idx, column=v_idx, value=val)
                 c.border = THIN_BORDER
                 c.alignment = CENTER_ALIGN
             tot_c = ws_bus.cell(row=r_idx, column=6, value=f"=SUM(C{r_idx}:E{r_idx})")
@@ -556,71 +446,44 @@ with tab1:
             c.border = THIN_BORDER
             c.alignment = CENTER_ALIGN
 
-        # --- UPDATE ENTERPRISE SHEET ---
         ws_ent = wb.create_sheet(title='Update Enterprise')
         ws_ent.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
         ws_ent.merge_cells("B1:G1")
         ws_ent.cell(row=2, column=2, value="Enterprise").fill = FNB_TEAL
         ws_ent.cell(row=2, column=2).font = WHITE_BOLD_FONT
+        for c_idx, reg in enumerate(["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal"], start=3):
+            cell = ws_ent.cell(row=2, column=c_idx, value=reg)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
 
-        if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
-            ent_cross_live = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290'])
-            ent_reg_cols = list(ent_cross_live.columns)
-            for c_idx, reg_name in enumerate(ent_reg_cols, start=3):
-                cell = ws_ent.cell(row=2, column=c_idx, value=str(reg_name))
-                cell.fill = FNB_TEAL
-                cell.font = WHITE_BOLD_FONT
-            tot_hdr_ent = ws_ent.cell(row=2, column=len(ent_reg_cols) + 3, value="Total")
-            tot_hdr_ent.fill = FNB_TEAL
-            tot_hdr_ent.font = WHITE_BOLD_FONT
-            tot_hdr_ent.alignment = CENTER_ALIGN
-            tot_hdr_ent.border = THIN_BORDER
+        tot_hdr_ent = ws_ent.cell(row=2, column=8, value="Total")
+        tot_hdr_ent.fill = FNB_TEAL
+        tot_hdr_ent.font = WHITE_BOLD_FONT
+        tot_hdr_ent.alignment = CENTER_ALIGN
+        tot_hdr_ent.border = THIN_BORDER
 
-            for idx, (prov, r_row) in enumerate(ent_cross_live.iterrows(), start=3):
-                ws_ent.cell(row=idx, column=2, value=str(prov)).border = THIN_BORDER
-                for v_idx, val in enumerate(r_row, start=3):
-                    c = ws_ent.cell(row=idx, column=v_idx, value=int(val))
-                    c.border = THIN_BORDER
-                    c.alignment = CENTER_ALIGN
-                last_c_idx = len(ent_reg_cols) + 3
-                first_let = openpyxl.utils.get_column_letter(3)
-                last_let = openpyxl.utils.get_column_letter(last_c_idx - 1)
-                ws_ent.cell(row=idx, column=last_c_idx, value=f"=SUM({first_let}{idx}:{last_let}{idx})").border = THIN_BORDER
-            ent_tot_row = len(ent_cross_live) + 3
-        else:
-            for c_idx, reg in enumerate(["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal"], start=3):
-                cell = ws_ent.cell(row=2, column=c_idx, value=reg)
-                cell.fill = FNB_TEAL
-                cell.font = WHITE_BOLD_FONT
-            tot_hdr_ent = ws_ent.cell(row=2, column=8, value="Total")
-            tot_hdr_ent.fill = FNB_TEAL
-            tot_hdr_ent.font = WHITE_BOLD_FONT
-            tot_hdr_ent.alignment = CENTER_ALIGN
-            tot_hdr_ent.border = THIN_BORDER
+        ent_rows = [
+            ("Eastern Cape", [55, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 21, 0]),
+            ("Gauteng East", [0, 89, 0, 0, 0]), ("Gauteng Klipriver", [0, 69, 0, 0, 0]),
+            ("Gauteng South-West", [0, 80, 0, 0, 0]), ("Gauteng Tshwane", [0, 0, 60, 0, 0]),
+            ("Greater Sandton", [0, 0, 56, 0, 0]), ("KZN Coastal", [0, 0, 0, 0, 87]),
+            ("KZN Inland", [0, 0, 0, 0, 50]), ("Limpopo", [0, 0, 0, 46, 0]),
+            ("Midrand", [0, 0, 56, 0, 0]), ("Mpumalanga", [0, 0, 0, 67, 0]),
+            ("North West", [0, 0, 0, 41, 0]), ("Northern Cape", [0, 0, 0, 26, 0]),
+            ("Western Cape Inland", [35, 0, 0, 0, 0]), ("Western Cape Metro", [53, 0, 0, 0, 0])
+        ]
+        for idx, (prov, vals) in enumerate(ent_rows, start=3):
+            ws_ent.cell(row=idx, column=2, value=prov).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_ent.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            ws_ent.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
 
-            ent_rows = [
-                ("Eastern Cape", [55, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 21, 0]),
-                ("Gauteng East", [0, 89, 0, 0, 0]), ("Gauteng Klipriver", [0, 69, 0, 0, 0]),
-                ("Gauteng South-West", [0, 80, 0, 0, 0]), ("Gauteng Tshwane", [0, 0, 60, 0, 0]),
-                ("Greater Sandton", [0, 0, 56, 0, 0]), ("KZN Coastal", [0, 0, 0, 0, 87]),
-                ("KZN Inland", [0, 0, 0, 0, 50]), ("Limpopo", [0, 0, 0, 46, 0]),
-                ("Midrand", [0, 0, 56, 0, 0]), ("Mpumalanga", [0, 0, 0, 67, 0]),
-                ("North West", [0, 0, 0, 41, 0]), ("Northern Cape", [0, 0, 0, 26, 0]),
-                ("Western Cape Inland", [35, 0, 0, 0, 0]), ("Western Cape Metro", [53, 0, 0, 0, 0])
-            ]
-            for idx, (prov, vals) in enumerate(ent_rows, start=3):
-                ws_ent.cell(row=idx, column=2, value=prov).border = THIN_BORDER
-                for v_idx, val in enumerate(vals, start=3):
-                    c = ws_ent.cell(row=idx, column=v_idx, value=val)
-                    c.border = THIN_BORDER
-                    c.alignment = CENTER_ALIGN
-                ws_ent.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
-            ent_tot_row = len(ent_rows) + 3
-
+        ent_tot_row = len(ent_rows) + 3
         ws_ent.cell(row=ent_tot_row, column=2, value="TOTAL EXCL R10 to R60MIL").fill = FNB_TEAL
         ws_ent.cell(row=ent_tot_row, column=2).font = WHITE_BOLD_FONT
-        max_col_ent_left = 8 if df_r10_live is None or 'V13290' not in df_r10_live.columns else len(pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290']).columns) + 3
-        for c_idx in range(3, max_col_ent_left + 1):
+        for c_idx in range(3, 9):
             col_let = openpyxl.utils.get_column_letter(c_idx)
             c = ws_ent.cell(row=ent_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{ent_tot_row-1})")
             c.fill = FNB_TEAL
@@ -636,24 +499,14 @@ with tab1:
             cell.fill = FNB_TEAL if c_idx < 17 else (FNB_ORANGE if c_idx == 17 else RED_FILL)
             cell.font = WHITE_BOLD_FONT
 
-        ent_seg_matrix_data = [
+        for idx, (s_name, s_vals, quota_val) in enumerate([
             ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60),
             ("R60-R150M", [43, 38, 90, 55, 21], q_seg_r60_r150),
             ("R150M+", [44, 29, 41, 37, 34], q_seg_r150_plus)
-        ]
-        if df_r10_live is not None and 'V44011' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
-            live_ent_seg_tab = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290'])
-            quotas_map_ent = {'R10-R60M': q_seg_r10_r60, 'R10m-R60m': q_seg_r10_r60, 'R60-R150M': q_seg_r60_r150, 'R60m-R150': q_seg_r60_r150, 'R150M+': q_seg_r150_plus, 'R150m+': q_seg_r150_plus}
-            ent_seg_matrix_data = []
-            for s_name, s_row in live_ent_seg_tab.iterrows():
-                vals_list = list(s_row.values[:5])
-                while len(vals_list) < 5: vals_list.append(0)
-                ent_seg_matrix_data.append((str(s_name), vals_list, quotas_map_ent.get(str(s_name), 1000)))
-
-        for idx, (s_name, s_vals, quota_val) in enumerate(ent_seg_matrix_data, start=3):
+        ], start=3):
             ws_ent.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
             for v_idx, val in enumerate(s_vals, start=11):
-                c = ws_ent.cell(row=idx, column=v_idx, value=int(val))
+                c = ws_ent.cell(row=idx, column=v_idx, value=val)
                 c.border = THIN_BORDER
                 c.alignment = CENTER_ALIGN
             ws_ent.cell(row=idx, column=16, value=f"=SUM(K{idx}:O{idx})").border = THIN_BORDER
@@ -686,19 +539,11 @@ with tab1:
             ("NORTH WEST", [22, 8, 11]), ("NORTHERN CAPE", [12, 2, 12]),
             ("WESTERN CAPE INLAND", [17, 16, 2]), ("WESTERN CAPE METRO", [13, 20, 20])
         ]
-        if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V44011' in df_r10_live.columns:
-            live_e_cross = pd.crosstab(df_r10_live['V12290'], df_r10_live['V44011'])
-            ent_crosstab_rows = []
-            for r_name, r_vals in live_e_cross.iterrows():
-                vals_list = list(r_vals.values[:3])
-                while len(vals_list) < 3: vals_list.append(0)
-                ent_crosstab_rows.append((str(r_name), vals_list))
-
         for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
             r_idx = ecross_start_row + 2 + idx_offset
             ws_ent.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
             for v_idx, val in enumerate(vals, start=3):
-                c = ws_ent.cell(row=r_idx, column=v_idx, value=int(val))
+                c = ws_ent.cell(row=r_idx, column=v_idx, value=val)
                 c.border = THIN_BORDER
                 c.alignment = CENTER_ALIGN
             tot_c = ws_ent.cell(row=r_idx, column=6, value=f"=SUM(C{r_idx}:E{r_idx})")
@@ -719,7 +564,6 @@ with tab1:
             c.border = THIN_BORDER
             c.alignment = CENTER_ALIGN
 
-        # --- UPDATE PUBSC SHEET ---
         ws_pub = wb.create_sheet(title='Update PUBSC')
         ws_pub.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
         ws_pub.merge_cells("B1:L1")
@@ -741,29 +585,19 @@ with tab1:
             ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1],
             ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1]
         ]
-        if df_pub_live is not None and 'V12290' in df_pub_live.columns and 'V13290' in df_pub_live.columns:
-            live_p_cross = pd.crosstab(df_pub_live['V13290'], df_pub_live['V12290'])
-            pub_rows_data = []
-            for r_name, r_vals in live_p_cross.iterrows():
-                vals_list = list(r_vals.values[:9])
-                while len(vals_list) < 9: vals_list.append(0)
-                pub_rows_data.append([str(r_name)] + [int(v) for v in vals_list])
-
         for row_offset, prow in enumerate(pub_rows_data, start=3):
             ws_pub.cell(row=row_offset, column=2, value=prow[0]).border = THIN_BORDER
             for val_idx, val in enumerate(prow[1:], start=3):
                 c = ws_pub.cell(row=row_offset, column=val_idx, value=val)
                 c.border = THIN_BORDER
                 c.alignment = CENTER_ALIGN
-            last_let_pub = openpyxl.utils.get_column_letter(len(prow) + 1)
-            tot_c = ws_pub.cell(row=row_offset, column=len(prow) + 2, value=f"=SUM(C{row_offset}:{last_let_pub}{row_offset})")
+            tot_c = ws_pub.cell(row=row_offset, column=12, value=f"=SUM(C{row_offset}:K{row_offset})")
             tot_c.border = THIN_BORDER
             tot_c.alignment = CENTER_ALIGN
 
         pub_tot_row = len(pub_rows_data) + 3
         ws_pub.cell(row=pub_tot_row, column=2, value="").border = THIN_BORDER
-        max_pub_col = len(pub_headers) + 1
-        for c_idx in range(3, max_pub_col + 1):
+        for c_idx in range(3, 13):
             col_let = openpyxl.utils.get_column_letter(c_idx)
             c = ws_pub.cell(row=pub_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{pub_tot_row-1})")
             c.border = THIN_BORDER
@@ -786,12 +620,12 @@ with tab1:
         return output_buffer
 
     st.markdown("---")
-    if st.button("📥 Generate & Download Exact PM Update Workbook", type="primary", key="download_status_btn"):
+    if st.button("?? Generate & Download Exact PM Update Workbook", type="primary", key="download_status_btn"):
         status_excel_bytes = generate_exact_pm_update_workbook()
         run_date_str = datetime.now().strftime("%Y-%m-%d")
-        st.success("🎉 Project Status Update report generated successfully with FNB brand colors and auto-fitted columns across all worksheets!")
+        st.success("?? Project Status Update report generated successfully with FNB brand colors and auto-fitted columns across all worksheets!")
         st.download_button(
-            label="💾 Download Formatted Excel Report (`Star Detailed Update.xlsx`)",
+            label="?? Download Formatted Excel Report (`Star Detailed Update.xlsx`)",
             data=status_excel_bytes,
             file_name=f"Star Detailed Update-W22 {run_date_str}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -816,7 +650,7 @@ with tab2:
     col_m4.metric("Environment", "Cloud Control Room", "Secure")
 
     st.markdown("---")
-    st.subheader("📅 Global Execution Parameters")
+    st.subheader("?? Global Execution Parameters")
     date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="911_date_mode")
 
     today = datetime.now()
@@ -831,7 +665,7 @@ with tab2:
                 days_to_subtract = 7
         last_friday = today - timedelta(days=days_to_subtract)
         last_friday = last_friday.replace(hour=0, minute=0, second=0, microsecond=0)
-        st.info(f"🎯 Target active execution window: **{last_friday.strftime('%Y-%m-%d')}** to **{today.strftime('%Y-%m-%d')}**")
+        st.info(f"?? Target active execution window: **{last_friday.strftime('%Y-%m-%d')}** to **{today.strftime('%Y-%m-%d')}**")
     else:
         col_d1, col_d2 = st.columns(2)
         with col_d1:
@@ -872,7 +706,7 @@ with tab2:
                 ].copy()
 
             if df_filtered.empty:
-                st.warning(f"⚠️ No records found matching the criteria for {section_choice}.")
+                st.warning(f"?? No records found matching the criteria for {section_choice}.")
                 return None
 
             if 'INTNR' not in df_filtered.columns:
@@ -1026,22 +860,22 @@ with tab2:
                 "count": len(df_filtered)
             }
         except Exception as e:
-            st.error(f"❌ Error in {section_choice}: {e}")
+            st.error(f"? Error in {section_choice}: {e}")
             return None
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
-    st.subheader("⚡ Pipeline Execution Control Room")
+    st.subheader("? Pipeline Execution Control Room")
     col1, col2, col3 = st.columns(3)
 
     with col1:
         with st.container(border=True):
-            st.markdown("### 🟢 Growth Section")
+            st.markdown("### ?? Growth Section")
             st.caption("Target: Business Client Pipeline")
             file_growth = st.file_uploader("Upload GROW SAV (.sav)", type=["sav"], key="growth_file")
             
-            if st.button("▶ Run Growth Stage", key="btn_growth", type="primary", use_container_width=True):
+            if st.button("? Run Growth Stage", key="btn_growth", type="primary", use_container_width=True):
                 if file_growth is None:
                     st.error("Upload a SAV file first.")
                 else:
@@ -1049,18 +883,18 @@ with tab2:
                         res = run_pipeline(file_growth, "Growth")
                         if res:
                             st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="g1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="g2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="g3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="g4")
+                            st.download_button("?? Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="g1")
+                            st.download_button("?? Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="g2")
+                            st.download_button("?? Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="g3")
+                            st.download_button("?? Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="g4")
 
     with col2:
         with st.container(border=True):
-            st.markdown("### 🔵 R10Mil Section")
+            st.markdown("### ?? R10Mil Section")
             st.caption("Target: Enterprise Client Pipeline")
             file_r10 = st.file_uploader("Upload RMW SAV (.sav)", type=["sav"], key="r10_file")
             
-            if st.button("▶ Run R10Mil Stage", key="btn_r10", type="primary", use_container_width=True):
+            if st.button("? Run R10Mil Stage", key="btn_r10", type="primary", use_container_width=True):
                 if file_r10 is None:
                     st.error("Upload a SAV file first.")
                 else:
@@ -1068,18 +902,18 @@ with tab2:
                         res = run_pipeline(file_r10, "R10Mil")
                         if res:
                             st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="r1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="r2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="r3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="r4")
+                            st.download_button("?? Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="r1")
+                            st.download_button("?? Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="r2")
+                            st.download_button("?? Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="r3")
+                            st.download_button("?? Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="r4")
 
     with col3:
         with st.container(border=True):
-            st.markdown("### 🟠 PUBSC Section")
+            st.markdown("### ?? PUBSC Section")
             st.caption("Target: Public Sector Pipeline")
             file_pub = st.file_uploader("Upload PUBW SAV (.sav)", type=["sav"], key="pub_file")
             
-            if st.button("▶ Run PUBSC Stage", key="btn_pub", type="primary", use_container_width=True):
+            if st.button("? Run PUBSC Stage", key="btn_pub", type="primary", use_container_width=True):
                 if file_pub is None:
                     st.error("Upload a SAV file first.")
                 else:
@@ -1087,10 +921,10 @@ with tab2:
                         res = run_pipeline(file_pub, "PUBSC")
                         if res:
                             st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="p1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="p2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="p3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="p4")
+                            st.download_button("?? Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="p1")
+                            st.download_button("?? Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="p2")
+                            st.download_button("?? Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="p3")
+                            st.download_button("?? Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="p4")
 
 
 # ==========================================================================
@@ -1099,7 +933,7 @@ with tab2:
 # ==========================================================================
 # ==========================================================================
 with tab3:
-    st.markdown("### 📊 NPS Dashboard & Streamlined Data Generator")
+    st.markdown("### ?? NPS Dashboard & Streamlined Data Generator")
     st.markdown("Upload your master SPSS data file below, select your wave preferences and portfolio filter, then click **Run Processing**.")
 
     if "nps_reports_ready" not in st.session_state: st.session_state.nps_reports_ready = False
@@ -1134,7 +968,7 @@ with tab3:
         if os.path.exists(temp_sav): os.remove(temp_sav)
         return excel_bytes, f"FNB_Customer_Satisfaction_Report_{prefix_label}.xlsx", sav_bytes, f"FNB_Data_{prefix_label}.sav"
 
-    if st.button("🚀 Run Processing & Generate Reports", type="primary", key="run_nps"):
+    if st.button("?? Run Processing & Generate Reports", type="primary", key="run_nps"):
         if nps_uploaded_file is None:
             st.error("Please upload a `.sav` file first!")
         else:
@@ -1164,16 +998,16 @@ with tab3:
 
                 st.session_state.nps_report_payloads = payloads
                 st.session_state.nps_reports_ready = True
-                st.success("🎉 Processing complete! Download ready below.")
+                st.success("?? Processing complete! Download ready below.")
 
     if st.session_state.nps_reports_ready and st.session_state.nps_report_payloads:
         st.markdown("---")
-        st.subheader("📥 Download Generated NPS Reports")
+        st.subheader("?? Download Generated NPS Reports")
         for idx, (ex_name, ex_bytes, sav_name, sav_bytes) in enumerate(st.session_state.nps_report_payloads):
             col_d1, col_d2 = st.columns(2)
             with col_d1:
                 st.download_button(
-                    label=f"💾 Download Excel: {ex_name}",
+                    label=f"?? Download Excel: {ex_name}",
                     data=ex_bytes,
                     file_name=ex_name,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1181,7 +1015,7 @@ with tab3:
                 )
             with col_d2:
                 st.download_button(
-                    label=f"💾 Download SPSS: {sav_name}",
+                    label=f"?? Download SPSS: {sav_name}",
                     data=sav_bytes,
                     file_name=sav_name,
                     mime="application/octet-stream",
@@ -1195,11 +1029,11 @@ with tab3:
 # ==========================================================================
 # ==========================================================================
 with tab4:
-    st.markdown("### 📈 Q11 Ratings & Reasons Extraction")
+    st.markdown("### ?? Q11 Ratings & Reasons Extraction")
     st.markdown("Upload your Enterprise (R10Mil) and Business (Growth) SPSS datasets below to extract Q11 ratings and reasons into a combined multi-tab Excel workbook.")
 
     st.markdown("---")
-    st.subheader("📅 Global Execution Parameters (Q11 Extraction)")
+    st.subheader("?? Global Execution Parameters (Q11 Extraction)")
     
     q11_date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="q11_date_mode")
     today_q11 = datetime.now()
@@ -1210,7 +1044,7 @@ with tab4:
         if days_sub == 0: days_sub = 7
         q11_last_friday = today_q11 - timedelta(days=days_sub)
         q11_last_friday = q11_last_friday.replace(hour=0, minute=0, second=0, microsecond=0)
-        st.info(f"🎯 Target active execution window: **{q11_last_friday.strftime('%Y-%m-%d')}** to **{today_q11.strftime('%Y-%m-%d')}**")
+        st.info(f"?? Target active execution window: **{q11_last_friday.strftime('%Y-%m-%d')}** to **{today_q11.strftime('%Y-%m-%d')}**")
     else:
         col_qd1, col_qd2 = st.columns(2)
         with col_qd1: q11_start_input = st.date_input("Start Date", value=today_q11 - timedelta(days=7), key="q11_start")
@@ -1358,12 +1192,12 @@ with tab4:
             df_final.columns = clean_headers
             return df_final
         except Exception as e:
-            st.error(f"❌ Error processing SPSS file: {e}")
+            st.error(f"? Error processing SPSS file: {e}")
             return pd.DataFrame()
         finally:
             if os.path.exists(tmp_path): os.remove(tmp_path)
 
-    if st.button("🚀 Run Q11 Extraction", type="primary", key="run_q11"):
+    if st.button("?? Run Q11 Extraction", type="primary", key="run_q11"):
         if file_q11_r10 is None and file_q11_grow is None:
             st.error("Please upload at least one SPSS (.sav) file.")
         else:
@@ -1392,7 +1226,7 @@ with tab4:
         st.markdown("---")
         run_date_str = datetime.now().strftime("%m-%d-%Y")
         st.download_button(
-            label="💾 Download Q11 Extraction Report (`Star W22 Q11 extraction.xlsx`)",
+            label="?? Download Q11 Extraction Report (`Star W22 Q11 extraction.xlsx`)",
             data=st.session_state.q11_bytes,
             file_name=f"Star W22 Q11 extraction {run_date_str}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1406,7 +1240,7 @@ with tab4:
 # ==========================================================================
 # ==========================================================================
 with tab5:
-    st.markdown("### 📈 NPS Yearly Dashboard Generator")
+    st.markdown("### ?? NPS Yearly Dashboard Generator")
     st.markdown("Upload your multi-wave yearly SPSS dataset (`.sav`) below to process and generate the comprehensive longitudinal `Star_Yearly_Dashboard.xlsx` report.")
 
     yearly_uploaded_file = st.file_uploader("Upload Yearly SPSS File (`Project Star_W1 to W22.sav`)", type=["sav"], key="yearly_sav_file")
@@ -2258,7 +2092,7 @@ with tab5:
             output_buffer.seek(0)
             return output_buffer
         except Exception as e:
-            st.error(f"❌ Error generating Yearly Dashboard: {e}")
+            st.error(f"? Error generating Yearly Dashboard: {e}")
             return None
         finally:
             if os.path.exists(tmp_path): os.remove(tmp_path)
@@ -2266,7 +2100,7 @@ with tab5:
     if "yearly_ready" not in st.session_state: st.session_state.yearly_ready = False
     if "yearly_bytes" not in st.session_state: st.session_state.yearly_bytes = None
 
-    if st.button("🚀 Generate Yearly Dashboard Report", type="primary", key="run_yearly_dash_btn"):
+    if st.button("?? Generate Yearly Dashboard Report", type="primary", key="run_yearly_dash_btn"):
         if yearly_uploaded_file is None:
             st.error("Please upload the yearly SPSS `.sav` file first!")
         else:
@@ -2275,12 +2109,12 @@ with tab5:
                 if yearly_excel_bytes:
                     st.session_state.yearly_bytes = yearly_excel_bytes
                     st.session_state.yearly_ready = True
-                    st.success("🎉 Yearly Dashboard report generated successfully! Download ready below.")
+                    st.success("?? Yearly Dashboard report generated successfully! Download ready below.")
 
     if st.session_state.yearly_ready and st.session_state.yearly_bytes:
         st.markdown("---")
         st.download_button(
-            label="💾 Download Formatted Excel Report (`Star_Yearly_Dashboard.xlsx`)",
+            label="?? Download Formatted Excel Report (`Star_Yearly_Dashboard.xlsx`)",
             data=st.session_state.yearly_bytes,
             file_name="Star_Yearly_Dashboard.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
