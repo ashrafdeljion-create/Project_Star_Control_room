@@ -128,22 +128,30 @@ with tab1:
     with col_up2: status_file_r10 = st.file_uploader("Upload R10Mil (.sav)", type=["sav"], key="status_r10")
     with col_up3: status_file_pub = st.file_uploader("Upload PUBW (.sav)", type=["sav"], key="status_pub")
 
-    def get_achieved_count(uploaded_file):
+    def load_spss_df(uploaded_file):
         if uploaded_file is None: return None
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
             tmp.write(uploaded_file.getvalue())
             tmp_path = tmp.name
         try:
-            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
-            return len(df)
+            df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
+            return df
         except:
-            return 0
+            try:
+                df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
+                return df
+            except:
+                return None
         finally:
             if os.path.exists(tmp_path): os.remove(tmp_path)
 
-    achieved_business = get_achieved_count(status_file_grow) if status_file_grow else 1721
-    achieved_enterprise = get_achieved_count(status_file_r10) if status_file_r10 else 432
-    achieved_pubsc = get_achieved_count(status_file_pub) if status_file_pub else 184
+    df_grow_live = load_spss_df(status_file_grow)
+    df_r10_live = load_spss_df(status_file_r10)
+    df_pub_live = load_spss_df(status_file_pub)
+
+    achieved_business = len(df_grow_live) if df_grow_live is not None else 1721
+    achieved_enterprise = len(df_r10_live) if df_r10_live is not None else 432
+    achieved_pubsc = len(df_pub_live) if df_pub_live is not None else 184
 
     total_achieved_val = achieved_business + achieved_enterprise + achieved_pubsc
     total_outstanding_val = total_target_val - total_achieved_val
@@ -167,8 +175,22 @@ with tab1:
 
     # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
     st.markdown("#### 📊 Segment Quotas Executive Summary Breakdown")
-    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
-    achieved_r60_r150, achieved_r150_plus = 247, 185
+    
+    if df_grow_live is not None and 'V44011' in df_grow_live.columns:
+        seg_counts = df_grow_live['V44011'].astype(str).value_counts()
+        achieved_r0_r1 = seg_counts.get('R0m-R1m', seg_counts.get('R0M-R1M', 616))
+        achieved_r1_r5 = seg_counts.get('R1m-R5m', seg_counts.get('R1M-R5M', 371))
+        achieved_r5_r10 = seg_counts.get('R5m-R10', seg_counts.get('R5M-R10M', 275))
+        achieved_r10_r60 = seg_counts.get('R10-R60M', seg_counts.get('R10m-R60m', 459))
+    else:
+        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
+
+    if df_r10_live is not None and 'V44011' in df_r10_live.columns:
+        seg_counts_ent = df_r10_live['V44011'].astype(str).value_counts()
+        achieved_r60_r150 = seg_counts_ent.get('R60m-R150', seg_counts_ent.get('R60-R150M', 247))
+        achieved_r150_plus = seg_counts_ent.get('R150m+', seg_counts_ent.get('R150M+', 185))
+    else:
+        achieved_r60_r150, achieved_r150_plus = 247, 185
     
     total_seg_target = q_seg_r0_r1 + q_seg_r1_r5 + q_seg_r5_r10 + q_seg_r10_r60 + q_seg_r60_r150 + q_seg_r150_plus
     total_seg_achieved = achieved_r0_r1 + achieved_r1_r5 + achieved_r5_r10 + achieved_r10_r60 + achieved_r60_r150 + achieved_r150_plus
@@ -195,103 +217,144 @@ with tab1:
     
     with sub_tab1:
         st.markdown("#### Business Regional Breakdown (Left Table)")
-        bus_preview_df = pd.DataFrame({
-            "Region": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
-            "Cape": [180, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105],
-            "Gauteng North": [0, 0, 0, 0, 65, 63, 0, 115, 59, 0, 0, 0, 0, 0, 0, 0, 0],
-            "Gauteng South Central": [0, 0, 88, 93, 0, 0, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            "Inland": [0, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 65, 72, 33, 0],
-            "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 45, 50, 0, 0, 0, 0, 0]
-        })
-        bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
+        if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
+            bus_crosstab_live = pd.crosstab(df_grow_live['V12290'], df_grow_live['V13290'])
+            bus_preview_df = bus_crosstab_live.reset_index().rename(columns={'V12290': 'Region'})
+            bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
+        else:
+            bus_preview_df = pd.DataFrame({
+                "Region": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
+                "Cape": [180, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105],
+                "Gauteng North": [0, 0, 0, 0, 65, 63, 0, 115, 59, 0, 0, 0, 0, 0, 0, 0, 0],
+                "Gauteng South Central": [0, 0, 88, 93, 0, 0, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "Inland": [0, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 65, 72, 33, 0],
+                "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 45, 50, 0, 0, 0, 0, 0]
+            })
+            bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(bus_preview_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Business Segment Breakdown Matrix (Right Table with Quotas & Outstanding)")
-        bus_seg_df = pd.DataFrame({
-            "Business": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M"],
-            "Cape": [159, 81, 45, 56],
-            "Gauteng North": [127, 90, 85, 105],
-            "Gauteng South Central": [116, 60, 72, 107],
-            "Inland": [157, 97, 36, 109],
-            "KwaZulu-Natal": [57, 43, 37, 82],
-            "Total": [616, 371, 275, 459],
-            "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
-            "Outstanding": [q_seg_r0_r1 - 616, q_seg_r1_r5 - 371, q_seg_r5_r10 - 275, q_seg_r10_r60 - 459]
-        })
+        if df_grow_live is not None and 'V44011' in df_grow_live.columns and 'V13290' in df_grow_live.columns:
+            bus_seg_crosstab = pd.crosstab(df_grow_live['V44011'], df_grow_live['V13290'])
+            bus_seg_df = bus_seg_crosstab.reset_index().rename(columns={'V44011': 'Business'})
+            bus_seg_df["Total"] = bus_seg_df.iloc[:, 1:].sum(axis=1)
+            quotas_list = [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60]
+            bus_seg_df["Quota"] = [quotas_list[i] if i < len(quotas_list) else 1000 for i in range(len(bus_seg_df))]
+            bus_seg_df["Outstanding"] = bus_seg_df["Quota"] - bus_seg_df["Total"]
+        else:
+            bus_seg_df = pd.DataFrame({
+                "Business": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M"],
+                "Cape": [159, 81, 45, 56],
+                "Gauteng North": [127, 90, 85, 105],
+                "Gauteng South Central": [116, 60, 72, 107],
+                "Inland": [157, 97, 36, 109],
+                "KwaZulu-Natal": [57, 43, 37, 82],
+                "Total": [616, 371, 275, 459],
+                "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
+                "Outstanding": [q_seg_r0_r1 - 616, q_seg_r1_r5 - 371, q_seg_r5_r10 - 275, q_seg_r10_r60 - 459]
+            })
         st.dataframe(bus_seg_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Business Regional vs. Segments Crosstab")
-        bus_crosstab_df = pd.DataFrame({
-            "Busines": [
-                "Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", 
-                "Gauteng Midrand", "Gauteng Tshwane East", "Gauteng Tshwane North", 
-                "Gauteng West-Rand", "Greater Sandton", "KZN North", "KZN South", 
-                "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
-            ],
-            "R0m-R1m": [121, 26, 32, 50, 27, 34, 24, 34, 42, 15, 21, 21, 34, 40, 38, 19, 38],
-            "R1m-R5m": [44, 23, 22, 21, 15, 18, 25, 17, 32, 15, 10, 18, 22, 19, 22, 11, 37],
-            "R5m-R10": [15, 5, 34, 22, 17, 13, 14, 16, 41, 12, 14, 11, 10, 6, 12, 3, 30]
-        })
-        bus_crosstab_df["TOTAL"] = bus_crosstab_df["R0m-R1m"] + bus_crosstab_df["R1m-R5m"] + bus_crosstab_df["R5m-R10"]
+        if df_grow_live is not None and 'V12290' in df_grow_live.columns and 'V44011' in df_grow_live.columns:
+            bus_crosstab_df = pd.crosstab(df_grow_live['V12290'], df_grow_live['V44011']).reset_index().rename(columns={'V12290': 'Busines'})
+            numeric_cols = [c for c in bus_crosstab_df.columns if c != 'Busines']
+            bus_crosstab_df["TOTAL"] = bus_crosstab_df[numeric_cols].sum(axis=1)
+        else:
+            bus_crosstab_df = pd.DataFrame({
+                "Busines": [
+                    "Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", 
+                    "Gauteng Midrand", "Gauteng Tshwane East", "Gauteng Tshwane North", 
+                    "Gauteng West-Rand", "Greater Sandton", "KZN North", "KZN South", 
+                    "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
+                ],
+                "R0m-R1m": [121, 26, 32, 50, 27, 34, 24, 34, 42, 15, 21, 21, 34, 40, 38, 19, 38],
+                "R1m-R5m": [44, 23, 22, 21, 15, 18, 25, 17, 32, 15, 10, 18, 22, 19, 22, 11, 37],
+                "R5m-R10": [15, 5, 34, 22, 17, 13, 14, 16, 41, 12, 14, 11, 10, 6, 12, 3, 30]
+            })
+            bus_crosstab_df["TOTAL"] = bus_crosstab_df["R0m-R1m"] + bus_crosstab_df["R1m-R5m"] + bus_crosstab_df["R5m-R10"]
         st.dataframe(bus_crosstab_df, use_container_width=True, hide_index=True)
 
     with sub_tab2:
         st.markdown("#### Enterprise Regional Breakdown")
-        ent_preview_df = pd.DataFrame({
-            "REGION": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", "Gauteng South-West", "Gauteng Tshwane", "Greater Sandton", "KZN Coastal", "KZN Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", "Northern Cape", "Western Cape Inland", "Western Cape Metro"],
-            "Cape": [55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 53],
-            "Gauteng South & Central": [0, 0, 0, 0, 0, 60, 56, 0, 0, 0, 56, 0, 0, 0, 0, 0],
-            "Gauteng-North": [0, 0, 89, 69, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            "Inland": [0, 21, 0, 0, 0, 0, 0, 0, 0, 46, 0, 67, 41, 26, 0, 0],
-            "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 87, 50, 0, 0, 0, 0, 0, 0, 0]
-        })
-        ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
+        if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
+            ent_crosstab_live = pd.crosstab(df_r10_live['V12290'], df_r10_live['V13290'])
+            ent_preview_df = ent_crosstab_live.reset_index().rename(columns={'V12290': 'REGION'})
+            ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
+        else:
+            ent_preview_df = pd.DataFrame({
+                "REGION": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", "Gauteng South-West", "Gauteng Tshwane", "Greater Sandton", "KZN Coastal", "KZN Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", "Northern Cape", "Western Cape Inland", "Western Cape Metro"],
+                "Cape": [55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 53],
+                "Gauteng South & Central": [0, 0, 0, 0, 0, 60, 56, 0, 0, 0, 56, 0, 0, 0, 0, 0],
+                "Gauteng-North": [0, 0, 89, 69, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "Inland": [0, 21, 0, 0, 0, 0, 0, 0, 0, 46, 0, 67, 41, 26, 0, 0],
+                "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 87, 50, 0, 0, 0, 0, 0, 0, 0]
+            })
+            ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(ent_preview_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Enterprise Segment Breakdown Matrix")
-        ent_seg_df = pd.DataFrame({
-            "Enterprise": ["R10-R60M", "R60-R150M", "R150M+"],
-            "Cape": [56, 43, 44],
-            "Gauteng-North": [105, 38, 29],
-            "Gauteng South and Central": [107, 90, 41],
-            "Inland": [109, 55, 37],
-            "KwaZulu-Natal": [82, 21, 34],
-            "Total": [459, 247, 185],
-            "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
-            "Outstanding": [q_seg_r10_r60 - 459, q_seg_r60_r150 - 247, q_seg_r150_plus - 185]
-        })
+        if df_r10_live is not None and 'V44011' in df_r10_live.columns and 'V13290' in df_r10_live.columns:
+            ent_seg_crosstab = pd.crosstab(df_r10_live['V44011'], df_r10_live['V13290'])
+            ent_seg_df = ent_seg_crosstab.reset_index().rename(columns={'V44011': 'Enterprise'})
+            ent_seg_df["Total"] = ent_seg_df.iloc[:, 1:].sum(axis=1)
+            quotas_list_ent = [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus]
+            ent_seg_df["Quota"] = [quotas_list_ent[i] if i < len(quotas_list_ent) else 1000 for i in range(len(ent_seg_df))]
+            ent_seg_df["Outstanding"] = ent_seg_df["Quota"] - ent_seg_df["Total"]
+        else:
+            ent_seg_df = pd.DataFrame({
+                "Enterprise": ["R10-R60M", "R60-R150M", "R150M+"],
+                "Cape": [56, 43, 44],
+                "Gauteng-North": [105, 38, 29],
+                "Gauteng South and Central": [107, 90, 41],
+                "Inland": [109, 55, 37],
+                "KwaZulu-Natal": [82, 21, 34],
+                "Total": [459, 247, 185],
+                "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
+                "Outstanding": [q_seg_r10_r60 - 459, q_seg_r60_r150 - 247, q_seg_r150_plus - 185]
+            })
         st.dataframe(ent_seg_df, use_container_width=True, hide_index=True)
 
         st.markdown("#### Enterprise Regional vs. Segments Crosstab")
-        ent_crosstab_df = pd.DataFrame({
-            "Enterprise": [
-                "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
-                "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
-                "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
-                "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
-            ],
-            "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
-            "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
-            "R60m-R150": [21, 6, 31, 28, 19, 31, 12, 12, 9, 11, 7, 15, 11, 12, 2, 20]
-        })
-        ent_crosstab_df["TOTAL"] = ent_crosstab_df["R10m-R60m"] + ent_crosstab_df["R150m+"] + ent_crosstab_df["R60m-R150"]
+        if df_r10_live is not None and 'V12290' in df_r10_live.columns and 'V44011' in df_r10_live.columns:
+            ent_crosstab_df = pd.crosstab(df_r10_live['V12290'], df_r10_live['V44011']).reset_index().rename(columns={'V12290': 'Enterprise'})
+            numeric_cols_ent = [c for c in ent_crosstab_df.columns if c != 'Enterprise']
+            ent_crosstab_df["TOTAL"] = ent_crosstab_df[numeric_cols_ent].sum(axis=1)
+        else:
+            ent_crosstab_df = pd.DataFrame({
+                "Enterprise": [
+                    "EASTERN CAPE", "FREE STATE", "GAUTENG EAST", "GAUTENG KLIPRIVER", 
+                    "GAUTENG TSHWANE", "GAUTENG WEST", "GREATER SANDTON", "KZN COASTAL", 
+                    "KZN INLAND", "LIMPOPO", "MIDRAND", "MPUMALANGA", "NORTH WEST", 
+                    "NORTHERN CAPE", "WESTERN CAPE INLAND", "WESTERN CAPE METRO"
+                ],
+                "R10m-R60m": [26, 10, 40, 36, 32, 31, 34, 52, 30, 23, 39, 42, 22, 12, 17, 13],
+                "R150m+": [8, 5, 18, 5, 9, 18, 10, 23, 11, 12, 10, 10, 8, 2, 16, 20],
+                "R60m-R150": [21, 6, 31, 28, 19, 31, 12, 12, 9, 11, 7, 15, 11, 12, 2, 20]
+            })
+            ent_crosstab_df["TOTAL"] = ent_crosstab_df["R10m-R60m"] + ent_crosstab_df["R150m+"] + ent_crosstab_df["R60m-R150"]
         st.dataframe(ent_crosstab_df, use_container_width=True, hide_index=True)
 
     with sub_tab3:
         st.markdown("#### Public Sector (PUBSC) Breakdown")
-        pub_preview_df = pd.DataFrame({
-            "Organization Type": ["Non-Profit Organisation", "Public Sector Colleges & FET's", "Public Sector Embassies", "Public Sector Local Government", "Public Sector Provincial Government", "Public Sector Public Schools", "Public Sector Unions & Politics"],
-            "Eastern Cape": [4, 0, 0, 0, 0, 8, 0],
-            "Free State": [1, 0, 0, 0, 0, 1, 0],
-            "Gauteng": [80, 1, 2, 1, 1, 34, 1],
-            "KwaZulu-Natal": [5, 0, 0, 0, 0, 12, 0],
-            "Limpopo": [5, 0, 0, 0, 0, 7, 0],
-            "Mpumalanga": [2, 0, 0, 0, 0, 5, 0],
-            "North West": [3, 0, 0, 0, 0, 2, 0],
-            "Northern Cape": [2, 0, 0, 1, 0, 0, 0],
-            "Western Cape": [4, 0, 0, 0, 0, 1, 1]
-        })
-        pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
+        if df_pub_live is not None and 'V12290' in df_pub_live.columns and 'V13290' in df_pub_live.columns:
+            pub_crosstab_live = pd.crosstab(df_pub_live['V13290'], df_pub_live['V12290'])
+            pub_preview_df = pub_crosstab_live.reset_index().rename(columns={'V13290': 'Organization Type'})
+            pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
+        else:
+            pub_preview_df = pd.DataFrame({
+                "Organization Type": ["Non-Profit Organisation", "Public Sector Colleges & FET's", "Public Sector Embassies", "Public Sector Local Government", "Public Sector Provincial Government", "Public Sector Public Schools", "Public Sector Unions & Politics"],
+                "Eastern Cape": [4, 0, 0, 0, 0, 8, 0],
+                "Free State": [1, 0, 0, 0, 0, 1, 0],
+                "Gauteng": [80, 1, 2, 1, 1, 34, 1],
+                "KwaZulu-Natal": [5, 0, 0, 0, 0, 12, 0],
+                "Limpopo": [5, 0, 0, 0, 0, 7, 0],
+                "Mpumalanga": [2, 0, 0, 0, 0, 5, 0],
+                "North West": [3, 0, 0, 0, 0, 2, 0],
+                "Northern Cape": [2, 0, 0, 1, 0, 0, 0],
+                "Western Cape": [4, 0, 0, 0, 0, 1, 1]
+            })
+            pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(pub_preview_df, use_container_width=True, hide_index=True)
 
     def generate_exact_pm_update_workbook():
