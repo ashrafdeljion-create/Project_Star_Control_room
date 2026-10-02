@@ -86,7 +86,549 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📈 NPS Yearly Dashboard"
 ])
 
+# ==========================================================================
+# ==========================================================================
+# TAB 1: PROJECT STATUS & QUOTAS UPDATE
+# ==========================================================================
+# ==========================================================================
+with tab1:
+    st.markdown("### 📋 Project Status & Quotas Update Hub")
+    st.markdown("Monitor overall sample quotas achieved, view executive summaries across portfolios, and download the PM Project Status Update report.")
 
+    st.markdown("---")
+    st.subheader("⚙ Live Quota Target Adjustments")
+    
+    col_t1, col_t2, col_t3 = st.columns(3)
+    with col_t1: target_business = st.number_input("Business (Growth) Target", min_value=0, value=4700, step=5, key="target_bus")
+    with col_t2: target_enterprise = st.number_input("Enterprise (R10Mil) Target", min_value=0, value=1400, step=5, key="target_ent")
+    with col_t3: target_pubsc = st.number_input("PUBSC Target", min_value=0, value=500, step=5, key="target_pub")
+
+    # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW ---
+    st.markdown("---")
+    st.subheader("⚙️ Segment-Level Quota Breakdown Inputs")
+    st.markdown("Specify exact individual segment quotas below for detailed tracking and Excel report integration:")
+
+    col_seg1, col_seg2, col_seg3, col_seg4 = st.columns(4)
+    with col_seg1: q_seg_r0_r1 = st.number_input("R0M-R1M Quota", min_value=0, value=1600, step=5, key="q_r0_r1")
+    with col_seg2: q_seg_r1_r5 = st.number_input("R1M-R5M Quota", min_value=0, value=1100, step=5, key="q_r1_r5")
+    with col_seg3: q_seg_r5_r10 = st.number_input("R5M-R10M Quota", min_value=0, value=900, step=5, key="q_r5_r10")
+    with col_seg4: q_seg_r10_r60 = st.number_input("R10-R60M Quota", min_value=0, value=1100, step=5, key="q_r10_r60")
+
+    col_seg5, col_seg6, _ = st.columns(3)
+    with col_seg5: q_seg_r60_r150 = st.number_input("R60-R150M Quota", min_value=0, value=900, step=5, key="q_seg_r60_r150")
+    with col_seg6: q_seg_r150_plus = st.number_input("R150M+ Quota", min_value=0, value=500, step=5, key="q_seg_r150_plus")
+
+    total_target_val = target_business + target_enterprise + target_pubsc
+
+    st.markdown("---")
+    st.subheader("📁 Upload Latest SPSS Datasets for Live Status Calculation")
+    col_up1, col_up2, col_up3 = st.columns(3)
+    with col_up1: status_file_grow = st.file_uploader("Upload Growth (.sav)", type=["sav"], key="status_grow")
+    with col_up2: status_file_r10 = st.file_uploader("Upload R10Mil (.sav)", type=["sav"], key="status_r10")
+    with col_up3: status_file_pub = st.file_uploader("Upload PUBW (.sav)", type=["sav"], key="status_pub")
+
+    def get_achieved_count(uploaded_file):
+        if uploaded_file is None: return None
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
+            tmp.write(uploaded_file.getvalue())
+            tmp_path = tmp.name
+        try:
+            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
+            return len(df)
+        except:
+            return 0
+        finally:
+            if os.path.exists(tmp_path): os.remove(tmp_path)
+
+    achieved_business = get_achieved_count(status_file_grow) if status_file_grow else 1721
+    achieved_enterprise = get_achieved_count(status_file_r10) if status_file_r10 else 432
+    achieved_pubsc = get_achieved_count(status_file_pub) if status_file_pub else 184
+
+    total_achieved_val = achieved_business + achieved_enterprise + achieved_pubsc
+    total_outstanding_val = total_target_val - total_achieved_val
+
+    st.markdown("---")
+    st.subheader("📊 Executive Summary Overview")
+    
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total Target Quota", f"{total_target_val:,}")
+    m2.metric("Total Achieved", f"{total_achieved_val:,}", f"{(total_achieved_val/total_target_val)*100:.1f}% Complete" if total_target_val > 0 else "0%")
+    m3.metric("Total Outstanding", f"{total_outstanding_val:,}")
+    m4.metric("Overall Progress", f"{(total_achieved_val/total_target_val)*100:.1f}%" if total_target_val > 0 else "0%")
+
+    summary_df = pd.DataFrame({
+        "Segment": ["Business", "Enterprise", "PUBSC", "FML", "Total"],
+        "TOTAL Target": [target_business, target_enterprise, target_pubsc, "?", total_target_val],
+        "TOTAL Achieved": [achieved_business, achieved_enterprise, achieved_pubsc, "?", total_achieved_val],
+        "Total Outstanding": [target_business - achieved_business, target_enterprise - achieved_enterprise, target_pubsc - achieved_pubsc, "?", total_outstanding_val]
+    })
+    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+
+    # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
+    st.markdown("#### 📊 Segment Quotas Executive Summary Breakdown")
+    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
+    achieved_r60_r150, achieved_r150_plus = 247, 185
+    
+    total_seg_target = q_seg_r0_r1 + q_seg_r1_r5 + q_seg_r5_r10 + q_seg_r10_r60 + q_seg_r60_r150 + q_seg_r150_plus
+    total_seg_achieved = achieved_r0_r1 + achieved_r1_r5 + achieved_r5_r10 + achieved_r10_r60 + achieved_r60_r150 + achieved_r150_plus
+    total_seg_outstanding = total_seg_target - total_seg_achieved
+
+    seg_summary_df = pd.DataFrame({
+        "Segment": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M", "R60-R150M", "R150M+", "Total"],
+        "TOTAL Target": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus, total_seg_target],
+        "TOTAL Achieved": [achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60, achieved_r60_r150, achieved_r150_plus, total_seg_achieved],
+        "Total Outstanding": [
+            q_seg_r0_r1 - achieved_r0_r1, q_seg_r1_r5 - achieved_r1_r5, 
+            q_seg_r5_r10 - achieved_r5_r10, q_seg_r10_r60 - achieved_r10_r60, 
+            q_seg_r60_r150 - achieved_r60_r150, q_seg_r150_plus - achieved_r150_plus, 
+            total_seg_outstanding
+        ]
+    })
+    st.dataframe(seg_summary_df, use_container_width=True, hide_index=True)
+
+    # --- Live Visual Previews inside App Dashboard ---
+    st.markdown("---")
+    st.subheader("📈 Live Regional & Segment Breakdown Tables")
+    
+    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["🟢 Business Breakdown", "🔵 Enterprise Breakdown", "🟠 PUBSC Breakdown"])
+    
+    with sub_tab1:
+        st.markdown("#### Business Regional Breakdown (Swapped: Sub-regions as Columns)")
+        bus_preview_df = pd.DataFrame({
+            "Business": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng South Central", "Gauteng Tshwane East", "Gauteng Tshwane North", "Gauteng Tshwane South", "Gauteng West-Rand", "Greater Sandton", "Gauteng Midrand", "KZN North", "KZN South", "KZN West", "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"],
+            "Cape": [181, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 105],
+            "Gauteng North": [0, 0, 0, 0, 65, 63, 0, 0, 148, 59, 0, 0, 0, 0, 0, 0, 0, 0],
+            "Gauteng South Central": [0, 0, 88, 93, 0, 0, 0, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "Inland": [0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 65, 72, 33, 0],
+            "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 45, 50, 0, 0, 0, 0, 0]
+        })
+        bus_preview_df["Total"] = bus_preview_df.iloc[:, 1:].sum(axis=1)
+        st.dataframe(bus_preview_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Business Segment Breakdown Matrix (Right Table with Quotas & Outstanding)")
+        bus_seg_df = pd.DataFrame({
+            "Business": ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M"],
+            "Cape": [159, 81, 45, 56],
+            "Gauteng North": [127, 90, 85, 105],
+            "Gauteng South Central": [116, 60, 72, 107],
+            "Inland": [157, 97, 36, 109],
+            "KwaZulu-Natal": [57, 43, 37, 82],
+            "Total": [616, 371, 275, 459],
+            "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
+            "Outstanding": [q_seg_r0_r1 - 616, q_seg_r1_r5 - 371, q_seg_r5_r10 - 275, q_seg_r10_r60 - 459]
+        })
+        st.dataframe(bus_seg_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Business Regional vs. Segments Crosstab (Swapped: Sub-regions as Columns)")
+        bus_crosstab_df = pd.DataFrame({
+            "Busines": ["R0m-R1m", "R1m-R5m", "R5m-R10"],
+            "Eastern Cape": [121, 45, 15],
+            "Free State": [29, 26, 5],
+            "Gauteng East": [32, 22, 34],
+            "Gauteng South Central": [50, 21, 22],
+            "Gauteng Midrand": [27, 15, 17],
+            "Gauteng Tshwane East": [34, 18, 13],
+            "Gauteng Tshwane North": [24, 25, 14],
+            "Gauteng West-Rand": [34, 17, 16],
+            "Greater Sandton": [42, 32, 41],
+            "KZN North": [15, 15, 12],
+            "KZN South": [21, 10, 14],
+            "KZN West": [21, 18, 11]
+        })
+        bus_crosstab_df["TOTAL"] = bus_crosstab_df.iloc[:, 1:].sum(axis=1)
+        st.dataframe(bus_crosstab_df, use_container_width=True, hide_index=True)
+
+    with sub_tab2:
+        st.markdown("#### Enterprise Regional Breakdown")
+        ent_preview_df = pd.DataFrame({
+            "REGION": ["Eastern Cape", "Free State", "Gauteng East", "Gauteng Klipriver", "Gauteng South-West", "Gauteng Tshwane", "Greater Sandton", "KZN Coastal", "KZN Inland", "Limpopo", "Midrand", "Mpumalanga", "North West", "Northern Cape", "Western Cape Inland", "Western Cape Metro"],
+            "Cape": [55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35, 53],
+            "Gauteng South & Central": [0, 0, 0, 0, 0, 60, 56, 0, 0, 0, 56, 0, 0, 0, 0, 0],
+            "Gauteng-North": [0, 0, 89, 69, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "Inland": [0, 21, 0, 0, 0, 0, 0, 0, 0, 46, 0, 67, 41, 26, 0, 0],
+            "KwaZulu-Natal": [0, 0, 0, 0, 0, 0, 0, 87, 50, 0, 0, 0, 0, 0, 0, 0]
+        })
+        ent_preview_df["Total"] = ent_preview_df.iloc[:, 1:].sum(axis=1)
+        st.dataframe(ent_preview_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Enterprise Segment Breakdown Matrix")
+        ent_seg_df = pd.DataFrame({
+            "Enterprise": ["R10-R60M", "R60-R150M", "R150M+"],
+            "Cape": [56, 43, 44],
+            "Gauteng-North": [105, 38, 29],
+            "Gauteng South and Central": [107, 90, 41],
+            "Inland": [109, 55, 37],
+            "KwaZulu-Natal": [82, 21, 34],
+            "Total": [459, 247, 185],
+            "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
+            "Outstanding": [q_seg_r10_r60 - 459, q_seg_r60_r150 - 247, q_seg_r150_plus - 185]
+        })
+        st.dataframe(ent_seg_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Enterprise Regional vs. Segments Crosstab (Swapped: Sub-regions as Columns)")
+        ent_crosstab_df = pd.DataFrame({
+            "Enterprise": ["R10m-R60m", "R150m+", "R60m-R150"],
+            "EASTERN CAPE": [26, 8, 21],
+            "FREE STATE": [10, 5, 6],
+            "GAUTENG EAST": [40, 18, 31],
+            "GAUTENG KLIPRIVER": [36, 5, 28],
+            "GAUTENG TSHWANE": [32, 9, 19],
+            "GAUTENG WEST": [31, 18, 31],
+            "GREATER SANDTON": [34, 10, 12],
+            "KZN COASTAL": [52, 23, 12],
+            "KZN INLAND": [30, 11, 9]
+        })
+        ent_crosstab_df["TOTAL"] = ent_crosstab_df.iloc[:, 1:].sum(axis=1)
+        st.dataframe(ent_crosstab_df, use_container_width=True, hide_index=True)
+
+    with sub_tab3:
+        st.markdown("#### Public Sector (PUBSC) Breakdown")
+        pub_preview_df = pd.DataFrame({
+            "Organization Type": ["Non-Profit Organisation", "Public Sector Colleges & FET's", "Public Sector Embassies", "Public Sector Local Government", "Public Sector Provincial Government", "Public Sector Public Schools", "Public Sector Unions & Politics"],
+            "Eastern Cape": [4, 0, 0, 0, 0, 8, 0],
+            "Free State": [1, 0, 0, 0, 0, 1, 0],
+            "Gauteng": [80, 1, 2, 1, 1, 34, 1],
+            "KwaZulu-Natal": [5, 0, 0, 0, 0, 12, 0],
+            "Limpopo": [5, 0, 0, 0, 0, 7, 0],
+            "Mpumalanga": [2, 0, 0, 0, 0, 5, 0],
+            "North West": [3, 0, 0, 0, 0, 2, 0],
+            "Northern Cape": [2, 0, 0, 1, 0, 0, 0],
+            "Western Cape": [4, 0, 0, 0, 0, 1, 1]
+        })
+        pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
+        st.dataframe(pub_preview_df, use_container_width=True, hide_index=True)
+
+    def generate_exact_pm_update_workbook():
+        output_buffer = io.BytesIO()
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)
+
+        FNB_TEAL = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
+        LIGHT_TEAL = PatternFill(start_color="D9F2F4", end_color="D9F2F4", fill_type="solid")
+        FNB_ORANGE = PatternFill(start_color="F58220", end_color="F58220", fill_type="solid")
+        GRAY_HEADER = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+        RED_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+        
+        WHITE_BOLD_FONT = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        THIN_BORDER = Border(left=Side(style='thin', color='BFBFBF'), right=Side(style='thin', color='BFBFBF'), top=Side(style='thin', color='BFBFBF'), bottom=Side(style='thin', color='BFBFBF'))
+        CENTER_ALIGN = Alignment(horizontal="center", vertical="center")
+
+        ws_sum = wb.create_sheet(title='Summary')
+        ws_sum.append(["", "Segment", "TOTAL Target", "TOTAL Achieved", "Total Outstanding"])
+        ws_sum['B1'].fill = FNB_TEAL
+        ws_sum['C1'].fill = FNB_TEAL
+        ws_sum['D1'].fill = FNB_TEAL
+        ws_sum['E1'].fill = FNB_TEAL
+        for col in ['B', 'C', 'D', 'E']:
+            ws_sum[f'{col}1'].font = WHITE_BOLD_FONT
+            ws_sum[f'{col}1'].alignment = CENTER_ALIGN
+        
+        for _, row in summary_df.iterrows():
+            ws_sum.append(["", row["Segment"], row["TOTAL Target"], row["TOTAL Achieved"], row["Total Outstanding"]])
+
+        ws_bus = wb.create_sheet(title='Update Business')
+        ws_bus.cell(row=1, column=2, value="Region").fill = GRAY_HEADER
+        ws_bus.merge_cells("B1:G1")
+        ws_bus.cell(row=1, column=2).alignment = CENTER_ALIGN
+        
+        ws_bus.cell(row=2, column=2, value="Business").fill = FNB_TEAL
+        ws_bus.cell(row=2, column=2).font = WHITE_BOLD_FONT
+        
+        for c_idx, reg in enumerate(["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal"], start=3):
+            cell = ws_bus.cell(row=2, column=c_idx, value=reg)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
+
+        tot_hdr_bus = ws_bus.cell(row=2, column=8, value="Total")
+        tot_hdr_bus.fill = FNB_TEAL
+        tot_hdr_bus.font = WHITE_BOLD_FONT
+        tot_hdr_bus.alignment = CENTER_ALIGN
+        tot_hdr_bus.border = THIN_BORDER
+
+        bus_rows = [
+            ("Eastern Cape", [181, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 60, 0]),
+            ("Gauteng East", [0, 0, 88, 0, 0]), ("Gauteng South Central", [0, 0, 93, 0, 0]),
+            ("Gauteng Tshwane East", [0, 65, 0, 0, 0]), ("Gauteng Tshwane North", [0, 63, 0, 0, 0]),
+            ("Gauteng Tshwane South", [0, 0, 0, 0, 0]), ("Gauteng West-Rand", [0, 0, 67, 0, 0]),
+            ("Greater Sandton", [0, 148, 0, 0, 0]), ("Gauteng Midrand", [0, 59, 0, 0, 0]),
+            ("KZN North", [0, 0, 0, 0, 42]), ("KZN South", [0, 0, 0, 0, 45]),
+            ("KZN West", [0, 0, 0, 0, 50]), ("Limpopo", [0, 0, 0, 66, 0]),
+            ("Mpumalanga", [0, 0, 0, 65, 0]), ("North West", [0, 0, 0, 72, 0]),
+            ("Northern Cape", [0, 0, 0, 33, 0]), ("Western Cape", [105, 0, 0, 0, 0])
+        ]
+        for idx, (prov, vals) in enumerate(bus_rows, start=3):
+            ws_bus.cell(row=idx, column=2, value=prov).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_bus.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            ws_bus.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
+
+        tot_row_idx = len(bus_rows) + 3
+        ws_bus.cell(row=tot_row_idx, column=2, value="TOTAL INLC R10-R60MIL").fill = FNB_TEAL
+        ws_bus.cell(row=tot_row_idx, column=2).font = WHITE_BOLD_FONT
+        for c_idx in range(3, 9):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_bus.cell(row=tot_row_idx, column=c_idx, value=f"=SUM({col_let}3:{col_let}{tot_row_idx-1})")
+            c.fill = FNB_TEAL
+            c.font = WHITE_BOLD_FONT
+            c.border = THIN_BORDER
+
+        ws_bus.cell(row=1, column=11, value="Region").fill = GRAY_HEADER
+        ws_bus.merge_cells("K1:P1")
+        ws_bus.cell(row=2, column=10, value="Business").fill = FNB_TEAL
+        ws_bus.cell(row=2, column=10).font = WHITE_BOLD_FONT
+        for c_idx, sc in enumerate(["Cape", "Gauteng North", "Gauteng South Central", "Inland", "KwaZulu-Natal", "Total", "Quota", "Outstanding"], start=11):
+            cell = ws_bus.cell(row=2, column=c_idx, value=sc)
+            cell.fill = FNB_TEAL if c_idx < 17 else (FNB_ORANGE if c_idx == 17 else RED_FILL)
+            cell.font = WHITE_BOLD_FONT
+
+        for idx, (s_name, s_vals, quota_val) in enumerate([
+            ("R0M-R1M", [159, 127, 116, 157, 57], q_seg_r0_r1),
+            ("R1M-R5M", [81, 90, 60, 97, 43], q_seg_r1_r5),
+            ("R5M-R10M", [45, 85, 72, 36, 37], q_seg_r5_r10),
+            ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60)
+        ], start=3):
+            ws_bus.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
+            for v_idx, val in enumerate(s_vals, start=11):
+                c = ws_bus.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            ws_bus.cell(row=idx, column=16, value=f"=SUM(K{idx}:O{idx})").border = THIN_BORDER
+            ws_bus.cell(row=idx, column=17, value=quota_val).border = THIN_BORDER
+            ws_bus.cell(row=idx, column=17).fill = LIGHT_TEAL
+            r_c = ws_bus.cell(row=idx, column=18, value=f"=Q{idx}-P{idx}")
+            r_c.border = THIN_BORDER
+            r_c.fill = RED_FILL
+
+        bcross_start_row = tot_row_idx + 4
+        ws_bus.cell(row=bcross_start_row, column=2, value="SEGMENTS").fill = GRAY_HEADER
+        ws_bus.merge_cells(start_row=bcross_start_row, start_column=3, end_row=bcross_start_row, end_column=5)
+        ws_bus.cell(row=bcross_start_row, column=3).alignment = CENTER_ALIGN
+
+        ws_bus.cell(row=bcross_start_row+1, column=2, value="Busines").fill = FNB_TEAL
+        ws_bus.cell(row=bcross_start_row+1, column=2).font = WHITE_BOLD_FONT
+        for c_idx, seg_lbl in enumerate(["R0m-R1m", "R1m-R5m", "R5m-R10", "TOTAL"], start=3):
+            cell = ws_bus.cell(row=bcross_start_row+1, column=c_idx, value=seg_lbl)
+            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
+            cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
+            cell.alignment = CENTER_ALIGN
+
+        bus_crosstab_rows = [
+            ("Eastern Cape", [121, 45, 15]), ("Free State", [29, 26, 5]),
+            ("Gauteng East", [32, 22, 34]), ("Gauteng South Central", [50, 21, 22]),
+            ("Gauteng Midrand", [27, 15, 17]), ("Gauteng Tshwane East", [34, 18, 13]),
+            ("Gauteng Tshwane North", [24, 25, 14]), ("Gauteng West-Rand", [34, 17, 16]),
+            ("Greater Sandton", [42, 32, 41]), ("KZN North", [15, 15, 12]),
+            ("KZN South", [21, 10, 14]), ("KZN West", [21, 18, 11])
+        ]
+        for idx_offset, (reg_name, vals) in enumerate(bus_crosstab_rows):
+            r_idx = bcross_start_row + 2 + idx_offset
+            ws_bus.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_bus.cell(row=r_idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            tot_c = ws_bus.cell(row=r_idx, column=6, value=f"=SUM(C{r_idx}:E{r_idx})")
+            tot_c.border = THIN_BORDER
+            tot_c.alignment = CENTER_ALIGN
+
+        bcross_tot_row = bcross_start_row + 2 + len(bus_crosstab_rows)
+        ws_bus.cell(row=bcross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
+        ws_bus.cell(row=bcross_tot_row, column=2).font = Font(name="Calibri", size=11, bold=True)
+        ws_bus.cell(row=bcross_tot_row, column=2).border = THIN_BORDER
+        for c_idx in range(3, 7):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            start_r = bcross_start_row + 2
+            end_r = bcross_tot_row - 1
+            c = ws_bus.cell(row=bcross_tot_row, column=c_idx, value=f"=SUM({col_let}{start_r}:{col_let}{end_r})")
+            c.fill = GRAY_HEADER
+            c.font = Font(name="Calibri", size=11, bold=True)
+            c.border = THIN_BORDER
+            c.alignment = CENTER_ALIGN
+
+        ws_ent = wb.create_sheet(title='Update Enterprise')
+        ws_ent.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
+        ws_ent.merge_cells("B1:G1")
+        ws_ent.cell(row=2, column=2, value="Enterprise").fill = FNB_TEAL
+        ws_ent.cell(row=2, column=2).font = WHITE_BOLD_FONT
+        for c_idx, reg in enumerate(["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal"], start=3):
+            cell = ws_ent.cell(row=2, column=c_idx, value=reg)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
+
+        tot_hdr_ent = ws_ent.cell(row=2, column=8, value="Total")
+        tot_hdr_ent.fill = FNB_TEAL
+        tot_hdr_ent.font = WHITE_BOLD_FONT
+        tot_hdr_ent.alignment = CENTER_ALIGN
+        tot_hdr_ent.border = THIN_BORDER
+
+        ent_rows = [
+            ("Eastern Cape", [55, 0, 0, 0, 0]), ("Free State", [0, 0, 0, 21, 0]),
+            ("Gauteng East", [0, 89, 0, 0, 0]), ("Gauteng Klipriver", [0, 69, 0, 0, 0]),
+            ("Gauteng South-West", [0, 80, 0, 0, 0]), ("Gauteng Tshwane", [0, 0, 60, 0, 0]),
+            ("Greater Sandton", [0, 0, 56, 0, 0]), ("KZN Coastal", [0, 0, 0, 0, 87]),
+            ("KZN Inland", [0, 0, 0, 0, 50]), ("Limpopo", [0, 0, 0, 46, 0]),
+            ("Midrand", [0, 0, 56, 0, 0]), ("Mpumalanga", [0, 0, 0, 67, 0]),
+            ("North West", [0, 0, 0, 41, 0]), ("Northern Cape", [0, 0, 0, 26, 0]),
+            ("Western Cape Inland", [35, 0, 0, 0, 0]), ("Western Cape Metro", [53, 0, 0, 0, 0])
+        ]
+        for idx, (prov, vals) in enumerate(ent_rows, start=3):
+            ws_ent.cell(row=idx, column=2, value=prov).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_ent.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            ws_ent.cell(row=idx, column=8, value=f"=SUM(C{idx}:G{idx})").border = THIN_BORDER
+
+        ent_tot_row = len(ent_rows) + 3
+        ws_ent.cell(row=ent_tot_row, column=2, value="TOTAL EXCL R10 to R60MIL").fill = FNB_TEAL
+        ws_ent.cell(row=ent_tot_row, column=2).font = WHITE_BOLD_FONT
+        for c_idx in range(3, 9):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_ent.cell(row=ent_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{ent_tot_row-1})")
+            c.fill = FNB_TEAL
+            c.font = WHITE_BOLD_FONT
+            c.border = THIN_BORDER
+
+        ws_ent.cell(row=1, column=11, value="REGION").fill = GRAY_HEADER
+        ws_ent.merge_cells("K1:P1")
+        ws_ent.cell(row=2, column=10, value="Enterprise").fill = FNB_TEAL
+        ws_ent.cell(row=2, column=10).font = WHITE_BOLD_FONT
+        for c_idx, sc in enumerate(["Cape", "Gauteng-North", "Gauteng South and Central", "Inland", "KwaZulu-Natal", "Total", "Quota", "Outstanding"], start=11):
+            cell = ws_ent.cell(row=2, column=c_idx, value=sc)
+            cell.fill = FNB_TEAL if c_idx < 17 else (FNB_ORANGE if c_idx == 17 else RED_FILL)
+            cell.font = WHITE_BOLD_FONT
+
+        for idx, (s_name, s_vals, quota_val) in enumerate([
+            ("R10-R60M", [56, 105, 107, 109, 82], q_seg_r10_r60),
+            ("R60-R150M", [43, 38, 90, 55, 21], q_seg_r60_r150),
+            ("R150M+", [44, 29, 41, 37, 34], q_seg_r150_plus)
+        ], start=3):
+            ws_ent.cell(row=idx, column=10, value=s_name).border = THIN_BORDER
+            for v_idx, val in enumerate(s_vals, start=11):
+                c = ws_ent.cell(row=idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            ws_ent.cell(row=idx, column=16, value=f"=SUM(K{idx}:O{idx})").border = THIN_BORDER
+            ws_ent.cell(row=idx, column=17, value=quota_val).border = THIN_BORDER
+            ws_ent.cell(row=idx, column=17).fill = LIGHT_TEAL
+            r_c = ws_ent.cell(row=idx, column=18, value=f"=Q{idx}-P{idx}")
+            r_c.border = THIN_BORDER
+            r_c.fill = RED_FILL
+
+        ecross_start_row = ent_tot_row + 4
+        ws_ent.cell(row=ecross_start_row, column=2, value="SEGMENTS").fill = GRAY_HEADER
+        ws_ent.merge_cells(start_row=ecross_start_row, start_column=3, end_row=ecross_start_row, end_column=5)
+        ws_ent.cell(row=ecross_start_row, column=3).alignment = CENTER_ALIGN
+
+        ws_ent.cell(row=ecross_start_row+1, column=2, value="Enterprise").fill = FNB_TEAL
+        ws_ent.cell(row=ecross_start_row+1, column=2).font = WHITE_BOLD_FONT
+        for c_idx, seg_lbl in enumerate(["R10m-R60m", "R150m+", "R60m-R150", "TOTAL"], start=3):
+            cell = ws_ent.cell(row=ecross_start_row+1, column=c_idx, value=seg_lbl)
+            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
+            cell.font = WHITE_BOLD_FONT if c_idx < 6 else Font(name="Calibri", size=11, bold=True)
+            cell.alignment = CENTER_ALIGN
+
+        ent_crosstab_rows = [
+            ("EASTERN CAPE", [26, 8, 21]), ("FREE STATE", [10, 5, 6]),
+            ("GAUTENG EAST", [40, 18, 31]), ("GAUTENG KLIPRIVER", [36, 5, 28]),
+            ("GAUTENG TSHWANE", [32, 9, 19]), ("GAUTENG WEST", [31, 18, 31]),
+            ("GREATER SANDTON", [34, 10, 12]), ("KZN COASTAL", [52, 23, 12]),
+            ("KZN INLAND", [30, 11, 9])
+        ]
+        for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
+            r_idx = ecross_start_row + 2 + idx_offset
+            ws_ent.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
+            for v_idx, val in enumerate(vals, start=3):
+                c = ws_ent.cell(row=r_idx, column=v_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            tot_c = ws_ent.cell(row=r_idx, column=6, value=f"=SUM(C{r_idx}:E{r_idx})")
+            tot_c.border = THIN_BORDER
+            tot_c.alignment = CENTER_ALIGN
+
+        ecross_tot_row = ecross_start_row + 2 + len(ent_crosstab_rows)
+        ws_ent.cell(row=ecross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
+        ws_ent.cell(row=ecross_tot_row, column=2).font = Font(name="Calibri", size=11, bold=True)
+        ws_ent.cell(row=ecross_tot_row, column=2).border = THIN_BORDER
+        for c_idx in range(3, 7):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            start_r = ecross_start_row + 2
+            end_r = ecross_tot_row - 1
+            c = ws_ent.cell(row=ecross_tot_row, column=c_idx, value=f"=SUM({col_let}{start_r}:{col_let}{end_r})")
+            c.fill = GRAY_HEADER
+            c.font = Font(name="Calibri", size=11, bold=True)
+            c.border = THIN_BORDER
+            c.alignment = CENTER_ALIGN
+
+        ws_pub = wb.create_sheet(title='Update PUBSC')
+        ws_pub.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
+        ws_pub.merge_cells("B1:L1")
+        ws_pub.cell(row=1, column=2).alignment = CENTER_ALIGN
+
+        pub_headers = ["ORGANISATION TYPE", "EASTERN CAPE", "FREE STATE", "GAUTENG", "KWAZULU-NATAL", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE", "WESTERN CAPE", "TOTAL"]
+        for col_idx, h_text in enumerate(pub_headers, start=2):
+            cell = ws_pub.cell(row=2, column=col_idx, value=h_text)
+            cell.fill = FNB_TEAL
+            cell.font = WHITE_BOLD_FONT
+            cell.alignment = CENTER_ALIGN
+
+        pub_rows_data = [
+            ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4],
+            ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0],
+            ["PUBLIC SECTOR LOCAL GOVERMENT", 0, 0, 1, 0, 0, 0, 0, 1, 0],
+            ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1],
+            ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1]
+        ]
+        for row_offset, prow in enumerate(pub_rows_data, start=3):
+            ws_pub.cell(row=row_offset, column=2, value=prow[0]).border = THIN_BORDER
+            for val_idx, val in enumerate(prow[1:], start=3):
+                c = ws_pub.cell(row=row_offset, column=val_idx, value=val)
+                c.border = THIN_BORDER
+                c.alignment = CENTER_ALIGN
+            tot_c = ws_pub.cell(row=row_offset, column=12, value=f"=SUM(C{row_offset}:K{row_offset})")
+            tot_c.border = THIN_BORDER
+            tot_c.alignment = CENTER_ALIGN
+
+        pub_tot_row = len(pub_rows_data) + 3
+        ws_pub.cell(row=pub_tot_row, column=2, value="").border = THIN_BORDER
+        for c_idx in range(3, 13):
+            col_let = openpyxl.utils.get_column_letter(c_idx)
+            c = ws_pub.cell(row=pub_tot_row, column=c_idx, value=f"=SUM({col_let}3:{col_let}{pub_tot_row-1})")
+            c.border = THIN_BORDER
+            c.alignment = CENTER_ALIGN
+            c.font = Font(name="Calibri", size=11, bold=True)
+
+        for sheet in wb.worksheets:
+            for col in sheet.columns:
+                max_len = 0
+                col_letter = openpyxl.utils.get_column_letter(col[0].column)
+                for cell in col:
+                    if cell.value is not None:
+                        val_str = str(cell.value)
+                        if len(val_str) > max_len:
+                            max_len = len(val_str)
+                sheet.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
+        wb.save(output_buffer)
+        output_buffer.seek(0)
+        return output_buffer
+
+    st.markdown("---")
+    if st.button("📥 Generate & Download Exact PM Update Workbook", type="primary", key="download_status_btn"):
+        status_excel_bytes = generate_exact_pm_update_workbook()
+        run_date_str = datetime.now().strftime("%Y-%m-%d")
+        st.success("🎉 Project Status Update report generated successfully with FNB brand colors and auto-fitted columns across all worksheets!")
+        st.download_button(
+            label="💾 Download Formatted Excel Report (`Star Detailed Update.xlsx`)",
+            data=status_excel_bytes,
+            file_name=f"Star Detailed Update-W22 {run_date_str}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download_status_excel_final"
+        )
 
 
 # =========================================================================
