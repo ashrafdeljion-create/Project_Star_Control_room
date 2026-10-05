@@ -4242,13 +4242,13 @@ with tab5:
 # ==========================================================================
 # ==========================================================================
 with tab6:
-    st.markdown("### ?? SME / ENT Segment & Type Analysis Tables")
+    st.markdown("### 📈 SME / ENT Segment & Type Analysis Tables")
     st.markdown(
         "Upload your SPSS datasets below or view live statistical summaries (Mean & Valid N) broken down by **TYPE** (Total, Growth, R10Mil) and **Segment** (Total, Enterprise, Gold/SME/Platinum), filtered by Wave."
     )
 
     st.markdown("---")
-    st.subheader("?? Upload Latest SPSS Datasets for Live Analysis")
+    st.subheader("📁 Upload Latest SPSS Datasets for Live Analysis")
     col_up1, col_up2, col_up3 = st.columns(3)
     with col_up1:
         sme_file_grow = st.file_uploader(
