@@ -289,7 +289,12 @@ with tab1:
     )
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
-# --- 100% LIVE DYNAMIC SEGMENT COUNTS FROM V44011 (NO FALLBACKS) ---
+# 1. First, the files are uploaded and loaded into dataframes here:
+    df_grow_live = load_and_clean_spss(status_file_grow)
+    df_r10_live = load_and_clean_spss(status_file_r10)
+    df_pub_live = load_and_clean_spss(status_file_pub)
+
+    # 2. THEN right underneath, you put the dynamic segment calculation block:
     if df_grow_live is not None and not df_grow_live.empty and "V44011" in df_grow_live.columns:
         seg_grow = df_grow_live["V44011"].astype(str).str.strip().str.lower()
         achieved_r0_r1 = int(seg_grow.str.contains("r0m-r1m|0-1|r0", regex=True).sum())
@@ -309,7 +314,7 @@ with tab1:
     else:
         achieved_r10_r60 = achieved_r10_r60_grow
         achieved_r60_r150, achieved_r150_plus = 0, 0
-
+        
     total_seg_target = (
         q_seg_r0_r1
         + q_seg_r1_r5
