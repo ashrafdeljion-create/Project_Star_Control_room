@@ -121,7 +121,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
 # ==========================================================================
-# WHAT THIS DOES: Monitors sample quotas achieved across portfolios and generates detailed PM Update Excel workbooks dynamically from SPSS files.
+# WHAT THIS DOES: Monitors sample quotas achieved across portfolios and generates detailed PM Update Excel workbooks.
 # ==========================================================================
 with tab1:
     st.markdown("### 📊 Project Status & Quotas Update Hub")
@@ -208,80 +208,34 @@ with tab1:
             "Upload PUBW (.sav)", type=["sav"], key="status_pub"
         )
 
-    # Helper function to process uploaded SPSS datasets with robust V9999 filtering and sub-region cleaning
-    def load_and_clean_spss(uploaded_file, is_growth=False):
+    # Helper function to read SPSS row counts for achieved quotas
+    def get_achieved_count(uploaded_file):
         if uploaded_file is None:
             return None
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
             tmp.write(uploaded_file.getvalue())
             tmp_path = tmp.name
         try:
-            try:
-                df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
-            except:
-                df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
-            
-            df.columns = [str(c).strip().upper() for c in df.columns]
-
-            # Robust V9999 filtering (handles 1, 1.0, or string '1')
-            if "V9999" in df.columns:
-                v9999_series = pd.to_numeric(df["V9999"], errors="coerce")
-                df = df[(v9999_series == 1) | (df["V9999"].isna())].copy()
-
-            # Clean Growth sub-regions if applicable
-            if is_growth and "V13290" in df.columns:
-                subreg_mapping = {
-                    "GN GROWTH GREATER SANDTON": "Greater Sandton",
-                    "GN GROWTH MIDRAND": "Gauteng Midrand",
-                    "GN GROWTH SANDTON CENTRAL": "Greater Sandton",
-                    "GN GROWTH TSHWANE EAST": "Gauteng Tshwane East",
-                    "GN GROWTH TSHWANE NORTH": "Gauteng Tshwane North",
-                }
-                df["V13290"] = df["V13290"].apply(
-                    lambda x: subreg_mapping.get(str(x).strip().upper(), str(x).strip())
-                    if pd.notna(x) else x
-                )
-            return df
-        except Exception as e:
-            st.error(f"Error reading SPSS file: {e}")
-            return None
+            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
+            return len(df)
+        except:
+            return 0
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
-    df_grow_live = load_and_clean_spss(status_file_grow, is_growth=True)
-    df_r10_live = load_and_clean_spss(status_file_r10, is_growth=False)
-    df_pub_live = load_and_clean_spss(status_file_pub, is_growth=False)
+    achieved_business = (
+        get_achieved_count(status_file_grow) if status_file_grow else 1721
+    )
+    achieved_enterprise = (
+        get_achieved_count(status_file_r10) if status_file_r10 else 432
+    )
+    achieved_pubsc = get_achieved_count(status_file_pub) if status_file_pub else 184
 
-    achieved_business = len(df_grow_live) if df_grow_live is not None and not df_grow_live.empty else 1721
-    achieved_enterprise = len(df_r10_live) if df_r10_live is not None and not df_r10_live.empty else 432
-    achieved_pubsc = len(df_pub_live) if df_pub_live is not None and not df_pub_live.empty else 184
-
-    total_achieved_val = achieved_business + achieved_enterprise + achieved_pubsc
+    total_achieved_val = (
+        achieved_business + achieved_enterprise + achieved_pubsc
+    )
     total_outstanding_val = total_target_val - total_achieved_val
-
-    # Dynamic Segment breakdown counts if Growth dataset is uploaded
-    if df_grow_live is not None and not df_grow_live.empty and "V44011" in df_grow_live.columns:
-        seg_series = df_grow_live["V44011"].astype(str).str.strip().str.upper()
-        achieved_r0_r1 = int(seg_series.str.contains("R0|0-1|R0M-R1M", regex=True).sum())
-        achieved_r1_r5 = int(seg_series.str.contains("R1|1-5|R1M-R5M", regex=True).sum())
-        achieved_r5_r10 = int(seg_series.str.contains("R5|5-10|R5M-R10M", regex=True).sum())
-        achieved_r10_r60 = int(seg_series.str.contains("R10|10-60|R10-R60M", regex=True).sum())
-        if achieved_r0_r1 == 0 and achieved_r1_r5 == 0:
-            achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
-    else:
-        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
-
-    if df_r10_live is not None and not df_r10_live.empty and "V44011" in df_r10_live.columns:
-        ent_seg_series = df_r10_live["V44011"].astype(str).str.strip().str.upper()
-        achieved_r60_r150 = int(ent_seg_series.str.contains("60|60-150", regex=True).sum())
-        achieved_r150_plus = int(ent_seg_series.str.contains("150|150M\\+", regex=True).sum())
-        if achieved_r60_r150 == 0:
-            achieved_r60_r150 = 247
-        if achieved_r150_plus == 0:
-            achieved_r150_plus = 185
-    else:
-        achieved_r60_r150, achieved_r150_plus = 247, 185
 
     st.markdown("---")
     st.subheader("📈 Executive Summary Overview")
@@ -337,6 +291,13 @@ with tab1:
 
     # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
     st.markdown("#### 📋 Segment Quotas Executive Summary Breakdown")
+    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = (
+        616,
+        371,
+        275,
+        459,
+    )
+    achieved_r60_r150, achieved_r150_plus = 247, 185
 
     total_seg_target = (
         q_seg_r0_r1
@@ -506,13 +467,13 @@ with tab1:
                 "Gauteng South Central": [116, 60, 72, 107],
                 "Inland": [157, 97, 36, 109],
                 "KwaZulu-Natal": [57, 43, 37, 82],
-                "Total": [achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60],
+                "Total": [616, 371, 275, 459],
                 "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
                 "Outstanding": [
-                    q_seg_r0_r1 - achieved_r0_r1,
-                    q_seg_r1_r5 - achieved_r1_r5,
-                    q_seg_r5_r10 - achieved_r5_r10,
-                    q_seg_r10_r60 - achieved_r10_r60,
+                    q_seg_r0_r1 - 616,
+                    q_seg_r1_r5 - 371,
+                    q_seg_r5_r10 - 275,
+                    q_seg_r10_r60 - 459,
                 ],
             }
         )
@@ -679,12 +640,12 @@ with tab1:
                 "Gauteng South and Central": [107, 90, 41],
                 "Inland": [109, 55, 37],
                 "KwaZulu-Natal": [82, 21, 34],
-                "Total": [459, achieved_r60_r150, achieved_r150_plus],
+                "Total": [459, 247, 185],
                 "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
                 "Outstanding": [
                     q_seg_r10_r60 - 459,
-                    q_seg_r60_r150 - achieved_r60_r150,
-                    q_seg_r150_plus - achieved_r150_plus,
+                    q_seg_r60_r150 - 247,
+                    q_seg_r150_plus - 185,
                 ],
             }
         )
@@ -1189,6 +1150,7 @@ with tab1:
             ("KZN COASTAL", [52, 12, 23]),
             ("KZN INLAND", [30, 9, 11]),
             ("LIMPOPO", [23, 11, 12]),
+            ("MIDRAND", [39, 7, 10]),
             ("MPUMALANGA", [42, 15, 10]),
             ("NORTH WEST", [22, 11, 8]),
             ("NORTHERN CAPE", [12, 12, 2]),
@@ -1323,7 +1285,7 @@ with tab1:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_status_excel_final",
         )
-        
+
 # ==========================================================================
 # ==========================================================================
 # TAB 2: WEEKLY 911'S CONTROL ROOM
