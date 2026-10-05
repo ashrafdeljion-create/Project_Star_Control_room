@@ -4242,7 +4242,7 @@ with tab5:
 # ==========================================================================
 # ==========================================================================
 with tab6:
-    st.markdown("### 📈 SME / ENT Segment & Type Analysis Tables")
+    st.markdown("### 🏢 SME / ENT Segment & Type Analysis Tables")
     st.markdown(
         "Upload your SPSS datasets below or view live statistical summaries (Mean & Valid N) broken down by **TYPE** (Total, Growth, R10Mil) and **Segment** (Total, Enterprise, Gold/SME/Platinum), filtered by Wave."
     )
