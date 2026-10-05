@@ -121,8 +121,6 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
 # ==========================================================================
-# WHAT THIS DOES: Monitors sample quotas achieved across portfolios and generates detailed PM Update Excel workbooks.
-# ==========================================================================
 with tab1:
     st.markdown("### 📊 Project Status & Quotas Update Hub")
     st.markdown(
@@ -132,7 +130,6 @@ with tab1:
     st.markdown("---")
     st.subheader("🎯 Live Quota Target Adjustments")
 
-    # Input fields allowing users to adjust target quotas dynamically
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1:
         target_business = st.number_input(
@@ -155,7 +152,6 @@ with tab1:
             "PUBSC Target", min_value=0, value=500, step=5, key="target_pub"
         )
 
-    # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW ---
     st.markdown("---")
     st.subheader("🔢 Segment-Level Quota Breakdown Inputs")
     st.markdown(
@@ -208,34 +204,73 @@ with tab1:
             "Upload PUBW (.sav)", type=["sav"], key="status_pub"
         )
 
-    # Helper function to read SPSS row counts for achieved quotas
-    def get_achieved_count(uploaded_file):
+    def load_and_clean_spss(uploaded_file):
         if uploaded_file is None:
             return None
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
             tmp.write(uploaded_file.getvalue())
             tmp_path = tmp.name
         try:
-            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
-            return len(df)
+            try:
+                df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
+            except:
+                df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
+            df.columns = [str(c).strip().upper() for c in df.columns]
+
+            if "V9999" in df.columns:
+                v9999_num = pd.to_numeric(df["V9999"], errors="coerce")
+                df = df[(v9999_num == 1) | (df["V9999"].isna())].copy()
+
+            for col in df.select_dtypes(include=["object"]).columns:
+                df[col] = df[col].astype(str).str.strip()
+
+            return df
         except:
-            return 0
+            return None
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
+    # 1. LOAD DATASETS FIRST
+    df_grow_live = load_and_clean_spss(status_file_grow)
+    df_r10_live = load_and_clean_spss(status_file_r10)
+    df_pub_live = load_and_clean_spss(status_file_pub)
+
     achieved_business = (
-        get_achieved_count(status_file_grow) if status_file_grow else 1721
+        len(df_grow_live) if df_grow_live is not None and not df_grow_live.empty else 0
     )
     achieved_enterprise = (
-        get_achieved_count(status_file_r10) if status_file_r10 else 432
+        len(df_r10_live) if df_r10_live is not None and not df_r10_live.empty else 0
     )
-    achieved_pubsc = get_achieved_count(status_file_pub) if status_file_pub else 184
+    achieved_pubsc = (
+        len(df_pub_live) if df_pub_live is not None and not df_pub_live.empty else 0
+    )
 
     total_achieved_val = (
         achieved_business + achieved_enterprise + achieved_pubsc
     )
     total_outstanding_val = total_target_val - total_achieved_val
+
+    # 2. RUN DYNAMIC SEGMENT COUNTS FROM V44011 AFTER LOADERS
+    if df_grow_live is not None and not df_grow_live.empty and "V44011" in df_grow_live.columns:
+        seg_grow = df_grow_live["V44011"].astype(str).str.strip().str.lower()
+        achieved_r0_r1 = int(seg_grow.str.contains("r0m-r1m|0-1|r0", regex=True).sum())
+        achieved_r1_r5 = int(seg_grow.str.contains("r1m-r5m|1-5|r1", regex=True).sum())
+        achieved_r5_r10 = int(seg_grow.str.contains("r5m-r10|5-10|r5", regex=True).sum())
+        achieved_r10_r60_grow = int(seg_grow.str.contains("r10-r60|10-60", regex=True).sum())
+    else:
+        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60_grow = 0, 0, 0, 0
+
+    if df_r10_live is not None and not df_r10_live.empty and "V44011" in df_r10_live.columns:
+        seg_r10 = df_r10_live["V44011"].astype(str).str.strip().str.lower()
+        achieved_r10_r60_r10 = int(seg_r10.str.contains("r10-r60|10-60|r10", regex=True).sum())
+        achieved_r60_r150 = int(seg_r10.str.contains("r60m-r150|60-150|60", regex=True).sum())
+        achieved_r150_plus = int(seg_r10.str.contains("r150m\\+|150m\\+|150", regex=True).sum())
+        
+        achieved_r10_r60 = achieved_r10_r60_grow + achieved_r10_r60_r10
+    else:
+        achieved_r10_r60 = achieved_r10_r60_grow
+        achieved_r60_r150, achieved_r150_plus = 0, 0
 
     st.markdown("---")
     st.subheader("📈 Executive Summary Overview")
@@ -289,32 +324,9 @@ with tab1:
     )
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
-# 1. First, the files are uploaded and loaded into dataframes here:
-    df_grow_live = load_and_clean_spss(status_file_grow)
-    df_r10_live = load_and_clean_spss(status_file_r10)
-    df_pub_live = load_and_clean_spss(status_file_pub)
+    # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
+    st.markdown("#### 📋 Segment Quotas Executive Summary Breakdown")
 
-    # 2. THEN right underneath, you put the dynamic segment calculation block:
-    if df_grow_live is not None and not df_grow_live.empty and "V44011" in df_grow_live.columns:
-        seg_grow = df_grow_live["V44011"].astype(str).str.strip().str.lower()
-        achieved_r0_r1 = int(seg_grow.str.contains("r0m-r1m|0-1|r0", regex=True).sum())
-        achieved_r1_r5 = int(seg_grow.str.contains("r1m-r5m|1-5|r1", regex=True).sum())
-        achieved_r5_r10 = int(seg_grow.str.contains("r5m-r10|5-10|r5", regex=True).sum())
-        achieved_r10_r60_grow = int(seg_grow.str.contains("r10-r60|10-60", regex=True).sum())
-    else:
-        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60_grow = 0, 0, 0, 0
-
-    if df_r10_live is not None and not df_r10_live.empty and "V44011" in df_r10_live.columns:
-        seg_r10 = df_r10_live["V44011"].astype(str).str.strip().str.lower()
-        achieved_r10_r60_r10 = int(seg_r10.str.contains("r10-r60|10-60|r10", regex=True).sum())
-        achieved_r60_r150 = int(seg_r10.str.contains("r60m-r150|60-150|60", regex=True).sum())
-        achieved_r150_plus = int(seg_r10.str.contains("r150m\\+|150m\\+|150", regex=True).sum())
-        
-        achieved_r10_r60 = achieved_r10_r60_grow + achieved_r10_r60_r10
-    else:
-        achieved_r10_r60 = achieved_r10_r60_grow
-        achieved_r60_r150, achieved_r150_plus = 0, 0
-        
     total_seg_target = (
         q_seg_r0_r1
         + q_seg_r1_r5
@@ -483,13 +495,13 @@ with tab1:
                 "Gauteng South Central": [116, 60, 72, 107],
                 "Inland": [157, 97, 36, 109],
                 "KwaZulu-Natal": [57, 43, 37, 82],
-                "Total": [616, 371, 275, 459],
+                "Total": [achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60],
                 "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
                 "Outstanding": [
-                    q_seg_r0_r1 - 616,
-                    q_seg_r1_r5 - 371,
-                    q_seg_r5_r10 - 275,
-                    q_seg_r10_r60 - 459,
+                    q_seg_r0_r1 - achieved_r0_r1,
+                    q_seg_r1_r5 - achieved_r1_r5,
+                    q_seg_r5_r10 - achieved_r5_r10,
+                    q_seg_r10_r60 - achieved_r10_r60,
                 ],
             }
         )
@@ -656,12 +668,12 @@ with tab1:
                 "Gauteng South and Central": [107, 90, 41],
                 "Inland": [109, 55, 37],
                 "KwaZulu-Natal": [82, 21, 34],
-                "Total": [459, 247, 185],
+                "Total": [achieved_r10_r60, achieved_r60_r150, achieved_r150_plus],
                 "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
                 "Outstanding": [
-                    q_seg_r10_r60 - 459,
-                    q_seg_r60_r150 - 247,
-                    q_seg_r150_plus - 185,
+                    q_seg_r10_r60 - achieved_r10_r60,
+                    q_seg_r60_r150 - achieved_r60_r150,
+                    q_seg_r150_plus - achieved_r150_plus,
                 ],
             }
         )
@@ -1166,7 +1178,6 @@ with tab1:
             ("KZN COASTAL", [52, 12, 23]),
             ("KZN INLAND", [30, 9, 11]),
             ("LIMPOPO", [23, 11, 12]),
-            ("MIDRAND", [39, 7, 10]),
             ("MPUMALANGA", [42, 15, 10]),
             ("NORTH WEST", [22, 11, 8]),
             ("NORTHERN CAPE", [12, 12, 2]),
@@ -1273,34 +1284,6 @@ with tab1:
                 for cell in col:
                     if cell.value is not None:
                         val_str = str(cell.value)
-                        if len(val_str) > max_len:
-                            max_len = len(val_str)
-                sheet.column_dimensions[col_letter].width = max(
-                    max_len + 3, 12
-                )
-
-        wb.save(output_buffer)
-        output_buffer.seek(0)
-        return output_buffer
-
-    st.markdown("---")
-    if st.button(
-        "📊 Generate & Download Exact PM Update Workbook",
-        type="primary",
-        key="download_status_btn",
-    ):
-        status_excel_bytes = generate_exact_pm_update_workbook()
-        run_date_str = datetime.now().strftime("%Y-%m-%d")
-        st.success(
-            "✅ Project Status Update report generated successfully with FNB brand colors and auto-fitted columns across all worksheets!"
-        )
-        st.download_button(
-            label="📥 Download Formatted Excel Report (`Star Detailed Update.xlsx`)",
-            data=status_excel_bytes,
-            file_name=f"Star Detailed Update-W22 {run_date_str}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_status_excel_final",
-        )
 
 # ==========================================================================
 # ==========================================================================
