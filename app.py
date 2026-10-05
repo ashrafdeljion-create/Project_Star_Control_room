@@ -121,8 +121,6 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
 # ==========================================================================
-# WHAT THIS DOES: Monitors sample quotas achieved across portfolios and generates detailed PM Update Excel workbooks.
-# ==========================================================================
 with tab1:
     st.markdown("### 📊 Project Status & Quotas Update Hub")
     st.markdown(
@@ -132,7 +130,6 @@ with tab1:
     st.markdown("---")
     st.subheader("🎯 Live Quota Target Adjustments")
 
-    # Input fields allowing users to adjust target quotas dynamically
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1:
         target_business = st.number_input(
@@ -155,7 +152,6 @@ with tab1:
             "PUBSC Target", min_value=0, value=500, step=5, key="target_pub"
         )
 
-    # --- SEPARATE SEGMENT-LEVEL QUOTA INPUTS BELOW ---
     st.markdown("---")
     st.subheader("🔢 Segment-Level Quota Breakdown Inputs")
     st.markdown(
@@ -208,7 +204,6 @@ with tab1:
             "Upload PUBW (.sav)", type=["sav"], key="status_pub"
         )
 
-    # Helper function to read SPSS datasets with V9999 == 1 filtering and string normalization
     def load_and_clean_spss(uploaded_file):
         if uploaded_file is None:
             return None
@@ -222,12 +217,10 @@ with tab1:
                 df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
             df.columns = [str(c).strip().upper() for c in df.columns]
 
-            # Filter by V9999 == 1 (completed interviews only)
             if "V9999" in df.columns:
                 v9999_num = pd.to_numeric(df["V9999"], errors="coerce")
                 df = df[(v9999_num == 1) | (df["V9999"].isna())].copy()
 
-            # Clean and strip string columns to prevent trailing whitespace issues
             for col in df.select_dtypes(include=["object"]).columns:
                 df[col] = df[col].astype(str).str.strip()
 
@@ -257,38 +250,28 @@ with tab1:
     )
     total_outstanding_val = total_target_val - total_achieved_val
 
-    # --- DYNAMICALLY CALCULATE SEGMENT ACHIEVED COUNTS FROM V44011 ---
-    # Growth Dataset Segments: R0m-R1m, R1m-R5m, R5m-R10, R10-R60m (if present in Growth)
+    # --- DYNAMIC SEGMENT COUNTS FROM V44011 ---
     if df_grow_live is not None and not df_grow_live.empty and "V44011" in df_grow_live.columns:
-        seg_grow_str = df_grow_live["V44011"].astype(str).str.strip().str.lower()
-        achieved_r0_r1 = int(seg_grow_str.str.contains("r0m-r1m|r0m|r1m|0-1", regex=True).sum())
-        achieved_r1_r5 = int(seg_grow_str.str.contains("r1m-r5m|1-5", regex=True).sum())
-        achieved_r5_r10 = int(seg_grow_str.str.contains("r5m-r10|5-10", regex=True).sum())
-        achieved_r10_r60_grow = int(seg_grow_str.str.contains("r10-r60|10-60", regex=True).sum())
-        if achieved_r0_r1 == 0 and achieved_r1_r5 == 0:
-            achieved_r0_r1, achieved_r1_r5, achieved_r5_r10 = 616, 371, 275
+        seg_grow = df_grow_live["V44011"].astype(str).str.strip().str.lower()
+        achieved_r0_r1 = int(seg_grow.str.contains("r0m-r1m|0-1|r0", regex=True).sum())
+        achieved_r1_r5 = int(seg_grow.str.contains("r1m-r5m|1-5|r1", regex=True).sum())
+        achieved_r5_r10 = int(seg_grow.str.contains("r5m-r10|5-10|r5", regex=True).sum())
+        achieved_r10_r60_grow = int(seg_grow.str.contains("r10-r60|10-60", regex=True).sum())
     else:
-        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10 = 616, 371, 275
-        achieved_r10_r60_grow = 0
+        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60_grow = 0, 0, 0, 0
 
-    # R10Mil Dataset Segments: R10m-R60m, R60m-R150, R150m+
     if df_r10_live is not None and not df_r10_live.empty and "V44011" in df_r10_live.columns:
-        seg_r10_str = df_r10_live["V44011"].astype(str).str.strip().str.lower()
-        achieved_r10_r60_r10 = int(seg_r10_str.str.contains("r10-r60|10-60", regex=True).sum())
-        achieved_r60_r150 = int(seg_r10_str.str.contains("r60m-r150|60m|60-150", regex=True).sum())
-        achieved_r150_plus = int(seg_r10_str.str.contains("r150m\\+|150m\\+|150", regex=True).sum())
+        seg_r10 = df_r10_live["V44011"].astype(str).str.strip().str.lower()
+        achieved_r10_r60_r10 = int(seg_r10.str.contains("r10-r60|10-60|r10", regex=True).sum())
+        achieved_r60_r150 = int(seg_r10.str.contains("r60m-r150|60-150|60", regex=True).sum())
+        achieved_r150_plus = int(seg_r10.str.contains("r150m\\+|150m\\+|150", regex=True).sum())
         
         achieved_r10_r60 = achieved_r10_r60_grow + achieved_r10_r60_r10
         if achieved_r10_r60 == 0:
-            achieved_r10_r60 = 459
-        if achieved_r60_r150 == 0:
-            achieved_r60_r150 = 247
-        if achieved_r150_plus == 0:
-            achieved_r150_plus = 185
+            achieved_r10_r60 = achieved_r10_r60_grow
     else:
-        achieved_r10_r60 = 459
-        achieved_r60_r150 = 247
-        achieved_r150_plus = 185
+        achieved_r10_r60 = achieved_r10_r60_grow
+        achieved_r60_r150, achieved_r150_plus = 0, 0
 
     st.markdown("---")
     st.subheader("📈 Executive Summary Overview")
