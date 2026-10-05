@@ -41,6 +41,7 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+        /* Styles the main background container holding the navigation tabs */
         .stTabs [data-baseweb="tab-list"] {
             gap: 12px;
             background-color: #f4fbfa;
@@ -48,6 +49,7 @@ st.markdown(
             border-radius: 12px;
             border: 2px solid #00A3AD;
         }
+        /* Styles each individual unselected tab button */
         .stTabs [data-baseweb="tab"] {
             height: 50px;
             white-space: pre-wrap;
@@ -63,6 +65,7 @@ st.markdown(
             box-shadow: 0 2px 4px rgba(0,163,173,0.1);
             transition: all 0.3s ease;
         }
+        /* Styles the currently active/selected tab */
         .stTabs [aria-selected="true"] {
             background: linear-gradient(135deg, #00A3AD 0%, #00828a 100%) !important;
             color: #ffffff !important;
@@ -72,6 +75,7 @@ st.markdown(
         .stTabs [aria-selected="true"] p {
             color: #ffffff !important;
         }
+        /* Styles primary action buttons (FNB Orange) */
         .stButton button[kind="primary"] {
             background-color: #F58220 !important;
             color: white !important;
@@ -86,6 +90,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Main title and subtitle displayed at the top of the Streamlit application web page
 st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown(
     "Your unified command center for Project Status, Weekly 911's pipeline automation, NPS Excel reports, Q11 extractions, Yearly Dashboard generation, and SME/ENT segment tables."
@@ -115,6 +120,8 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 # ==========================================================================
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
+# ==========================================================================
+# WHAT THIS DOES: Monitors sample quotas achieved across portfolios and generates detailed PM Update Excel workbooks.
 # ==========================================================================
 with tab1:
     st.markdown("### 📊 Project Status & Quotas Update Hub")
@@ -1284,6 +1291,8 @@ with tab1:
 # TAB 2: WEEKLY 911'S CONTROL ROOM
 # ==========================================================================
 # ==========================================================================
+# WHAT THIS DOES: Manages weekly dataset pipelines, cleans dates, filters data, and exports 4 formatted CSV outputs.
+# ==========================================================================
 with tab2:
     st.markdown("### `[02 // CONTROL ROOM]` &nbsp;&nbsp;&nbsp; `SYS.READY // PIPELINE 2.2`")
     st.markdown(
@@ -1888,6 +1897,8 @@ with tab2:
 # TAB 3: NPS DASHBOARD & DATA GENERATOR
 # ==========================================================================
 # ==========================================================================
+# WHATTHIS DOES: Processes master SPSS files to generate customer satisfaction reports and SPSS datasets.
+# ==========================================================================
 with tab3:
     st.markdown("### 📈 NPS Dashboard & Streamlined Data Generator")
     st.markdown(
@@ -2051,6 +2062,8 @@ with tab3:
 # TAB 4: Q11 RATINGS & REASONS EXTRACTION
 # ==========================================================================
 # ==========================================================================
+# WHAT THIS DOES: Extracts Q11 ratings and reasons from datasets into an Excel report.
+# ==========================================================================
 with tab4:
     st.markdown("### 📋 Q11 Ratings & Reasons Extraction")
     st.markdown(
@@ -2058,7 +2071,7 @@ with tab4:
     )
 
     st.markdown("---")
-    st.subheader("⚙️️ Global Execution Parameters (Q11 Extraction)")
+    st.subheader("⚙ Global Execution Parameters (Q11 Extraction)")
 
     q11_date_mode = st.radio(
         "Select Date Filtering Mode for Runs:",
@@ -2402,6 +2415,8 @@ with tab4:
 # ==========================================================================
 # TAB 5: NPS YEARLY DASHBOARD GENERATOR
 # ==========================================================================
+# ==========================================================================
+# WHAT THIS DOES: Processes multi-wave yearly SPSS datasets to generate longitudinal NPS performance reports.
 # ==========================================================================
 with tab5:
     st.markdown("### 📅 NPS Yearly Dashboard Generator")
@@ -4262,6 +4277,8 @@ with tab5:
 # ==========================================================================
 # TAB 6: SME/ENT TABLES (NEW TAB ADDED)
 # ==========================================================================
+# ==========================================================================
+# WHAT THIS DOES: Analyzes SME/ENT segment and type data to generate statistical summary tables.
 # ==========================================================================
 with tab6:
     st.markdown("### 🏢 SME / ENT Segment & Type Analysis Tables")
