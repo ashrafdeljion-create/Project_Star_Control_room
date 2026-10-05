@@ -251,26 +251,24 @@ with tab1:
     )
     total_outstanding_val = total_target_val - total_achieved_val
 
-    # 2. RUN DYNAMIC SEGMENT COUNTS FROM V44011 AFTER LOADERS
+    # 2. 100% DYNAMIC & EXACT SEGMENT COUNTS FROM V44011 STRING MATCHING
+    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60_grow = 0, 0, 0, 0
+    achieved_r10_r60_r10, achieved_r60_r150, achieved_r150_plus = 0, 0, 0
+
     if df_grow_live is not None and not df_grow_live.empty and "V44011" in df_grow_live.columns:
         seg_grow = df_grow_live["V44011"].astype(str).str.strip().str.lower()
-        achieved_r0_r1 = int(seg_grow.str.contains("r0m-r1m|0-1|r0", regex=True).sum())
-        achieved_r1_r5 = int(seg_grow.str.contains("r1m-r5m|1-5|r1", regex=True).sum())
-        achieved_r5_r10 = int(seg_grow.str.contains("r5m-r10|5-10|r5", regex=True).sum())
-        achieved_r10_r60_grow = int(seg_grow.str.contains("r10-r60|10-60", regex=True).sum())
-    else:
-        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60_grow = 0, 0, 0, 0
+        achieved_r0_r1 = int((seg_grow == "r0m-r1m").sum())
+        achieved_r1_r5 = int((seg_grow == "r1m-r5m").sum())
+        achieved_r5_r10 = int(seg_grow.str.contains("r5m-r10", regex=False).sum())
+        achieved_r10_r60_grow = int((seg_grow == "r10m-r60m").sum())
 
     if df_r10_live is not None and not df_r10_live.empty and "V44011" in df_r10_live.columns:
         seg_r10 = df_r10_live["V44011"].astype(str).str.strip().str.lower()
-        achieved_r10_r60_r10 = int(seg_r10.str.contains("r10-r60|10-60|r10", regex=True).sum())
-        achieved_r60_r150 = int(seg_r10.str.contains("r60m-r150|60-150|60", regex=True).sum())
-        achieved_r150_plus = int(seg_r10.str.contains("r150m\\+|150m\\+|150", regex=True).sum())
-        
-        achieved_r10_r60 = achieved_r10_r60_grow + achieved_r10_r60_r10
-    else:
-        achieved_r10_r60 = achieved_r10_r60_grow
-        achieved_r60_r150, achieved_r150_plus = 0, 0
+        achieved_r10_r60_r10 = int((seg_r10 == "r10m-r60m").sum())
+        achieved_r60_r150 = int(seg_r10.str.contains("r60m-r150", regex=False).sum())
+        achieved_r150_plus = int(seg_r10.str.contains("r150m", regex=False).sum())
+
+    achieved_r10_r60 = achieved_r10_r60_grow + achieved_r10_r60_r10
 
     st.markdown("---")
     st.subheader("📈 Executive Summary Overview")
@@ -1145,145 +1143,7 @@ with tab1:
         )
         ws_ent.merge_cells(
             start_row=ecross_start_row,
-            start_column=3,
-            end_row=ecross_start_row,
-            end_column=5,
-        )
-        ws_ent.cell(row=ecross_start_row, column=3).alignment = CENTER_ALIGN
-
-        ws_ent.cell(
-            row=ecross_start_row + 1, column=2, value="Enterprise"
-        ).fill = FNB_TEAL
-        ws_ent.cell(row=ecross_start_row + 1, column=2).font = WHITE_BOLD_FONT
-        for c_idx, seg_lbl in enumerate(
-            ["R10m-R60m", "R150m+", "R60m-R150", "TOTAL"], start=3
-        ):
-            cell = ws_ent.cell(row=ecross_start_row + 1, column=c_idx, value=seg_lbl)
-            cell.fill = FNB_TEAL if c_idx < 6 else GRAY_HEADER
-            cell.font = (
-                WHITE_BOLD_FONT
-                if c_idx < 6
-                else Font(name="Calibri", size=11, bold=True)
-            )
-            cell.alignment = CENTER_ALIGN
-
-        ent_crosstab_rows = [
-            ("EASTERN CAPE", [26, 21, 8]),
-            ("FREE STATE", [10, 6, 5]),
-            ("GAUTENG EAST", [40, 31, 18]),
-            ("GAUTENG KLIPRIVER", [36, 28, 5]),
-            ("GAUTENG TSHWANE", [32, 19, 9]),
-            ("GAUTENG WEST", [31, 31, 18]),
-            ("GREATER SANDTON", [34, 12, 10]),
-            ("KZN COASTAL", [52, 12, 23]),
-            ("KZN INLAND", [30, 9, 11]),
-            ("LIMPOPO", [23, 11, 12]),
-            ("MPUMALANGA", [42, 15, 10]),
-            ("NORTH WEST", [22, 11, 8]),
-            ("NORTHERN CAPE", [12, 12, 2]),
-            ("WESTERN CAPE INLAND", [17, 2, 16]),
-            ("WESTERN CAPE METRO", [13, 20, 20]),
-        ]
-        for idx_offset, (reg_name, vals) in enumerate(ent_crosstab_rows):
-            r_idx = ecross_start_row + 2 + idx_offset
-            ws_ent.cell(row=r_idx, column=2, value=reg_name).border = THIN_BORDER
-            for v_idx, val in enumerate(vals, start=3):
-                c = ws_ent.cell(row=r_idx, column=v_idx, value=val)
-                c.border = THIN_BORDER
-                c.alignment = CENTER_ALIGN
-            tot_c = ws_ent.cell(
-                row=r_idx, column=6, value=f"=SUM(C{r_idx}:E{r_idx})"
-            )
-            tot_c.border = THIN_BORDER
-            tot_c.alignment = CENTER_ALIGN
-
-        ecross_tot_row = ecross_start_row + 2 + len(ent_crosstab_rows)
-        ws_ent.cell(row=ecross_tot_row, column=2, value="TOTAL").fill = GRAY_HEADER
-        ws_ent.cell(row=ecross_tot_row, column=2).font = Font(
-            name="Calibri", size=11, bold=True
-        )
-        ws_ent.cell(row=ecross_tot_row, column=2).border = THIN_BORDER
-        for c_idx in range(3, 7):
-            col_let = openpyxl.utils.get_column_letter(c_idx)
-            start_r = ecross_start_row + 2
-            end_r = ecross_tot_row - 1
-            c = ws_ent.cell(
-                row=ecross_tot_row,
-                column=c_idx,
-                value=f"=SUM({col_let}{start_r}:{col_let}{end_r})",
-            )
-            c.fill = GRAY_HEADER
-            c.font = Font(name="Calibri", size=11, bold=True)
-            c.border = THIN_BORDER
-            c.alignment = CENTER_ALIGN
-
-        ws_pub = wb.create_sheet(title="Update PUBSC")
-        ws_pub.cell(row=1, column=2, value="REGION").fill = GRAY_HEADER
-        ws_pub.merge_cells("B1:L1")
-        ws_pub.cell(row=1, column=2).alignment = CENTER_ALIGN
-
-        pub_headers = [
-            "ORGANISATION TYPE",
-            "EASTERN CAPE",
-            "FREE STATE",
-            "GAUTENG",
-            "KWAZULU-NATAL",
-            "LIMPOPO",
-            "MPUMALANGA",
-            "NORTH WEST",
-            "NORTHERN CAPE",
-            "WESTERN CAPE",
-            "TOTAL",
-        ]
-        for col_idx, h_text in enumerate(pub_headers, start=2):
-            cell = ws_pub.cell(row=2, column=col_idx, value=h_text)
-            cell.fill = FNB_TEAL
-            cell.font = WHITE_BOLD_FONT
-            cell.alignment = CENTER_ALIGN
-
-        pub_rows_data = [
-            ["NON-PROFIT ORGANISATION", 4, 1, 80, 5, 5, 2, 3, 2, 4],
-            ["PUBLIC SECTOR COLLEGES & FET'S", 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            ["PUBLIC SECTOR EMBASSIES", 0, 0, 2, 0, 0, 0, 0, 0, 0],
-            ["PUBLIC SECTOR LOCAL GOVERMENT", 0, 0, 1, 0, 0, 0, 0, 1, 0],
-            ["PUBLIC SECTOR PROVINCIAL GOVER", 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            ["PUBLIC SECTOR PUBLIC SCHOOLS", 8, 1, 34, 12, 7, 5, 2, 0, 1],
-            ["PUBLIC SECTOR UNIONS & POLITIC", 0, 0, 1, 0, 0, 0, 0, 0, 1],
-        ]
-        for row_offset, prow in enumerate(pub_rows_data, start=3):
-            ws_pub.cell(row=row_offset, column=2, value=prow[0]).border = (
-                THIN_BORDER
-            )
-            for val_idx, val in enumerate(prow[1:], start=3):
-                c = ws_pub.cell(row=row_offset, column=val_idx, value=val)
-                c.border = THIN_BORDER
-                c.alignment = CENTER_ALIGN
-            tot_c = ws_pub.cell(
-                row=row_offset, column=12, value=f"=SUM(C{row_offset}:K{row_offset})"
-            )
-            tot_c.border = THIN_BORDER
-            tot_c.alignment = CENTER_ALIGN
-
-        pub_tot_row = len(pub_rows_data) + 3
-        ws_pub.cell(row=pub_tot_row, column=2, value="").border = THIN_BORDER
-        for c_idx in range(3, 13):
-            col_let = openpyxl.utils.get_column_letter(c_idx)
-            c = ws_pub.cell(
-                row=pub_tot_row,
-                column=c_idx,
-                value=f"=SUM({col_let}3:{col_let}{pub_tot_row-1})",
-            )
-            c.border = THIN_BORDER
-            c.alignment = CENTER_ALIGN
-            c.font = Font(name="Calibri", size=11, bold=True)
-
-        for sheet in wb.worksheets:
-            for col in sheet.columns:
-                max_len = 0
-                col_letter = openpyxl.utils.get_column_letter(col[0].column)
-                for cell in col:
-                    if cell.value is not None:
-                        val_str = str(cell.value)
+            start_
 
 # ==========================================================================
 # ==========================================================================
