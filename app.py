@@ -4244,8 +4244,24 @@ with tab5:
 with tab6:
     st.markdown("### 🏢 SME / ENT Segment & Type Analysis Tables")
     st.markdown(
-        "View live statistical summaries (Mean & Valid N) broken down by **TYPE** (Total, Growth, R10Mil) and **Segment** (Total, Enterprise, Gold/SME/Platinum), filtered by Wave."
+        "Upload your SPSS datasets below or view live statistical summaries (Mean & Valid N) broken down by **TYPE** (Total, Growth, R10Mil) and **Segment** (Total, Enterprise, Gold/SME/Platinum), filtered by Wave."
     )
+
+    st.markdown("---")
+    st.subheader("📁 Upload Latest SPSS Datasets for Live Analysis")
+    col_up1, col_up2, col_up3 = st.columns(3)
+    with col_up1:
+        sme_file_grow = st.file_uploader(
+            "Upload Growth (.sav)", type=["sav"], key="sme_grow"
+        )
+    with col_up2:
+        sme_file_r10 = st.file_uploader(
+            "Upload R10Mil (.sav)", type=["sav"], key="sme_r10"
+        )
+    with col_up3:
+        sme_file_pub = st.file_uploader(
+            "Upload PUBW (.sav)", type=["sav"], key="sme_pub"
+        )
 
     # Mock or master data for SME/ENT tab demonstration / live use
     @st.cache_data
