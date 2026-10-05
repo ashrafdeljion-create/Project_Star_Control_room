@@ -4377,8 +4377,11 @@ with tab6:
             ws_sme.title = "SME-ENT Tables"
             ws_sme.views.sheetView[0].showGridLines = True
 
-            navy_fill = PatternFill(start_color="004B87", end_color="004B87", fill_type="solid")
+            # FNB Brand Color Palette from Logo
+            teal_fill = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
+            orange_fill = PatternFill(start_color="F58220", end_color="F58220", fill_type="solid")
             gray_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+            
             white_font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
             dark_font = Font(name="Calibri", size=10, bold=True, color="000000")
             regular_font = Font(name="Calibri", size=10)
@@ -4427,11 +4430,23 @@ with tab6:
                     cell = ws_sme.cell(row=r, column=c)
                     cell.border = thin_border
                     cell.alignment = center_align
-                    if r < 4 and c >= 8:
+                    if r == 1:
+                        cell.fill = teal_fill
+                        cell.font = white_font
+                    elif r == 2 and c >= 8:
                         cell.fill = gray_fill
                         cell.font = dark_font
-                    else:
-                        cell.fill = navy_fill
+                    elif r == 2:
+                        cell.fill = orange_fill
+                        cell.font = white_font
+                    elif r == 3 and c >= 8:
+                        cell.fill = gray_fill
+                        cell.font = dark_font
+                    elif r == 3:
+                        cell.fill = orange_fill
+                        cell.font = white_font
+                    else: # Row 4
+                        cell.fill = teal_fill
                         cell.font = white_font
 
             for row_idx, row_vals in enumerate(flat_data_sme, start=5):
