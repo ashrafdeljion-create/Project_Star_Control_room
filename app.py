@@ -14,7 +14,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 import pandas as pd
-import pyreadstat
+#import pyreadstat
 import streamlit as st
 
 st.set_page_config(
