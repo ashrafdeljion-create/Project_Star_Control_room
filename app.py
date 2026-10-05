@@ -1,6 +1,13 @@
 # =========================================================================
 # SECTION 1: IMPORTING PACKAGES & CONFIGURING PAGE LAYOUT
 # =========================================================================
+# WHAT THIS DOES: 
+# Imports all necessary Python modules. 
+# - `streamlit` creates the web UI.
+# - `pandas` and `pyreadstat` handle dataframes and SPSS (.sav) files.
+# - `openpyxl` builds and styles custom Excel workbooks.
+# HOW TO MODIFY: If you install a new python library, import it here.
+# =========================================================================
 import io
 import os
 import re
@@ -17,6 +24,7 @@ import pandas as pd
 import pyreadstat
 import streamlit as st
 
+# Configures browser tab title, icon, and sets layout to wide mode
 st.set_page_config(
     page_title="Project Star: One-Stop Operations Hub", page_icon="⭐", layout="wide"
 )
@@ -24,6 +32,11 @@ st.set_page_config(
 
 # =========================================================================
 # SECTION 2: CUSTOM UI STYLING (FNB BRAND & HIGH-VISIBILITY TABS)
+# =========================================================================
+# WHAT THIS DOES: 
+# Uses HTML/CSS injection to style Streamlit tabs, buttons, and colors 
+# to match official FNB branding (Teal `#00A3AD` and Orange `#F58220`).
+# HOW TO MODIFY: Change hex color codes below to update the app color scheme.
 # =========================================================================
 st.markdown(
     """
@@ -82,6 +95,11 @@ st.markdown(
 # =========================================================================
 # SECTION 3: DEFINING MAIN APP NAVIGATION TABS (6 Tabs Total)
 # =========================================================================
+# WHAT THIS DOES: 
+# Initializes the 6 main tabs in Streamlit.
+# HOW TO MODIFY: To add a 7th tab, create `tab7` here, add its name to the list, 
+# and create a corresponding `with tab7:` block further down in the script.
+# =========================================================================
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "📊 Project Status & Quotas Update",
@@ -107,6 +125,7 @@ with tab1:
     st.markdown("---")
     st.subheader("🎯 Live Quota Target Adjustments")
 
+    # Input fields allowing users to adjust target quotas dynamically
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1:
         target_business = st.number_input(
@@ -182,6 +201,7 @@ with tab1:
             "Upload PUBW (.sav)", type=["sav"], key="status_pub"
         )
 
+    # Helper function to read SPSS row counts for achieved quotas
     def get_achieved_count(uploaded_file):
         if uploaded_file is None:
             return None
@@ -716,6 +736,7 @@ with tab1:
         pub_preview_df["Total"] = pub_preview_df.iloc[:, 1:].sum(axis=1)
         st.dataframe(pub_preview_df, use_container_width=True, hide_index=True)
 
+    # Function generating the formatted PM Update Excel Workbook using openpyxl
     def generate_exact_pm_update_workbook():
         output_buffer = io.BytesIO()
         wb = openpyxl.Workbook()
@@ -1318,6 +1339,7 @@ with tab2:
 
     st.markdown("---")
 
+    # Core function processing weekly 911 datasets and generating 4 CSV outputs
     def run_pipeline(uploaded_file, section_choice):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
@@ -2036,7 +2058,7 @@ with tab4:
     )
 
     st.markdown("---")
-    st.subheader("⚙️ Global Execution Parameters (Q11 Extraction)")
+    st.subheader("⚙️️ Global Execution Parameters (Q11 Extraction)")
 
     q11_date_mode = st.radio(
         "Select Date Filtering Mode for Runs:",
@@ -4385,7 +4407,6 @@ with tab6:
             ws_sme.title = "SME-ENT Tables"
             ws_sme.views.sheetView[0].showGridLines = True
 
-            # FNB Brand Color Palette from Logo
             teal_fill = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
             orange_fill = PatternFill(start_color="F58220", end_color="F58220", fill_type="solid")
             gray_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
@@ -4401,19 +4422,16 @@ with tab6:
             )
             center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-            # ROW 1: Top-Level "Total" Banner
             ws_sme.cell(row=1, column=1, value="")
             ws_sme.merge_cells("B1:M1")
             ws_sme.cell(row=1, column=2, value="Total")
 
-            # ROW 2: Category Banners (TYPE vs Seg1)
             ws_sme.cell(row=2, column=1, value="")
             ws_sme.merge_cells("B2:G2")
             ws_sme.cell(row=2, column=2, value="TYPE")
             ws_sme.merge_cells("H2:M2")
             ws_sme.cell(row=2, column=8, value="Seg1")
 
-            # ROW 3: Sub-Category / Segment Headers
             ws_sme.cell(row=3, column=1, value="Questions")
             ws_sme.cell(row=3, column=2, value="Total")
             ws_sme.merge_cells("B3:C3")
@@ -4428,7 +4446,6 @@ with tab6:
             ws_sme.cell(row=3, column=12, value="GOLD/SME/PLATINUM")
             ws_sme.merge_cells("L3:M3")
 
-            # ROW 4: Metric Sub-Headers (Mean / Valid N)
             metrics_row = ["Questions", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N"]
             for col_idx, h_text in enumerate(metrics_row, start=1):
                 ws_sme.cell(row=4, column=col_idx, value=h_text)
@@ -4453,7 +4470,7 @@ with tab6:
                     elif r == 3:
                         cell.fill = orange_fill
                         cell.font = white_font
-                    else: # Row 4
+                    else:
                         cell.fill = teal_fill
                         cell.font = white_font
 
