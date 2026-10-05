@@ -4371,52 +4371,70 @@ with tab6:
 
         st.markdown("---")
         st.subheader("📥 Download SME/ENT Tables as Excel")
-        if st.button("Download SME/ENT FNB Branded Report (.xlsx)", type="primary", key="sme_download_btn"):
-            wb_sme = Workbook()
+        if st.button("Download FNB Branded SME/ENT Report (.xlsx)", type="primary", key="sme_download_btn"):
+            wb_sme = openpyxl.Workbook()
             ws_sme = wb_sme.active
             ws_sme.title = "SME-ENT Tables"
+            ws_sme.views.sheetView[0].showGridLines = True
 
             navy_fill = PatternFill(start_color="004B87", end_color="004B87", fill_type="solid")
-            white_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-            regular_font = Font(name="Calibri", size=11)
+            gray_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+            white_font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+            dark_font = Font(name="Calibri", size=10, bold=True, color="000000")
+            regular_font = Font(name="Calibri", size=10)
+            
+            thin_border_side = Side(style='thin', color='BFBFBF')
             thin_border = Border(
-                left=Side(style='thin', color='CCCCCC'), right=Side(style='thin', color='CCCCCC'),
-                top=Side(style='thin', color='CCCCCC'), bottom=Side(style='thin', color='CCCCCC')
+                left=thin_border_side, right=thin_border_side,
+                top=thin_border_side, bottom=thin_border_side
             )
+            center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-            ws_sme.cell(row=1, column=1, value="Questions")
-            ws_sme.merge_cells("B1:G1")
-            ws_sme.cell(row=1, column=2, value="TYPE")
-            ws_sme.merge_cells("H1:M1")
-            ws_sme.cell(row=1, column=8, value="Segment")
+            # ROW 1: Top-Level "Total" Banner
+            ws_sme.cell(row=1, column=1, value="")
+            ws_sme.merge_cells("B1:M1")
+            ws_sme.cell(row=1, column=2, value="Total")
 
+            # ROW 2: Category Banners (TYPE vs Seg1)
             ws_sme.cell(row=2, column=1, value="")
-            ws_sme.cell(row=2, column=2, value="Total")
-            ws_sme.merge_cells("B2:C2")
-            ws_sme.cell(row=2, column=4, value="Growth")
-            ws_sme.merge_cells("D2:E2")
-            ws_sme.cell(row=2, column=6, value="R10Mil")
-            ws_sme.merge_cells("F2:G2")
-            ws_sme.cell(row=2, column=8, value="Total")
-            ws_sme.merge_cells("H2:I2")
-            ws_sme.cell(row=2, column=10, value="ENTERPRISE")
-            ws_sme.merge_cells("J2:K2")
-            ws_sme.cell(row=2, column=12, value="GOLD/SME/PLATINUM")
-            ws_sme.merge_cells("L2:M2")
+            ws_sme.merge_cells("B2:G2")
+            ws_sme.cell(row=2, column=2, value="TYPE")
+            ws_sme.merge_cells("H2:M2")
+            ws_sme.cell(row=2, column=8, value="Seg1")
 
-            headers_row3 = ["Questions", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N"]
-            for col_idx, h_text in enumerate(headers_row3, start=1):
-                ws_sme.cell(row=3, column=col_idx, value=h_text)
+            # ROW 3: Sub-Category / Segment Headers
+            ws_sme.cell(row=3, column=1, value="Questions")
+            ws_sme.cell(row=3, column=2, value="Total")
+            ws_sme.merge_cells("B3:C3")
+            ws_sme.cell(row=3, column=4, value="Growth")
+            ws_sme.merge_cells("D3:E3")
+            ws_sme.cell(row=3, column=6, value="R10Mil")
+            ws_sme.merge_cells("F3:G3")
+            ws_sme.cell(row=3, column=8, value="Total")
+            ws_sme.merge_cells("H3:I3")
+            ws_sme.cell(row=3, column=10, value="ENTERPRISE")
+            ws_sme.merge_cells("J3:K3")
+            ws_sme.cell(row=3, column=12, value="GOLD/SME/PLATINUM")
+            ws_sme.merge_cells("L3:M3")
 
-            for r in range(1, 4):
+            # ROW 4: Metric Sub-Headers (Mean / Valid N)
+            metrics_row = ["Questions", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N"]
+            for col_idx, h_text in enumerate(metrics_row, start=1):
+                ws_sme.cell(row=4, column=col_idx, value=h_text)
+
+            for r in range(1, 5):
                 for c in range(1, 14):
                     cell = ws_sme.cell(row=r, column=c)
-                    cell.fill = navy_fill
-                    cell.font = white_font
-                    cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
                     cell.border = thin_border
+                    cell.alignment = center_align
+                    if r < 4 and c >= 8:
+                        cell.fill = gray_fill
+                        cell.font = dark_font
+                    else:
+                        cell.fill = navy_fill
+                        cell.font = white_font
 
-            for row_idx, row_vals in enumerate(flat_data_sme, start=4):
+            for row_idx, row_vals in enumerate(flat_data_sme, start=5):
                 for col_idx, val in enumerate(row_vals, start=1):
                     cell = ws_sme.cell(row=row_idx, column=col_idx, value=val)
                     cell.font = regular_font
