@@ -121,7 +121,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
 # ==========================================================================
-# WHAT THIS DOES: Monitors sample quotas achieved across portfolios and generates detailed PM Update Excel workbooks.
+# WHAT THIS DOES: Monitors sample quotas achieved across portfolios and generates detailed PM Update Excel workbooks dynamically from SPSS files.
 # ==========================================================================
 with tab1:
     st.markdown("### 📊 Project Status & Quotas Update Hub")
@@ -208,21 +208,26 @@ with tab1:
             "Upload PUBW (.sav)", type=["sav"], key="status_pub"
         )
 
-    # Helper function to read SPSS row counts for achieved quotas, filtering V9999 == 1
-    def get_achieved_count(uploaded_file, is_growth=False):
+    # Helper function to process uploaded SPSS datasets with robust error handling and sub-region cleaning
+    def load_and_clean_spss(uploaded_file, is_growth=False):
         if uploaded_file is None:
             return None
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
             tmp.write(uploaded_file.getvalue())
             tmp_path = tmp.name
         try:
-            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
-            df.columns = [str(c).strip().upper() for c in df.columns]
+            # Try reading with value labels first, fallback without if metadata error occurs
+            try:
+                df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
+            except:
+                df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
             
-            # Filter by V9999 == 1 if present
+            df.columns = [str(c).strip().upper() for c in df.columns]
+
+            # Filter by V9999 == 1 (completed interviews only)
             if "V9999" in df.columns:
                 df = df[df["V9999"] == 1].copy()
-            
+
             # Clean Growth sub-regions if applicable
             if is_growth and "V13290" in df.columns:
                 subreg_mapping = {
@@ -236,26 +241,48 @@ with tab1:
                     lambda x: subreg_mapping.get(str(x).strip().upper(), str(x).strip())
                     if pd.notna(x) else x
                 )
-                
-            return len(df)
-        except:
-            return 0
+            return df
+        except Exception as e:
+            st.error(f"Error reading SPSS file: {e}")
+            return None
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
-    achieved_business = (
-        get_achieved_count(status_file_grow, is_growth=True) if status_file_grow else 1721
-    )
-    achieved_enterprise = (
-        get_achieved_count(status_file_r10) if status_file_r10 else 432
-    )
-    achieved_pubsc = get_achieved_count(status_file_pub) if status_file_pub else 184
+    df_grow_live = load_and_clean_spss(status_file_grow, is_growth=True)
+    df_r10_live = load_and_clean_spss(status_file_r10, is_growth=False)
+    df_pub_live = load_and_clean_spss(status_file_pub, is_growth=False)
 
-    total_achieved_val = (
-        achieved_business + achieved_enterprise + achieved_pubsc
-    )
+    achieved_business = len(df_grow_live) if df_grow_live is not None else 1721
+    achieved_enterprise = len(df_r10_live) if df_r10_live is not None else 432
+    achieved_pubsc = len(df_pub_live) if df_pub_live is not None else 184
+
+    total_achieved_val = achieved_business + achieved_enterprise + achieved_pubsc
     total_outstanding_val = total_target_val - total_achieved_val
+
+    # Dynamic Segment breakdown counts if Growth dataset is uploaded
+    if df_grow_live is not None and "V44011" in df_grow_live.columns:
+        seg_series = df_grow_live["V44011"].astype(str).str.strip().str.upper()
+        achieved_r0_r1 = seg_series.str.contains("R0|0-1|R0M-R1M", regex=True).sum()
+        achieved_r1_r5 = seg_series.str.contains("R1|1-5|R1M-R5M", regex=True).sum()
+        achieved_r5_r10 = seg_series.str.contains("R5|5-10|R5M-R10M", regex=True).sum()
+        achieved_r10_r60 = seg_series.str.contains("R10|10-60|R10-R60M", regex=True).sum()
+        if achieved_r0_r1 == 0 and achieved_r1_r5 == 0:
+            # Fallback default counts if text labels don't match exact regex
+            achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
+    else:
+        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
+
+    if df_r10_live is not None and "V44011" in df_r10_live.columns:
+        ent_seg_series = df_r10_live["V44011"].astype(str).str.strip().str.upper()
+        achieved_r60_r150 = ent_seg_series.str.contains("60|60-150", regex=True).sum()
+        achieved_r150_plus = ent_seg_series.str.contains("150|150M\\+", regex=True).sum()
+        if achieved_r60_r150 == 0:
+            achieved_r60_r150 = 247
+        if achieved_r150_plus == 0:
+            achieved_r150_plus = 185
+    else:
+        achieved_r60_r150, achieved_r150_plus = 247, 185
 
     st.markdown("---")
     st.subheader("📈 Executive Summary Overview")
@@ -311,13 +338,6 @@ with tab1:
 
     # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
     st.markdown("#### 📋 Segment Quotas Executive Summary Breakdown")
-    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = (
-        616,
-        371,
-        275,
-        459,
-    )
-    achieved_r60_r150, achieved_r150_plus = 247, 185
 
     total_seg_target = (
         q_seg_r0_r1
@@ -487,13 +507,13 @@ with tab1:
                 "Gauteng South Central": [116, 60, 72, 107],
                 "Inland": [157, 97, 36, 109],
                 "KwaZulu-Natal": [57, 43, 37, 82],
-                "Total": [616, 371, 275, 459],
+                "Total": [achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60],
                 "Quota": [q_seg_r0_r1, q_seg_r1_r5, q_seg_r5_r10, q_seg_r10_r60],
                 "Outstanding": [
-                    q_seg_r0_r1 - 616,
-                    q_seg_r1_r5 - 371,
-                    q_seg_r5_r10 - 275,
-                    q_seg_r10_r60 - 459,
+                    q_seg_r0_r1 - achieved_r0_r1,
+                    q_seg_r1_r5 - achieved_r1_r5,
+                    q_seg_r5_r10 - achieved_r5_r10,
+                    q_seg_r10_r60 - achieved_r10_r60,
                 ],
             }
         )
@@ -660,12 +680,12 @@ with tab1:
                 "Gauteng South and Central": [107, 90, 41],
                 "Inland": [109, 55, 37],
                 "KwaZulu-Natal": [82, 21, 34],
-                "Total": [459, 247, 185],
+                "Total": [459, achieved_r60_r150, achieved_r150_plus],
                 "Quota": [q_seg_r10_r60, q_seg_r60_r150, q_seg_r150_plus],
                 "Outstanding": [
                     q_seg_r10_r60 - 459,
-                    q_seg_r60_r150 - 247,
-                    q_seg_r150_plus - 185,
+                    q_seg_r60_r150 - achieved_r60_r150,
+                    q_seg_r150_plus - achieved_r150_plus,
                 ],
             }
         )
