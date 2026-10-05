@@ -208,15 +208,35 @@ with tab1:
             "Upload PUBW (.sav)", type=["sav"], key="status_pub"
         )
 
-    # Helper function to read SPSS row counts for achieved quotas
-    def get_achieved_count(uploaded_file):
+    # Helper function to read SPSS row counts for achieved quotas, filtering V9999 == 1
+    def get_achieved_count(uploaded_file, is_growth=False):
         if uploaded_file is None:
             return None
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
             tmp.write(uploaded_file.getvalue())
             tmp_path = tmp.name
         try:
-            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
+            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
+            df.columns = [str(c).strip().upper() for c in df.columns]
+            
+            # Filter by V9999 == 1 if present
+            if "V9999" in df.columns:
+                df = df[df["V9999"] == 1].copy()
+            
+            # Clean Growth sub-regions if applicable
+            if is_growth and "V13290" in df.columns:
+                subreg_mapping = {
+                    "GN GROWTH GREATER SANDTON": "Greater Sandton",
+                    "GN GROWTH MIDRAND": "Gauteng Midrand",
+                    "GN GROWTH SANDTON CENTRAL": "Greater Sandton",
+                    "GN GROWTH TSHWANE EAST": "Gauteng Tshwane East",
+                    "GN GROWTH TSHWANE NORTH": "Gauteng Tshwane North",
+                }
+                df["V13290"] = df["V13290"].apply(
+                    lambda x: subreg_mapping.get(str(x).strip().upper(), str(x).strip())
+                    if pd.notna(x) else x
+                )
+                
             return len(df)
         except:
             return 0
@@ -225,7 +245,7 @@ with tab1:
                 os.remove(tmp_path)
 
     achieved_business = (
-        get_achieved_count(status_file_grow) if status_file_grow else 1721
+        get_achieved_count(status_file_grow, is_growth=True) if status_file_grow else 1721
     )
     achieved_enterprise = (
         get_achieved_count(status_file_r10) if status_file_r10 else 432
@@ -1285,7 +1305,7 @@ with tab1:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_status_excel_final",
         )
-
+        
 # ==========================================================================
 # ==========================================================================
 # TAB 2: WEEKLY 911'S CONTROL ROOM
