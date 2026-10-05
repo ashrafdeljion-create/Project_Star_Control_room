@@ -4244,26 +4244,10 @@ with tab5:
 with tab6:
     st.markdown("### 🏢 SME / ENT Segment & Type Analysis Tables")
     st.markdown(
-        "Upload your SPSS datasets below or view live statistical summaries (Mean & Valid N) broken down by **TYPE** (Total, Growth, R10Mil) and **Segment** (Total, Enterprise, Gold/SME/PLATINUM), filtered by Wave."
+        "View live statistical summaries (Mean & Valid N) broken down by **TYPE** (Total, Growth, R10Mil) and **Segment** (Total, Enterprise, Gold/SME/Platinum), filtered by Wave."
     )
 
-    st.markdown("---")
-    st.subheader("📁 Upload Latest SPSS Datasets for Live Analysis")
-    col_up1, col_up2, col_up3 = st.columns(3)
-    with col_up1:
-        sme_file_grow = st.file_uploader(
-            "Upload Growth (.sav)", type=["sav"], key="sme_grow"
-        )
-    with col_up2:
-        sme_file_r10 = st.file_uploader(
-            "Upload R10Mil (.sav)", type=["sav"], key="sme_r10"
-        )
-    with col_up3:
-        sme_file_pub = st.file_uploader(
-            "Upload PUBW (.sav)", type=["sav"], key="sme_pub"
-        )
-
-    # Mock or master data for SME/ENT tab demonstration - fully cached to prevent startup lag
+    # Mock or master data for SME/ENT tab demonstration / live use
     @st.cache_data
     def generate_sme_ent_mock_data(num_rows=2500):
         np.random.seed(42)
@@ -4393,6 +4377,7 @@ with tab6:
             ws_sme.title = "SME-ENT Tables"
             ws_sme.views.sheetView[0].showGridLines = True
 
+            # FNB Brand Color Palette from Logo
             teal_fill = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
             orange_fill = PatternFill(start_color="F58220", end_color="F58220", fill_type="solid")
             gray_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
@@ -4408,16 +4393,19 @@ with tab6:
             )
             center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
+            # ROW 1: Top-Level "Total" Banner
             ws_sme.cell(row=1, column=1, value="")
             ws_sme.merge_cells("B1:M1")
             ws_sme.cell(row=1, column=2, value="Total")
 
+            # ROW 2: Category Banners (TYPE vs Seg1)
             ws_sme.cell(row=2, column=1, value="")
             ws_sme.merge_cells("B2:G2")
             ws_sme.cell(row=2, column=2, value="TYPE")
             ws_sme.merge_cells("H2:M2")
             ws_sme.cell(row=2, column=8, value="Seg1")
 
+            # ROW 3: Sub-Category / Segment Headers
             ws_sme.cell(row=3, column=1, value="Questions")
             ws_sme.cell(row=3, column=2, value="Total")
             ws_sme.merge_cells("B3:C3")
@@ -4432,6 +4420,7 @@ with tab6:
             ws_sme.cell(row=3, column=12, value="GOLD/SME/PLATINUM")
             ws_sme.merge_cells("L3:M3")
 
+            # ROW 4: Metric Sub-Headers (Mean / Valid N)
             metrics_row = ["Questions", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N", "Mean", "Valid N"]
             for col_idx, h_text in enumerate(metrics_row, start=1):
                 ws_sme.cell(row=4, column=col_idx, value=h_text)
@@ -4456,7 +4445,7 @@ with tab6:
                     elif r == 3:
                         cell.fill = orange_fill
                         cell.font = white_font
-                    else:
+                    else: # Row 4
                         cell.fill = teal_fill
                         cell.font = white_font
 
