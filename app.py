@@ -290,25 +290,25 @@ with tab1:
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # --- 100% LIVE DYNAMIC SEGMENT COUNTS FROM V44011 (NO FALLBACKS) ---
-if df_grow_live is not None and not df_grow_live.empty and "V44011" in df_grow_live.columns:
-    seg_grow = df_grow_live["V44011"].astype(str).str.strip().str.lower()
-    achieved_r0_r1 = int(seg_grow.str.contains("r0m-r1m|0-1|r0", regex=True).sum())
-    achieved_r1_r5 = int(seg_grow.str.contains("r1m-r5m|1-5|r1", regex=True).sum())
-    achieved_r5_r10 = int(seg_grow.str.contains("r5m-r10|5-10|r5", regex=True).sum())
-    achieved_r10_r60_grow = int(seg_grow.str.contains("r10-r60|10-60", regex=True).sum())
-else:
-    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60_grow = 0, 0, 0, 0
+    if df_grow_live is not None and not df_grow_live.empty and "V44011" in df_grow_live.columns:
+        seg_grow = df_grow_live["V44011"].astype(str).str.strip().str.lower()
+        achieved_r0_r1 = int(seg_grow.str.contains("r0m-r1m|0-1|r0", regex=True).sum())
+        achieved_r1_r5 = int(seg_grow.str.contains("r1m-r5m|1-5|r1", regex=True).sum())
+        achieved_r5_r10 = int(seg_grow.str.contains("r5m-r10|5-10|r5", regex=True).sum())
+        achieved_r10_r60_grow = int(seg_grow.str.contains("r10-r60|10-60", regex=True).sum())
+    else:
+        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60_grow = 0, 0, 0, 0
 
-if df_r10_live is not None and not df_r10_live.empty and "V44011" in df_r10_live.columns:
-    seg_r10 = df_r10_live["V44011"].astype(str).str.strip().str.lower()
-    achieved_r10_r60_r10 = int(seg_r10.str.contains("r10-r60|10-60|r10", regex=True).sum())
-    achieved_r60_r150 = int(seg_r10.str.contains("r60m-r150|60-150|60", regex=True).sum())
-    achieved_r150_plus = int(seg_r10.str.contains("r150m\\+|150m\\+|150", regex=True).sum())
-    
-    achieved_r10_r60 = achieved_r10_r60_grow + achieved_r10_r60_r10
-else:
-    achieved_r10_r60 = achieved_r10_r60_grow
-    achieved_r60_r150, achieved_r150_plus = 0, 0
+    if df_r10_live is not None and not df_r10_live.empty and "V44011" in df_r10_live.columns:
+        seg_r10 = df_r10_live["V44011"].astype(str).str.strip().str.lower()
+        achieved_r10_r60_r10 = int(seg_r10.str.contains("r10-r60|10-60|r10", regex=True).sum())
+        achieved_r60_r150 = int(seg_r10.str.contains("r60m-r150|60-150|60", regex=True).sum())
+        achieved_r150_plus = int(seg_r10.str.contains("r150m\\+|150m\\+|150", regex=True).sum())
+        
+        achieved_r10_r60 = achieved_r10_r60_grow + achieved_r10_r60_r10
+    else:
+        achieved_r10_r60 = achieved_r10_r60_grow
+        achieved_r60_r150, achieved_r150_plus = 0, 0
 
     total_seg_target = (
         q_seg_r0_r1
