@@ -1106,10 +1106,39 @@ with tab3:
 # ==========================================================================
 # ==========================================================================
 with tab4:
-    st.markdown("### 📋 Q11 Ratings & Reasons Extraction")
-    st.markdown("Extract Q11 ratings and open-ended reasons from your SPSS datasets and export them into a structured Excel report.")
+    st.markdown("### 📋 Q11 Ratings & Reasons Extraction Control Room")
+    st.markdown("Filter records by date window, upload SPSS datasets, and extract Q11 ratings and open-ended reasons into structured Excel reports.")
     st.markdown("---")
 
+    st.subheader("⚙️ Global Execution Parameters")
+    date_mode_q11 = st.radio(
+        "Select Date Filtering Mode for Runs:",
+        ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"],
+        horizontal=True,
+        key="q11_date_mode",
+    )
+
+    today_q11 = datetime.now()
+    if date_mode_q11 == "Dynamic Past 7 Days (Auto Friday)":
+        current_weekday = today_q11.weekday()
+        days_to_subtract = 7 if current_weekday == 4 else (current_weekday - 4) % 7
+        if days_to_subtract == 0:
+            days_to_subtract = 7
+        last_friday_q11 = today_q11 - timedelta(days=days_to_subtract)
+        last_friday_q11 = last_friday_q11.replace(hour=0, minute=0, second=0, microsecond=0)
+        st.info(f"📅 Target active execution window: **{last_friday_q11.strftime('%Y-%m-%d')}** to **{today_q11.strftime('%Y-%m-%d')}**")
+    else:
+        col_qd1, col_qd2 = st.columns(2)
+        with col_qd1:
+            start_date_input_q11 = st.date_input("Start Date", value=today_q11 - timedelta(days=7), key="q11_start")
+        with col_qd2:
+            end_date_input_q11 = st.date_input("End Date", value=today_q11, key="q11_end")
+        last_friday_q11 = datetime.combine(start_date_input_q11, datetime.min.time())
+        today_q11 = datetime.combine(end_date_input_q11, datetime.max.time())
+
+    st.markdown("---")
+    st.subheader("📁 Upload SPSS Datasets for Q11 Extraction")
+    
     col_q1, col_q2 = st.columns(2)
     file_q11_r10 = col_q1.file_uploader("Upload R10Mil SPSS File (.sav)", type=["sav"], key="q11_r10_file")
     file_q11_grow = col_q2.file_uploader("Upload Growth SPSS File (.sav)", type=["sav"], key="q11_grow_file")
@@ -1121,7 +1150,7 @@ with tab4:
         if not file_q11_r10 and not file_q11_grow:
             st.error("Please upload at least one SPSS dataset (.sav) before running the extraction.")
         else:
-            with st.spinner("Extracting Q11 data and generating report..."):
+            with st.spinner("Filtering records by date window and extracting Q11 data..."):
                 out_buf = io.BytesIO()
                 with pd.ExcelWriter(out_buf, engine="openpyxl") as writer:
                     for f_up, s_name in [(file_q11_r10, "Enterprise-R10Mil"), (file_q11_grow, "Business-Growth")]:
@@ -1130,16 +1159,26 @@ with tab4:
                                 tmp.write(f_up.getvalue())
                                 tp = tmp.name
                             try:
-                                # Read SPSS dataset with pyreadstat for robust handling
                                 df_q, meta = pyreadstat.read_sav(tp, apply_value_formats=True)
                                 df_q.columns = [str(c).strip().upper() for c in df_q.columns]
                                 
-                                # Filter or select relevant Q11 columns if present
-                                q11_cols = [c for c in df_q.columns if "Q11" in c or "TQ11" in c or c in ["V9999", "INTNR", "BUSINESS_NAME", "V12290", "V13290"]]
+                                # Apply completed filter and date window filter if STIME exists
+                                df_filtered = df_q[df_q["V9999"] == 1].copy() if "V9999" in df_q.columns else df_q.copy()
+                                if "STIME" in df_filtered.columns:
+                                    df_filtered["STIME_CLEAN"] = df_filtered["STIME"].astype(str).str.strip().str[:8]
+                                    df_filtered["STIME_DATE"] = df_filtered["STIME_CLEAN"].apply(
+                                        lambda x: datetime.strptime(x, "%Y%m%d") if len(x) == 8 else None
+                                    )
+                                    df_filtered = df_filtered[
+                                        (df_filtered["STIME_DATE"] >= last_friday_q11) & (df_filtered["STIME_DATE"] <= today_q11)
+                                    ].copy()
+
+                                # Select Q11 related columns
+                                q11_cols = [c for c in df_filtered.columns if "Q11" in c or "TQ11" in c or c in ["V9999", "INTNR", "BUSINESS_NAME", "V12290", "V13290", "STIME"]]
                                 if q11_cols:
-                                    df_export = df_q[q11_cols].copy()
+                                    df_export = df_filtered[q11_cols].copy()
                                 else:
-                                    df_export = df_q.copy()
+                                    df_export = df_filtered.copy()
 
                                 df_export.to_excel(writer, sheet_name=s_name, index=False)
                             except Exception as e:
@@ -1151,7 +1190,7 @@ with tab4:
                 out_buf.seek(0)
                 st.session_state.q11_bytes = out_buf.getvalue()
                 st.session_state.q11_ready = True
-                st.success("✅ Q11 extraction completed successfully!")
+                st.success("✅ Q11 extraction completed successfully with date window filters applied!")
 
     if st.session_state.q11_ready and st.session_state.q11_bytes:
         st.markdown("---")
