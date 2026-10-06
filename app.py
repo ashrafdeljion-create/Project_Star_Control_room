@@ -1107,6 +1107,9 @@ with tab3:
 # ==========================================================================
 with tab4:
     st.markdown("### 📋 Q11 Ratings & Reasons Extraction")
+    st.markdown("Extract Q11 ratings and open-ended reasons from your SPSS datasets and export them into a structured Excel report.")
+    st.markdown("---")
+
     col_q1, col_q2 = st.columns(2)
     file_q11_r10 = col_q1.file_uploader("Upload R10Mil SPSS File (.sav)", type=["sav"], key="q11_r10_file")
     file_q11_grow = col_q2.file_uploader("Upload Growth SPSS File (.sav)", type=["sav"], key="q11_grow_file")
@@ -1115,27 +1118,50 @@ with tab4:
     if "q11_bytes" not in st.session_state: st.session_state.q11_bytes = None
 
     if st.button("▶ Run Q11 Extraction", type="primary", key="run_q11_btn"):
-        if not file_q11_r10 and not file_q11_grow: st.error("Upload at least one file.")
+        if not file_q11_r10 and not file_q11_grow:
+            st.error("Please upload at least one SPSS dataset (.sav) before running the extraction.")
         else:
-            with st.spinner("Extracting Q11..."):
+            with st.spinner("Extracting Q11 data and generating report..."):
                 out_buf = io.BytesIO()
                 with pd.ExcelWriter(out_buf, engine="openpyxl") as writer:
                     for f_up, s_name in [(file_q11_r10, "Enterprise-R10Mil"), (file_q11_grow, "Business-Growth")]:
                         if f_up is not None:
                             with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
-                                tmp.write(f_up.getvalue()); tp = tmp.name
+                                tmp.write(f_up.getvalue())
+                                tp = tmp.name
                             try:
-                                df_q = pd.read_spss(tp, convert_categoricals=False)
-                                df_q.to_excel(writer, sheet_name=s_name, index=False)
+                                # Read SPSS dataset with pyreadstat for robust handling
+                                df_q, meta = pyreadstat.read_sav(tp, apply_value_formats=True)
+                                df_q.columns = [str(c).strip().upper() for c in df_q.columns]
+                                
+                                # Filter or select relevant Q11 columns if present
+                                q11_cols = [c for c in df_q.columns if "Q11" in c or "TQ11" in c or c in ["V9999", "INTNR", "BUSINESS_NAME", "V12290", "V13290"]]
+                                if q11_cols:
+                                    df_export = df_q[q11_cols].copy()
+                                else:
+                                    df_export = df_q.copy()
+
+                                df_export.to_excel(writer, sheet_name=s_name, index=False)
+                            except Exception as e:
+                                st.error(f"Error processing {s_name}: {e}")
                             finally:
-                                if os.path.exists(tp): os.remove(tp)
+                                if os.path.exists(tp):
+                                    os.remove(tp)
+                
                 out_buf.seek(0)
                 st.session_state.q11_bytes = out_buf.getvalue()
                 st.session_state.q11_ready = True
-                st.success("Extraction complete!")
+                st.success("✅ Q11 extraction completed successfully!")
 
     if st.session_state.q11_ready and st.session_state.q11_bytes:
-        st.download_button("📥 Download Q11 Report (.xlsx)", st.session_state.q11_bytes, file_name="Q11_Extraction_Report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="dl_q11_xlsx")
+        st.markdown("---")
+        st.download_button(
+            label="📥 Download Q11 Extraction Report (.xlsx)",
+            data=st.session_state.q11_bytes,
+            file_name="Q11_Extraction_Report.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="dl_q11_xlsx"
+        )
 
 # ==========================================================================
 # ==========================================================================
