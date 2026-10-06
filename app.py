@@ -12,7 +12,6 @@ import numpy as np
 import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.datavalidation import DataValidation
 import pandas as pd
 import pyreadstat
 import streamlit as st
@@ -80,7 +79,7 @@ st.markdown(
 # Main title and subtitle displayed at the top of the application web page
 st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown(
-    "Your unified command center for Project Status, Weekly 911's pipeline automation, NPS Excel reports, Q11 extractions, Yearly Dashboard generation, and SME/ENT segment tables."
+    "Your unified command center for Project Star, Weekly 911's pipeline automation, NPS Excel reports, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
 )
 
 # =========================================================================
@@ -99,16 +98,14 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 
 # ==========================================================================
 # ==========================================================================
-# TAB 1: PROJECT STATUS & QUOTAS UPDATE (YOUR EXACT WORKING LOGIC)
+# TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
 # ==========================================================================
 with tab1:
     st.markdown("### 📊 Live Status Calculation & Quota Tracker")
     st.markdown("---")
 
-    # ==========================================
     # SECTION 1: LIVE QUOTA TARGET ADJUSTMENTS
-    # ==========================================
     st.markdown("### 🎯 Live Quota Target Adjustments")
     col1, col2, col3 = st.columns(3)
 
@@ -129,13 +126,9 @@ with tab1:
 
     st.markdown("---")
 
-    # ==========================================
     # SECTION 2: SEGMENT-LEVEL QUOTA BREAKDOWN
-    # ==========================================
     st.markdown("### 🔢 Segment-Level Quota Breakdown Inputs")
-    st.markdown(
-        "Specify exact individual segment quotas below for detailed tracking:"
-    )
+    st.markdown("Specify exact individual segment quotas below for detailed tracking:")
 
     seg_cols = st.columns(4)
     with seg_cols[0]:
@@ -172,9 +165,7 @@ with tab1:
 
     st.markdown("---")
 
-    # ==========================================
     # SECTION 3: UPLOAD SPSS DATASETS (.sav)
-    # ==========================================
     st.markdown("### 📁 Upload Latest SPSS Datasets for Live Status Calculation")
     up_col1, up_col2, up_col3 = st.columns(3)
 
@@ -225,9 +216,7 @@ with tab1:
 
     st.markdown("---")
 
-    # ==========================================
     # SECTION 4: EXECUTIVE SUMMARY OVERVIEW
-    # ==========================================
     st.markdown("### 📋 Executive Summary Overview")
 
     m1, m2, m3, m4 = st.columns(4)
@@ -270,9 +259,7 @@ with tab1:
 
     st.markdown("---")
 
-    # ==========================================
     # SECTION 5: SEGMENT QUOTAS EXECUTIVE SUMMARY BREAKDOWN
-    # ==========================================
     st.markdown("### 📊 Segment Quotas Executive Summary Breakdown")
 
     def get_segment_achieved(target_df, segment_keywords):
@@ -353,9 +340,7 @@ with tab1:
 
     st.markdown("---")
 
-    # ==========================================
     # SECTION 6: BUSINESS REGIONAL & SEGMENT BREAKDOWN
-    # ==========================================
     standard_subregions = [
         "Eastern Cape",
         "Free State",
@@ -504,9 +489,7 @@ with tab1:
     total_row = bus_reg_seg_crosstab.sum(numeric_only=True)
     bus_reg_seg_crosstab.loc["TOTAL"] = total_row
 
-    # ==========================================
     # SECTION 7: ENTERPRISE (R10MIL) REGIONAL & SEGMENT BREAKDOWN
-    # ==========================================
     ent_subregions = [
         "Eastern Cape",
         "Free State",
@@ -646,9 +629,7 @@ with tab1:
     ent_total_row = ent_reg_seg_crosstab.sum(numeric_only=True)
     ent_reg_seg_crosstab.loc["TOTAL"] = ent_total_row
 
-    # ==========================================
     # SECTION 8: PUBSC REGIONAL & SECTOR CROSSTAB
-    # ==========================================
     pubsc_regions = [
         "EASTERN CAPE",
         "FREE STATE",
@@ -838,7 +819,7 @@ with tab1:
 
 # ==========================================================================
 # ==========================================================================
-# TAB 2: WEEKLY 911'S CONTROL ROOM
+# TAB 2: WEEKLY 911'S CONTROL ROOM (YOUR EXACT WORKING SCRIPT)
 # ==========================================================================
 # ==========================================================================
 with tab2:
@@ -853,29 +834,29 @@ with tab2:
     col_m4.metric("Environment", "Cloud Control Room", "Secure")
 
     st.markdown("---")
-    st.subheader("⚙️ Global Execution Parameters")
-    date_mode = st.radio(
-        "Select Date Filtering Mode for Runs:",
-        ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"],
-        horizontal=True,
-        key="911_date_mode",
-    )
+    st.subheader("📅 Global Execution Parameters")
+    date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="911_date_mode")
 
     today = datetime.now()
+
     if date_mode == "Dynamic Past 7 Days (Auto Friday)":
         current_weekday = today.weekday()
-        days_to_subtract = 7 if current_weekday == 4 else (current_weekday - 4) % 7
-        if days_to_subtract == 0:
+        if current_weekday == 4:
             days_to_subtract = 7
+        else:
+            days_to_subtract = (current_weekday - 4) % 7
+            if days_to_subtract == 0:
+                days_to_subtract = 7
         last_friday = today - timedelta(days=days_to_subtract)
         last_friday = last_friday.replace(hour=0, minute=0, second=0, microsecond=0)
-        st.info(f"📅 Target active execution window: **{last_friday.strftime('%Y-%m-%d')}** to **{today.strftime('%Y-%m-%d')}**")
+        st.info(f"🎯 Target active execution window: **{last_friday.strftime('%Y-%m-%d')}** to **{today.strftime('%Y-%m-%d')}**")
     else:
         col_d1, col_d2 = st.columns(2)
         with col_d1:
             start_date_input = st.date_input("Start Date", value=today - timedelta(days=7), key="911_start")
         with col_d2:
             end_date_input = st.date_input("End Date", value=today, key="911_end")
+        
         last_friday = datetime.combine(start_date_input, datetime.min.time())
         today = datetime.combine(end_date_input, datetime.max.time())
 
@@ -888,52 +869,62 @@ with tab2:
 
         try:
             df, meta = pyreadstat.read_sav(tmp_path)
-            df_filtered = df[df["V9999"] == 1].copy() if "V9999" in df.columns else df.copy()
+            
+            if 'V9999' in df.columns:
+                df_filtered = df[df['V9999'] == 1].copy()
+            else:
+                df_filtered = df.copy()
 
-            if "STIME" in df_filtered.columns:
-                df_filtered["STIME_CLEAN"] = df_filtered["STIME"].astype(str).str.strip().str[:8]
-                df_filtered["STIME_DATE"] = df_filtered["STIME_CLEAN"].apply(
-                    lambda x: datetime.strptime(x, "%Y%m%d") if len(x) == 8 else None
-                )
+            if 'STIME' in df_filtered.columns:
+                df_filtered['STIME_CLEAN'] = df_filtered['STIME'].astype(str).str.strip().str[:8]
+                def parse_stime_date(x):
+                    try:
+                        return datetime.strptime(x, "%Y%m%d")
+                    except:
+                        return None
+                df_filtered['STIME_DATE'] = df_filtered['STIME_CLEAN'].apply(parse_stime_date)
+                
                 df_filtered = df_filtered[
-                    (df_filtered["STIME_DATE"] >= last_friday) & (df_filtered["STIME_DATE"] <= today)
+                    (df_filtered['STIME_DATE'] >= last_friday) & 
+                    (df_filtered['STIME_DATE'] <= today)
                 ].copy()
 
             if df_filtered.empty:
-                st.warning(f"⚠️ No records found matching criteria for {section_choice}.")
+                st.warning(f"⚠️ No records found matching the criteria for {section_choice}.")
                 return None
 
-            if "INTNR" not in df_filtered.columns:
-                df_filtered["INTNR"] = range(1, len(df_filtered) + 1)
+            if 'INTNR' not in df_filtered.columns:
+                df_filtered['INTNR'] = range(1, len(df_filtered) + 1)
+                
+            valid_intnr = df_filtered['INTNR'] > 0
 
-            valid_intnr = df_filtered["INTNR"] > 0
-            df_filtered.loc[valid_intnr, "PARENT_TYPE"] = "Juristic"
-            df_filtered.loc[valid_intnr, "WAVE"] = "22"
-            if "V80116" in df_filtered.columns:
-                df_filtered.loc[valid_intnr, "CLIENT_UCN"] = df_filtered["V80116"]
-            df_filtered.loc[valid_intnr, "CLIENT_TYPE"] = "Full Client"
-            df_filtered.loc[valid_intnr, "COMPANY_CODE"] = "15"
-            df_filtered.loc[valid_intnr, "CASE_SUBJECT"] = "Coverage"
-            df_filtered.loc[valid_intnr, "REQUEST_CATEGORY"] = "Care"
-            df_filtered.loc[valid_intnr, "TOPIC"] = "Complaints"
+            df_filtered.loc[valid_intnr, 'PARENT_TYPE'] = "Juristic"
+            df_filtered.loc[valid_intnr, 'WAVE'] = "22"
+            if 'V80116' in df_filtered.columns:
+                df_filtered.loc[valid_intnr, 'CLIENT_UCN'] = df_filtered['V80116']
+            df_filtered.loc[valid_intnr, 'CLIENT_TYPE'] = "Full Client"
+            df_filtered.loc[valid_intnr, 'COMPANY_CODE'] = "15"
+            df_filtered.loc[valid_intnr, 'CASE_SUBJECT'] = "Coverage"
+            df_filtered.loc[valid_intnr, 'REQUEST_CATEGORY'] = "Care"
+            df_filtered.loc[valid_intnr, 'TOPIC'] = "Complaints"
 
-            tq13_open_clean = df_filtered["TQ13_OPEN"].fillna("").astype(str) if "TQ13_OPEN" in df_filtered.columns else ""
-            df_filtered.loc[valid_intnr, "CASE_DESCRIPTION"] = "Improvement Area: " + tq13_open_clean
-            df_filtered.loc[valid_intnr, "CAMPAIGN"] = "CMP-01522-S7K7N3"
-            df_filtered.loc[valid_intnr, "ORIGIN"] = "Web"
-            df_filtered.loc[valid_intnr, "OWNER"] = r"FNBJNB01\Web"
+            tq13_open_clean = df_filtered['TQ13_OPEN'].fillna('').astype(str) if 'TQ13_OPEN' in df_filtered.columns else ""
+            df_filtered.loc[valid_intnr, 'CASE_DESCRIPTION'] = "Improvement Area: " + tq13_open_clean
 
-            sub_region_col = "V8013" if section_choice == "PUBSC" else "V13290"
-            segment_col = "V13290" if section_choice == "PUBSC" else "V44011"
+            df_filtered.loc[valid_intnr, 'CAMPAIGN'] = "CMP-01522-S7K7N3"
+            df_filtered.loc[valid_intnr, 'ORIGIN'] = "Web"
+            df_filtered.loc[valid_intnr, 'OWNER'] = r"FNBJNB01\Web"
+            
+            sub_region_col = 'V8013' if section_choice == 'PUBSC' else 'V13290'
+            segment_col = 'V13290' if section_choice == 'PUBSC' else 'V44011'
 
-            for col_target, col_src in [
-                ("PRIM_OFCR_IND", "V8026"),
-                ("OFFICER_NAME_AND_SURNAME", "V8016"),
-                ("BUSINESS_NAME", "V56011"),
-                ("REGIONS", "V12290"),
-                ("SUB_REGIONS", sub_region_col),
-                ("SEGMENT", segment_col),
-            ]:
+            mapping_pairs = [
+                ('PRIM_OFCR_IND', 'V8026'), ('OFFICER_NAME_AND_SURNAME', 'V8016'), 
+                ('BUSINESS_NAME', 'V56011'), ('REGIONS', 'V12290'), 
+                ('SUB_REGIONS', sub_region_col), ('SEGMENT', segment_col)
+            ]
+
+            for col_target, col_src in mapping_pairs:
                 if col_src in df_filtered.columns:
                     df_filtered.loc[valid_intnr, col_target] = df_filtered[col_src]
 
@@ -944,26 +935,20 @@ with tab2:
                 elif score > 8: return "NPS - Promoter"
                 return None
 
-            if "Q14_1" in df_filtered.columns:
-                df_filtered["FNB_NPS"] = df_filtered["Q14_1"].apply(calculate_nps_bucket)
-                df_filtered["FNB_NPS_OPEN_ENDED"] = df_filtered.apply(
-                    lambda r: r["TQ14_1_OPEN"] if "TQ14_1_OPEN" in df_filtered.columns and pd.notna(r.get("TQ14_1_OPEN")) and r["Q14_1"] < 7 else None, axis=1
-                )
-            if "Q14_2" in df_filtered.columns:
-                df_filtered["RM_BM_NPS"] = df_filtered["Q14_2"].apply(calculate_nps_bucket)
-                df_filtered["RM_BM_NPS_OPEN_ENDED"] = df_filtered.apply(
-                    lambda r: r["TQ14_2_OPEN"] if "TQ14_2_OPEN" in df_filtered.columns and pd.notna(r.get("TQ14_2_OPEN")) and r["Q14_2"] < 7 else None, axis=1
-                )
+            if 'Q14_1' in df_filtered.columns:
+                df_filtered['FNB_NPS'] = df_filtered['Q14_1'].apply(calculate_nps_bucket)
+                df_filtered['FNB_NPS_OPEN_ENDED'] = df_filtered.apply(lambda r: r['TQ14_1_OPEN'] if 'TQ14_1_OPEN' in df_filtered.columns and pd.notna(r.get('TQ14_1_OPEN')) and r['Q14_1'] < 7 else None, axis=1)
+            if 'Q14_2' in df_filtered.columns:
+                df_filtered['RM_BM_NPS'] = df_filtered['Q14_2'].apply(calculate_nps_bucket)
+                df_filtered['RM_BM_NPS_OPEN_ENDED'] = df_filtered.apply(lambda r: r['TQ14_2_OPEN'] if 'TQ14_2_OPEN' in df_filtered.columns and pd.notna(r.get('TQ14_2_OPEN')) and r['Q14_2'] < 7 else None, axis=1)
 
-            bank_columns = [
-                ("Q16_1_1", "Absa"), ("Q16_1_2", "Capitec"), ("Q16_1_3", "Investec"),
-                ("Q16_1_4", "Mercantile"), ("Q16_1_5", "Nedbank"), ("Q16_1_6", "Sasfin"), ("Q16_1_7", "Standard Bank")
-            ] if section_choice != "PUBSC" else [
-                ("Q16_1_1", "Absa"), ("Q16_1_2", "Investec"), ("Q16_1_3", "Nedbank"),
-                ("Q16_1_4", "Standard Bank"), ("Q16_1_5", "Capitec"), ("Q16_1_6", "Refused")
-            ]
-            loop_cols = ["TQ16_1C8", "TQ16_1C9", "TQ16_1C10"] if section_choice != "PUBSC" else ["TQ16_1C6", "TQ16_1C7", "TQ16_1C8"]
-
+            if section_choice == 'PUBSC':
+                bank_columns = [('Q16_1_1', 'Absa'), ('Q16_1_2', 'Investec'), ('Q16_1_3', 'Nedbank'), ('Q16_1_4', 'Standard Bank'), ('Q16_1_5', 'Capitec'), ('Q16_1_6', 'Refused')]
+                loop_cols = ['TQ16_1C6', 'TQ16_1C7', 'TQ16_1C8']
+            else:
+                bank_columns = [('Q16_1_1', 'Absa'), ('Q16_1_2', 'Capitec'), ('Q16_1_3', 'Investec'), ('Q16_1_4', 'Mercantile'), ('Q16_1_5', 'Nedbank'), ('Q16_1_6', 'Sasfin'), ('Q16_1_7', 'Standard Bank')]
+                loop_cols = ['TQ16_1C8', 'TQ16_1C9', 'TQ16_1C10']
+            
             switch_compiled = []
             for idx, row in df_filtered.iterrows():
                 matched_banks = []
@@ -971,79 +956,159 @@ with tab2:
                     if col_flag in df_filtered.columns and row.get(col_flag) == 1:
                         matched_banks.append(bank_label)
                 for loop_col in loop_cols:
-                    if loop_col in df_filtered.columns and pd.notna(row.get(loop_col)) and str(row[loop_col]).strip() != "":
+                    if loop_col in df_filtered.columns and pd.notna(row.get(loop_col)) and str(row[loop_col]).strip() != '':
                         matched_banks.append(str(row[loop_col]).strip())
                 switch_compiled.append(",".join(matched_banks))
+                
+            df_filtered['WOULD_CONSIDER_SWITCH_TO'] = switch_compiled
+            if 'TQ16_OPEN' in df_filtered.columns:
+                df_filtered.loc[valid_intnr, 'REASON'] = df_filtered['TQ16_OPEN']
 
-            df_filtered["WOULD_CONSIDER_SWITCH_TO"] = switch_compiled
-            if "TQ16_OPEN" in df_filtered.columns:
-                df_filtered.loc[valid_intnr, "REASON"] = df_filtered["TQ16_OPEN"]
+            if 'STIME_CLEAN' in df_filtered.columns:
+                df_filtered['NYEAR'] = df_filtered['STIME_CLEAN'].str[:4]
+                df_filtered['NMONTH'] = df_filtered['STIME_CLEAN'].str[4:6]
+                df_filtered['NDAY'] = df_filtered['STIME_CLEAN'].str[6:8]
+                df_filtered['RECORDED_DATE'] = df_filtered['NYEAR'] + "/" + df_filtered['NMONTH'] + "/" + df_filtered['NDAY']
 
-            if "STIME_CLEAN" in df_filtered.columns:
-                df_filtered["NYEAR"] = df_filtered["STIME_CLEAN"].str[:4]
-                df_filtered["NMONTH"] = df_filtered["STIME_CLEAN"].str[4:6]
-                df_filtered["NDAY"] = df_filtered["STIME_CLEAN"].str[6:8]
-                df_filtered["RECORDED_DATE"] = df_filtered["NYEAR"] + "/" + df_filtered["NMONTH"] + "/" + df_filtered["NDAY"]
+            df_filtered['Qualifier'] = "Not Priority"
+            if 'Q14_2' in df_filtered.columns:
+                df_filtered.loc[df_filtered['Q14_2'] < 7, 'Qualifier'] = "Priority"
+            if 'Q16' in df_filtered.columns:
+                df_filtered.loc[df_filtered['Q16'] == 1, 'Qualifier'] = "Priority"
 
-            df_filtered["Qualifier"] = "Not Priority"
-            if "Q14_2" in df_filtered.columns:
-                df_filtered.loc[df_filtered["Q14_2"] < 7, "Qualifier"] = "Priority"
-            if "Q16" in df_filtered.columns:
-                df_filtered.loc[df_filtered["Q16"] == 1, "Qualifier"] = "Priority"
+            case_desc_upper = df_filtered['CASE_DESCRIPTION'].fillna('').str.upper() if 'CASE_DESCRIPTION' in df_filtered.columns else pd.Series([""]*len(df_filtered))
+            people_keywords = ['BM', 'BUSINESS MANAGER', 'BUSINESS BANKERS', 'PRIVATE BANKER', 'RM', 'RELATIONSHIP MANAGER', 'STAFF', 'CLIENTS']
+            process_keywords = ['SYSTEM', 'PROCESS', 'SERVICE', 'DELAY', 'QUERY', 'ACCESS', 'APP']
+            product_keywords = ['FEE', 'CHARGES', 'LOAN', 'ACCOUNT', 'INVESTMENT', 'CARD']
+            none_keywords = ['NO IMPROVEMENT', 'NONE', 'SATISFIED', 'ALL GOOD', 'N/A']
 
-            df_priority = df_filtered[df_filtered["Qualifier"] == "Priority"].copy()
-            run_date_file = today.strftime("%Y_%m_%d")
-            prefix = "Business_Client_911" if section_choice == "Growth" else ("Enterprise_Client_911" if section_choice == "R10Mil" else "PUBSC_Client_911")
+            def contains_keywords(text, kw_list):
+                return 1 if any(kw in text for kw in kw_list) else 0
 
-            f1_data = df_priority[(df_priority.get("FNB_NPS") == "NPS - Detractor") | (df_priority.get("RM_BM_NPS") == "NPS - Detractor")]
-            f2_data = f1_data.drop(columns=["PRODUCT_PEOPLE_PROCESS"], errors="ignore")
-            f3_data = df_priority
-            f4_data = df_priority.drop(columns=["PRODUCT_PEOPLE_PROCESS"], errors="ignore")
+            df_filtered['People_1'] = case_desc_upper.apply(lambda x: contains_keywords(x, people_keywords))
+            df_filtered['PROCESS_1'] = case_desc_upper.apply(lambda x: contains_keywords(x, process_keywords))
+            df_filtered['PRODUCT_1'] = case_desc_upper.apply(lambda x: contains_keywords(x, product_keywords))
+            df_filtered['NONE_OVERRIDE'] = case_desc_upper.apply(lambda x: contains_keywords(x, none_keywords))
+
+            def apply_triple_p_logic(row):
+                if row.get('NONE_OVERRIDE') == 1: return "NONE"
+                p, pp, pr = row.get('PRODUCT_1') == 1, row.get('People_1') == 1, row.get('PROCESS_1') == 1
+                if pp and pr and p: return "ALL"
+                if p and pr: return "PRODUCT & PROCESS"
+                if p and pp: return "PRODUCT & PEOPLE"
+                if pp and pr: return "PEOPLE & PROCESS"
+                if p: return "PRODUCT ONLY"
+                if pr: return "PROCESS ONLY"
+                if pp: return "PEOPLE ONLY"
+                return ""
+
+            df_filtered['PRODUCT_PEOPLE_PROCESS'] = df_filtered.apply(apply_triple_p_logic, axis=1)
+            df_filtered = df_filtered.sort_values(by='INTNR', ascending=True).copy()
+
+            verbatim_cols = ['CASE_DESCRIPTION', 'FNB_NPS_OPEN_ENDED', 'RM_BM_NPS_OPEN_ENDED', 'WOULD_CONSIDER_SWITCH_TO', 'REASON']
+            for col in verbatim_cols:
+                if col in df_filtered.columns:
+                    df_filtered[col] = df_filtered[col].fillna('').astype(str).str.replace(',', '~', regex=False)
+
+            df_priority = df_filtered[df_filtered['Qualifier'] == "Priority"].copy()
 
             keep_columns = [
-                "PARENT_TYPE", "WAVE", "CLIENT_UCN", "CLIENT_TYPE", "COMPANY_CODE", "CASE_SUBJECT",
-                "REQUEST_CATEGORY", "TOPIC", "CASE_DESCRIPTION", "PRODUCT_PEOPLE_PROCESS", "CAMPAIGN",
-                "ORIGIN", "OWNER", "PRIM_OFCR_IND", "OFFICER_NAME_AND_SURNAME", "BUSINESS_NAME",
-                "REGIONS", "SUB_REGIONS", "SEGMENT", "FNB_NPS", "FNB_NPS_OPEN_ENDED", "RM_BM_NPS",
-                "RM_BM_NPS_OPEN_ENDED", "WOULD_CONSIDER_SWITCH_TO", "REASON", "RECORDED_DATE"
+                'PARENT_TYPE', 'WAVE', 'CLIENT_UCN', 'CLIENT_TYPE', 'COMPANY_CODE', 'CASE_SUBJECT',
+                'REQUEST_CATEGORY', 'TOPIC', 'CASE_DESCRIPTION', 'PRODUCT_PEOPLE_PROCESS', 'CAMPAIGN',
+                'ORIGIN', 'OWNER', 'PRIM_OFCR_IND', 'OFFICER_NAME_AND_SURNAME', 'BUSINESS_NAME',
+                'REGIONS', 'SUB_REGIONS', 'SEGMENT', 'FNB_NPS', 'FNB_NPS_OPEN_ENDED', 'RM_BM_NPS',
+                'RM_BM_NPS_OPEN_ENDED', 'WOULD_CONSIDER_SWITCH_TO', 'REASON', 'RECORDED_DATE'
             ]
+
             for c in keep_columns:
-                if c not in df_priority.columns: df_priority[c] = ""
+                if c not in df_priority.columns:
+                    df_priority[c] = ""
+
+            base_priority_data = df_priority[keep_columns].copy()
+            run_date_file = today.strftime("%Y_%m_%d")
+
+            if section_choice == "Growth": prefix = "Business_Client_911"
+            elif section_choice == "R10Mil": prefix = "Enterprise_Client_911"
+            else: prefix = "PUBSC_Client_911"
+
+            f1_data = base_priority_data[(base_priority_data.get('FNB_NPS') == "NPS - Detractor") | (base_priority_data.get('RM_BM_NPS') == "NPS - Detractor")]
+            f2_data = f1_data.drop(columns=['PRODUCT_PEOPLE_PROCESS'], errors='ignore')
+            f3_data = base_priority_data
+            f4_data = base_priority_data.drop(columns=['PRODUCT_PEOPLE_PROCESS'], errors='ignore')
 
             return {
-                "f1": (f1_data[keep_columns].to_csv(sep="|", index=False, encoding="utf-8-sig").encode("utf-8-sig"), f"{prefix}_NPS_D_classification_{run_date_file}.csv"),
-                "f2": (f2_data[keep_columns].drop(columns=["PRODUCT_PEOPLE_PROCESS"], errors="ignore").to_csv(sep="|", index=False, encoding="utf-8-sig").encode("utf-8-sig"), f"{prefix}_NPS_D_NO_classification_{run_date_file}.csv"),
-                "f3": (f3_data[keep_columns].to_csv(sep="|", index=False, encoding="utf-8-sig").encode("utf-8-sig"), f"{prefix}_NPS_D_S_classification_{run_date_file}.csv"),
-                "f4": (f4_data[keep_columns].drop(columns=["PRODUCT_PEOPLE_PROCESS"], errors="ignore").to_csv(sep="|", index=False, encoding="utf-8-sig").encode("utf-8-sig"), f"{prefix}_NPS_D_S_NO_classification_{run_date_file}.csv"),
+                "f1": (f1_data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'), f"{prefix}_NPS_D_classification_{run_date_file}.csv"),
+                "f2": (f2_data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'), f"{prefix}_NPS_D_NO_classification_{run_date_file}.csv"),
+                "f3": (f3_data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'), f"{prefix}_NPS_D_S_classification_{run_date_file}.csv"),
+                "f4": (f4_data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'), f"{prefix}_NPS_D_S_NO_classification_{run_date_file}.csv"),
                 "count": len(df_filtered)
             }
         except Exception as e:
             st.error(f"❌ Error in {section_choice}: {e}")
             return None
         finally:
-            if os.path.exists(tmp_path): os.remove(tmp_path)
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
-    st.subheader("🚀 Pipeline Execution Control Room")
+    st.subheader("⚡ Pipeline Execution Control Room")
     col1, col2, col3 = st.columns(3)
 
-    for col_obj, title, key_prefix, choice in [
-        (col1, "💼 Growth Section", "growth", "Growth"),
-        (col2, "🏢 R10Mil Section", "r10", "R10Mil"),
-        (col3, "🏫 PUBSC Section", "pub", "PUBSC")
-    ]:
-        with col_obj:
-            with st.container(border=True):
-                st.markdown(f"### {title}")
-                uploaded = st.file_uploader(f"Upload {choice} SAV", type=["sav"], key=f"up_{key_prefix}_911")
-                if st.button(f"▶ Run {choice} Stage", key=f"btn_{key_prefix}_911", type="primary", use_container_width=True):
-                    if uploaded is None: st.error("Upload SAV file first.")
-                    else:
-                        with st.spinner(f"Processing {choice}..."):
-                            res = run_pipeline(uploaded, choice)
-                            if res:
-                                st.success(f"Processed {res['count']} records!")
-                                for i, k in enumerate(["f1", "f2", "f3", "f4"], start=1):
-                                    st.download_button(f"📥 Output {i}", res[k][0], file_name=res[k][1], mime="text/csv", key=f"{key_prefix}_dl_{i}")
+    with col1:
+        with st.container(border=True):
+            st.markdown("### 🟢 Growth Section")
+            st.caption("Target: Business Client Pipeline")
+            file_growth = st.file_uploader("Upload GROW SAV (.sav)", type=["sav"], key="growth_file")
+            
+            if st.button("▶ Run Growth Stage", key="btn_growth", type="primary", use_container_width=True):
+                if file_growth is None:
+                    st.error("Upload a SAV file first.")
+                else:
+                    with st.spinner("Processing Growth..."):
+                        res = run_pipeline(file_growth, "Growth")
+                        if res:
+                            st.success(f"Processed {res['count']} records!")
+                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="g1")
+                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="g2")
+                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="g3")
+                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="g4")
+
+    with col2:
+        with st.container(border=True):
+            st.markdown("### 🔵 R10Mil Section")
+            st.caption("Target: Enterprise Client Pipeline")
+            file_r10 = st.file_uploader("Upload RMW SAV (.sav)", type=["sav"], key="r10_file")
+            
+            if st.button("▶ Run R10Mil Stage", key="btn_r10", type="primary", use_container_width=True):
+                if file_r10 is None:
+                    st.error("Upload a SAV file first.")
+                else:
+                    with st.spinner("Processing R10Mil..."):
+                        res = run_pipeline(file_r10, "R10Mil")
+                        if res:
+                            st.success(f"Processed {res['count']} records!")
+                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="r1")
+                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="r2")
+                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="r3")
+                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="r4")
+
+    with col3:
+        with st.container(border=True):
+            st.markdown("### 🟠 PUBSC Section")
+            st.caption("Target: Public Sector Pipeline")
+            file_pub = st.file_uploader("Upload PUBW SAV (.sav)", type=["sav"], key="pub_file")
+            
+            if st.button("▶ Run PUBSC Stage", key="btn_pub", type="primary", use_container_width=True):
+                if file_pub is None:
+                    st.error("Upload a SAV file first.")
+                else:
+                    with st.spinner("Processing PUBSC..."):
+                        res = run_pipeline(file_pub, "PUBSC")
+                        if res:
+                            st.success(f"Processed {res['count']} records!")
+                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="p1")
+                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="p2")
+                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="p3")
+                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="p4")
 
 # ==========================================================================
 # ==========================================================================
@@ -1102,7 +1167,7 @@ with tab3:
 
 # ==========================================================================
 # ==========================================================================
-# TAB 4: Q11 RATINGS & REASONS EXTRACTION
+# TAB 4: Q11 RATINGS & REASONS EXTRACTION (YOUR EXACT WORKING SCRIPT)
 # ==========================================================================
 # ==========================================================================
 with tab4:
@@ -1110,7 +1175,7 @@ with tab4:
     st.markdown("Filter records by date window, upload SPSS datasets, and extract Q11 ratings, coded reasons, and open-ended text into structured Excel reports.")
     st.markdown("---")
 
-    st.subheader("⚙️️ Global Execution Parameters")
+    st.subheader("⚙ Global Execution Parameters")
     date_mode_q11 = st.radio(
         "Select Date Filtering Mode for Runs:",
         ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"],
@@ -1157,7 +1222,6 @@ with tab4:
             if df.empty or 'STIME' not in df.columns:
                 return pd.DataFrame()
 
-            # Automated Friday-to-Friday Date Filtering Window
             df['STIME_CLEAN'] = pd.to_datetime(df['STIME'].astype(str).str.slice(0, 8), format='%Y%m%d', errors='coerce')
             date_mask = (df['STIME_CLEAN'] >= pd.Timestamp(last_friday)) & (df['STIME_CLEAN'] <= pd.Timestamp(today_dt))
             df = df[date_mask].copy()
@@ -1178,7 +1242,6 @@ with tab4:
             df_out['UCN Number'] = np.where(mask, df['V80116'], None) if 'V80116' in df.columns else None
             df_out['Date'] = np.where(mask, recorded_date, None)
 
-            # Rating Scales
             rating_cols = {
                 'Q11.1 RATING - FNB Business Lending products (overdraft, loans, etc.)': 'Q11_1_1',
                 'Q11.2 RATING - FNB Business Transactional products (cheque, debit card, credit card etc.)': 'Q11_1_2',
@@ -1192,7 +1255,6 @@ with tab4:
                 else:
                     df_out[target] = np.nan
 
-            # Coded Reason Variables
             custom_label_mappings = {
                 'Q11 REASONS - Lending_1': {'src': 'Q11A_1_1', 'label': 'Overdraft'},
                 'Q11 REASONS - Lending_2': {'src': 'Q11A_1_2', 'label': 'Loans'},
@@ -1236,7 +1298,6 @@ with tab4:
                 numeric_src = pd.to_numeric(df[src_col], errors='coerce')
                 df_out[target_col] = np.where((mask) & (numeric_src == 1), config['label'], None)
 
-            # Free Text Open Ends
             open_ends = {
                 'Q11 REASONS - Lending OTHER': 'TQ11A_1C3',
                 'Q11 REASONS OTHER - Transactional products': 'TQ11A_2C4',
