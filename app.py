@@ -1107,10 +1107,10 @@ with tab3:
 # ==========================================================================
 with tab4:
     st.markdown("### 📋 Q11 Ratings & Reasons Extraction Control Room")
-    st.markdown("Filter records by date window, upload SPSS datasets, and extract Q11 ratings and open-ended reasons into structured Excel reports.")
+    st.markdown("Filter records by date window, upload SPSS datasets, and extract Q11 ratings, coded reasons, and open-ended text into structured Excel reports.")
     st.markdown("---")
 
-    st.subheader("⚙️ Global Execution Parameters")
+    st.subheader("⚙️️ Global Execution Parameters")
     date_mode_q11 = st.radio(
         "Select Date Filtering Mode for Runs:",
         ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"],
@@ -1137,7 +1137,7 @@ with tab4:
         today_q11 = datetime.combine(end_date_input_q11, datetime.max.time())
 
     st.markdown("---")
-    st.subheader("📁 Upload SPSS Datasets for Q11 Extraction")
+    st.subheader("📁 Upload SPSS Datasets (.sav)")
     
     col_q1, col_q2 = st.columns(2)
     file_q11_r10 = col_q1.file_uploader("Upload R10Mil SPSS File (.sav)", type=["sav"], key="q11_r10_file")
@@ -1146,58 +1146,174 @@ with tab4:
     if "q11_ready" not in st.session_state: st.session_state.q11_ready = False
     if "q11_bytes" not in st.session_state: st.session_state.q11_bytes = None
 
+    def process_spss_for_q11(uploaded_file, last_friday, today_dt):
+        if uploaded_file is None:
+            return pd.DataFrame()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
+            tmp.write(uploaded_file.getvalue())
+            tp = tmp.name
+        try:
+            df = pd.read_spss(tp, convert_categoricals=False)
+            if df.empty or 'STIME' not in df.columns:
+                return pd.DataFrame()
+
+            # Automated Friday-to-Friday Date Filtering Window
+            df['STIME_CLEAN'] = pd.to_datetime(df['STIME'].astype(str).str.slice(0, 8), format='%Y%m%d', errors='coerce')
+            date_mask = (df['STIME_CLEAN'] >= pd.Timestamp(last_friday)) & (df['STIME_CLEAN'] <= pd.Timestamp(today_dt))
+            df = df[date_mask].copy()
+
+            if df.empty:
+                return pd.DataFrame()
+
+            df['STIME_STR'] = df['STIME'].astype(str)
+            nyear = df['STIME_STR'].str.slice(0, 4)
+            nmonth = df['STIME_STR'].str.slice(4, 6)
+            nday = df['STIME_STR'].str.slice(6, 8)
+            recorded_date = nyear + '/' + nmonth + '/' + nday
+
+            mask = df['INTNR'] > 0 if 'INTNR' in df.columns else np.zeros(len(df), dtype=bool)
+            df_out = pd.DataFrame(index=df.index)
+
+            df_out['Interview number'] = df['INTNR'] if 'INTNR' in df.columns else None
+            df_out['UCN Number'] = np.where(mask, df['V80116'], None) if 'V80116' in df.columns else None
+            df_out['Date'] = np.where(mask, recorded_date, None)
+
+            # Rating Scales
+            rating_cols = {
+                'Q11.1 RATING - FNB Business Lending products (overdraft, loans, etc.)': 'Q11_1_1',
+                'Q11.2 RATING - FNB Business Transactional products (cheque, debit card, credit card etc.)': 'Q11_1_2',
+                'Q11.3 RATING - FNB Business Insurance products (business credit protection plan, law-on-call business plan, etc.)': 'Q11_1_3',
+                'Q11.4 RATING - FNB Business FNB Business Investment products': 'Q11_1_4',
+                'Q11.5 RATING - FNB Business FNB Business FOREX products': 'Q11_1_5'
+            }
+            for target, src in rating_cols.items():
+                if src in df.columns:
+                    df_out[target] = np.where(mask, pd.to_numeric(df[src], errors='coerce'), np.nan)
+                else:
+                    df_out[target] = np.nan
+
+            # Coded Reason Variables
+            custom_label_mappings = {
+                'Q11 REASONS - Lending_1': {'src': 'Q11A_1_1', 'label': 'Overdraft'},
+                'Q11 REASONS - Lending_2': {'src': 'Q11A_1_2', 'label': 'Loans'},
+                'Q11 REASONS - Lending_3': {'src': 'Q11A_1_3', 'label': 'Other'},
+                'Q11 REASONS - Lending_4': {'src': None, 'label': 'Other'},  
+                'Q11 REASONS - Lending_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Transactional products_1': {'src': 'Q11A_2_1', 'label': 'Cheque card'},
+                'Q11 REASONS - Transactional products_2': {'src': 'Q11A_2_2', 'label': 'Debit card'},
+                'Q11 REASONS - Transactional products_3': {'src': 'Q11A_2_3', 'label': 'Credit Card'},
+                'Q11 REASONS - Transactional products_4': {'src': 'Q11A_2_4', 'label': 'Other'},
+                'Q11 REASONS - Transactional products_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Insurance_1': {'src': 'Q11A_3_1', 'label': 'Business credit protection plan'},
+                'Q11 REASONS - Insurance_2': {'src': 'Q11A_3_2', 'label': 'Law-on-call business plan'},
+                'Q11 REASONS - Insurance_3': {'src': 'Q11A_3_3', 'label': 'Other'},
+                'Q11 REASONS - Insurance_4': {'src': None, 'label': 'Other'},
+                'Q11 REASONS - Insurance_5': {'src': None, 'label': 'Other'},
+                
+                'Q11 REASONS - Investment products_1': {'src': 'Q11A_4_1', 'label': 'Savings'},
+                'Q11 REASONS - Investment products_2': {'src': 'Q11A_4_2', 'label': 'Notice deposits'},
+                'Q11 REASONS - Investment products_3': {'src': 'Q11A_4_3', 'label': 'Other'},
+                'Q11 REASONS - Investment products_4': {'src': None, 'label': 'Other'},
+                'Q11 REASONS - Investment products_5': {'src': None, 'label': 'Other'},
+            }
+
+            forex_labels = {
+                1: 'Foreign Exchange', 2: 'Imports and Exports', 3: 'Structured Trade + Commodity Finance',
+                4: 'PayPal', 5: 'Trade (Trade Platform and Transacting)', 6: 'MoneyGram (TM)',
+                7: 'Global Payments (business global account)', 8: 'Travel card',
+                9: 'Trans-country Interbank Clearing', 10: 'Other'
+            }
+            for i, label_text in forex_labels.items():
+                custom_label_mappings[f'Q11 REASONS - FOREX products_{i}'] = {'src': f'Q11A_5_{i}', 'label': label_text}
+
+            for target_col, config in custom_label_mappings.items():
+                src_col = config['src']
+                if src_col is None or src_col not in df.columns:
+                    df_out[target_col] = None
+                    continue
+                numeric_src = pd.to_numeric(df[src_col], errors='coerce')
+                df_out[target_col] = np.where((mask) & (numeric_src == 1), config['label'], None)
+
+            # Free Text Open Ends
+            open_ends = {
+                'Q11 REASONS - Lending OTHER': 'TQ11A_1C3',
+                'Q11 REASONS OTHER - Transactional products': 'TQ11A_2C4',
+                'Q11 REASONS - Insurance OTHER': 'TQ11A_3C3',
+                'Q11 REASONS - Investment products OTHER': 'TQ11A_4C3',
+                'Q11 REASONS - FOREX products OTHER': 'TQ11A_5C10'
+            }
+            for target, src in open_ends.items():
+                if src in df.columns:
+                    string_series = df[src].astype(str).replace(['nan', 'NaN', 'None'], None)
+                    df_out[target] = np.where(mask, string_series, None)
+                else:
+                    df_out[target] = None
+
+            final_column_order = [
+                'Interview number', 'UCN Number', 'Date',
+                'Q11.1 RATING - FNB Business Lending products (overdraft, loans, etc.)', 
+                'Q11 REASONS - Lending_1', 'Q11 REASONS - Lending_2', 'Q11 REASONS - Lending_3', 'Q11 REASONS - Lending_4', 'Q11 REASONS - Lending_5', 
+                'Q11 REASONS - Lending OTHER',
+                
+                'Q11.2 RATING - FNB Business Transactional products (cheque, debit card, credit card etc.)', 
+                'Q11 REASONS - Transactional products_1', 'Q11 REASONS - Transactional products_2', 'Q11 REASONS - Transactional products_3', 'Q11 REASONS - Transactional products_4', 'Q11 REASONS - Transactional products_5', 
+                'Q11 REASONS OTHER - Transactional products',
+                
+                'Q11.3 RATING - FNB Business Insurance products (business credit protection plan, law-on-call business plan, etc.)', 
+                'Q11 REASONS - Insurance_1', 'Q11 REASONS - Insurance_2', 'Q11 REASONS - Insurance_3', 'Q11 REASONS - Insurance_4', 'Q11 REASONS - Insurance_5', 
+                'Q11 REASONS - Insurance OTHER',
+                
+                'Q11.4 RATING - FNB Business FNB Business Investment products', 
+                'Q11 REASONS - Investment products_1', 'Q11 REASONS - Investment products_2', 'Q11 REASONS - Investment products_3', 'Q11 REASONS - Investment products_4', 'Q11 REASONS - Investment products_5', 
+                'Q11 REASONS - Investment products OTHER',
+                
+                'Q11.5 RATING - FNB Business FNB Business FOREX products', 
+                'Q11 REASONS - FOREX products_1', 'Q11 REASONS - FOREX products_2', 'Q11 REASONS - FOREX products_3', 'Q11 REASONS - FOREX products_4', 'Q11 REASONS - FOREX products_5', 'Q11 REASONS - FOREX products_6', 'Q11 REASONS - FOREX products_7', 'Q11 REASONS - FOREX products_8', 'Q11 REASONS - FOREX products_9', 'Q11 REASONS - FOREX products_10', 
+                'Q11 REASONS - FOREX products OTHER'
+            ]
+            
+            df_final = df_out[final_column_order].copy()
+            clean_headers = [header.split('_')[0] for header in df_final.columns]
+            df_final.columns = clean_headers
+            return df_final
+        except Exception as e:
+            st.error(f"Error processing SPSS file: {e}")
+            return pd.DataFrame()
+        finally:
+            if os.path.exists(tp):
+                os.remove(tp)
+
     if st.button("▶ Run Q11 Extraction", type="primary", key="run_q11_btn"):
         if not file_q11_r10 and not file_q11_grow:
             st.error("Please upload at least one SPSS dataset (.sav) before running the extraction.")
         else:
-            with st.spinner("Filtering records by date window and extracting Q11 data..."):
+            with st.spinner("Processing Q11 extractions with date window filter..."):
+                clean_df1 = process_spss_for_q11(file_q11_r10, last_friday_q11, today_q11)
+                clean_df2 = process_spss_for_q11(file_q11_grow, last_friday_q11, today_q11)
+
                 out_buf = io.BytesIO()
                 with pd.ExcelWriter(out_buf, engine="openpyxl") as writer:
-                    for f_up, s_name in [(file_q11_r10, "Enterprise-R10Mil"), (file_q11_grow, "Business-Growth")]:
-                        if f_up is not None:
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
-                                tmp.write(f_up.getvalue())
-                                tp = tmp.name
-                            try:
-                                df_q, meta = pyreadstat.read_sav(tp, apply_value_formats=True)
-                                df_q.columns = [str(c).strip().upper() for c in df_q.columns]
-                                
-                                # Apply completed filter and date window filter if STIME exists
-                                df_filtered = df_q[df_q["V9999"] == 1].copy() if "V9999" in df_q.columns else df_q.copy()
-                                if "STIME" in df_filtered.columns:
-                                    df_filtered["STIME_CLEAN"] = df_filtered["STIME"].astype(str).str.strip().str[:8]
-                                    df_filtered["STIME_DATE"] = df_filtered["STIME_CLEAN"].apply(
-                                        lambda x: datetime.strptime(x, "%Y%m%d") if len(x) == 8 else None
-                                    )
-                                    df_filtered = df_filtered[
-                                        (df_filtered["STIME_DATE"] >= last_friday_q11) & (df_filtered["STIME_DATE"] <= today_q11)
-                                    ].copy()
+                    if not clean_df1.empty:
+                        clean_df1.to_excel(writer, sheet_name="Enterprise-R10Mil", index=False)
+                    if not clean_df2.empty:
+                        clean_df2.to_excel(writer, sheet_name="Business-Growth", index=False)
+                    if clean_df1.empty and clean_df2.empty:
+                        pd.DataFrame({"Notice": ["No records found for the selected date window."]}).to_excel(writer, sheet_name="No Data", index=False)
 
-                                # Select Q11 related columns
-                                q11_cols = [c for c in df_filtered.columns if "Q11" in c or "TQ11" in c or c in ["V9999", "INTNR", "BUSINESS_NAME", "V12290", "V13290", "STIME"]]
-                                if q11_cols:
-                                    df_export = df_filtered[q11_cols].copy()
-                                else:
-                                    df_export = df_filtered.copy()
-
-                                df_export.to_excel(writer, sheet_name=s_name, index=False)
-                            except Exception as e:
-                                st.error(f"Error processing {s_name}: {e}")
-                            finally:
-                                if os.path.exists(tp):
-                                    os.remove(tp)
-                
                 out_buf.seek(0)
                 st.session_state.q11_bytes = out_buf.getvalue()
                 st.session_state.q11_ready = True
-                st.success("✅ Q11 extraction completed successfully with date window filters applied!")
+                st.success("✅ Q11 extraction completed successfully using your exact standalone script logic!")
 
     if st.session_state.q11_ready and st.session_state.q11_bytes:
         st.markdown("---")
+        run_date_file = datetime.now().strftime("%Y-%m-%d")
         st.download_button(
             label="📥 Download Q11 Extraction Report (.xlsx)",
             data=st.session_state.q11_bytes,
-            file_name="Q11_Extraction_Report.xlsx",
+            file_name=f"Star W22 Q11 extraction {run_date_file}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="dl_q11_xlsx"
         )
