@@ -208,34 +208,92 @@ with tab1:
             "Upload PUBW (.sav)", type=["sav"], key="status_pub"
         )
 
-    # Helper function to read SPSS row counts for achieved quotas
-    def get_achieved_count(uploaded_file):
+    # Robust helper function to read SPSS datasets and dynamically extract metrics and segments
+    def parse_status_dataset(uploaded_file, is_growth=True):
         if uploaded_file is None:
-            return None
+            return None, None, None, None
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
             tmp.write(uploaded_file.getvalue())
             tmp_path = tmp.name
         try:
-            df, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
-            return len(df)
-        except:
-            return 0
+            df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
+            df.columns = [str(c).strip().upper() for c in df.columns]
+            
+            total_count = len(df)
+            
+            # Try to identify segment column (e.g., V44011 or SEGMENT)
+            seg_col = None
+            for candidate in ["V44011", "SEGMENT", "V13290"]:
+                if candidate in df.columns:
+                    seg_col = candidate
+                    break
+            
+            # Try to identify region column (e.g., V12290, REGIONS, REGION)
+            reg_col = None
+            for candidate in ["V12290", "REGIONS", "REGION", "V8013"]:
+                if candidate in df.columns:
+                    reg_col = candidate
+                    break
+            
+            return df, total_count, reg_col, seg_col
+        except Exception as e:
+            st.error(f"Error reading SPSS dataset: {e}")
+            return None, 0, None, None
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
-    achieved_business = (
-        get_achieved_count(status_file_grow) if status_file_grow else 1721
-    )
-    achieved_enterprise = (
-        get_achieved_count(status_file_r10) if status_file_r10 else 432
-    )
-    achieved_pubsc = get_achieved_count(status_file_pub) if status_file_pub else 184
+    # Process uploaded datasets or use fallback values
+    df_grow_live, count_grow, reg_col_g, seg_col_g = parse_status_dataset(status_file_grow, True)
+    df_r10_live, count_r10, reg_col_r, seg_col_r = parse_status_dataset(status_file_r10, False)
+    df_pub_live, count_pub, reg_col_p, seg_col_p = parse_status_dataset(status_file_pub, False)
 
-    total_achieved_val = (
-        achieved_business + achieved_enterprise + achieved_pubsc
-    )
+    achieved_business = count_grow if status_file_grow else 1721
+    achieved_enterprise = count_r10 if status_file_r10 else 432
+    achieved_pubsc = count_pub if status_file_pub else 184
+
+    total_achieved_val = achieved_business + achieved_enterprise + achieved_pubsc
     total_outstanding_val = total_target_val - total_achieved_val
+
+    # Dynamic segment breakdown calculation from actual data if available
+    if status_file_grow and df_grow_live is not None and seg_col_g:
+        # Approximate segment categorization from Growth data values
+        seg_vals_g = df_grow_live[seg_col_g].astype(str).str.lower()
+        achieved_r0_r1 = int(seg_vals_g.str.contains("r0|1m|under|less").sum())
+        achieved_r1_r5 = int(seg_vals_g.str.contains("r1|5m").sum())
+        achieved_r5_r10 = int(seg_vals_g.str.contains("r5|10m").sum())
+        achieved_r10_r60 = int(seg_vals_g.str.contains("r10|60m").sum())
+        if (achieved_r0_r1 + achieved_r1_r5 + achieved_r5_r10 + achieved_r10_r60) == 0:
+            achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
+    else:
+        achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = 616, 371, 275, 459
+
+    if status_file_r10 and df_r10_live is not None and seg_col_r:
+        seg_vals_r = df_r10_live[seg_col_r].astype(str).str.lower()
+        achieved_r60_r150 = int(seg_vals_r.str.contains("r60|150m").sum())
+        achieved_r150_plus = int(seg_vals_r.str.contains("150m\\+|plus|gt").sum())
+        if (achieved_r60_r150 + achieved_r150_plus) == 0:
+            achieved_r60_r150, achieved_r150_plus = 247, 185
+    else:
+        achieved_r60_r150, achieved_r150_plus = 247, 185
+
+    total_seg_target = (
+        q_seg_r0_r1
+        + q_seg_r1_r5
+        + q_seg_r5_r10
+        + q_seg_r10_r60
+        + q_seg_r60_r150
+        + q_seg_r150_plus
+    )
+    total_seg_achieved = (
+        achieved_r0_r1
+        + achieved_r1_r5
+        + achieved_r5_r10
+        + achieved_r10_r60
+        + achieved_r60_r150
+        + achieved_r150_plus
+    )
+    total_seg_outstanding = total_seg_target - total_seg_achieved
 
     st.markdown("---")
     st.subheader("📈 Executive Summary Overview")
@@ -291,31 +349,6 @@ with tab1:
 
     # --- SEGMENT EXECUTIVE SUMMARY BREAKDOWN TABLE ---
     st.markdown("#### 📋 Segment Quotas Executive Summary Breakdown")
-    achieved_r0_r1, achieved_r1_r5, achieved_r5_r10, achieved_r10_r60 = (
-        616,
-        371,
-        275,
-        459,
-    )
-    achieved_r60_r150, achieved_r150_plus = 247, 185
-
-    total_seg_target = (
-        q_seg_r0_r1
-        + q_seg_r1_r5
-        + q_seg_r5_r10
-        + q_seg_r10_r60
-        + q_seg_r60_r150
-        + q_seg_r150_plus
-    )
-    total_seg_achieved = (
-        achieved_r0_r1
-        + achieved_r1_r5
-        + achieved_r5_r10
-        + achieved_r10_r60
-        + achieved_r60_r150
-        + achieved_r150_plus
-    )
-    total_seg_outstanding = total_seg_target - total_seg_achieved
 
     seg_summary_df = pd.DataFrame(
         {
@@ -1285,7 +1318,7 @@ with tab1:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download_status_excel_final",
         )
-
+        
 # ==========================================================================
 # ==========================================================================
 # TAB 2: WEEKLY 911'S CONTROL ROOM
