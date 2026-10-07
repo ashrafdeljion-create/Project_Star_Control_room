@@ -13,6 +13,7 @@ import openpyxl
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.datavalidation import DataValidation
 import pandas as pd
 import pyreadstat
 import streamlit as st
@@ -80,7 +81,7 @@ st.markdown(
 # Main title and subtitle displayed at the top of the application web page
 st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown(
-    "Your unified command center for Project Star, Weekly 911's pipeline automation, NPS Excel reports, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
+    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
 )
 
 # =========================================================================
@@ -90,7 +91,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "📊 Project Status & Quotas Update",
         "⚙️ Weekly 911's Control Room",
-        "📈 NPS Dashboard & Data Generator",
+        "📈 BM/RM NPS Portfolio Generator",
         "📋 Q11 Ratings & Reasons Extraction",
         "📅 NPS Yearly Dashboard",
         "🏢 SME/ENT Tables",
@@ -969,7 +970,7 @@ with tab2:
                 df_filtered['NYEAR'] = df_filtered['STIME_CLEAN'].str[:4]
                 df_filtered['NMONTH'] = df_filtered['STIME_CLEAN'].str[4:6]
                 df_filtered['NDAY'] = df_filtered['STIME_CLEAN'].str[6:8]
-                # Updated date separator from "/" to "-"
+                # Updated date separator from "/" to "-" as requested
                 df_filtered['RECORDED_DATE'] = df_filtered['NYEAR'] + "-" + df_filtered['NMONTH'] + "-" + df_filtered['NDAY']
 
             df_filtered['Qualifier'] = "Not Priority"
@@ -1114,58 +1115,415 @@ with tab2:
 
 # ==========================================================================
 # ==========================================================================
-# TAB 3: NPS DASHBOARD & DATA GENERATOR
+# TAB 3: BM/RM NPS PORTFOLIO GENERATOR (UPDATED FROM app_10.py)
 # ==========================================================================
 # ==========================================================================
 with tab3:
-    st.markdown("### 📈 NPS Dashboard & Streamlined Data Generator")
-    if "nps_reports_ready" not in st.session_state: st.session_state.nps_reports_ready = False
-    if "nps_report_payloads" not in st.session_state: st.session_state.nps_report_payloads = []
+    st.markdown("### 📈 BM/RM NPS Portfolio Generator")
+    st.markdown("Upload your master SPSS (`.sav`) data file below, select your wave preferences and portfolio filter, then click **Run Processing** to generate your reports.")
 
-    nps_file = st.file_uploader("Upload Master SPSS Data File (.sav) for NPS Dashboard", type=["sav"], key="nps_master_file")
-    portfolio_mode = st.selectbox("Select Portfolio Filter Mode:", ["Generate All (Combined, Growth, and R10M Separately)", "Combined (Growth & R10M)", "Growth Only", "R10M Only"], key="nps_port_mode")
-    filter_option = st.radio("Select Wave Filter Option:", ["All Waves", "Custom Range (e.g., Wave 1 to 10)", "Specific Waves List"], key="nps_filt_opt")
+    if "reports_ready" not in st.session_state:
+        st.session_state.reports_ready = False
+    if "report_files" not in st.session_state:
+        st.session_state.report_files = {}
 
-    if st.button("🚀 Run Processing & Generate Reports", type="primary", key="run_nps_tab3"):
-        if nps_file is None: st.error("Please upload a `.sav` file first!")
+    uploaded_file_tab3 = st.file_uploader("Upload Master SPSS Data File (.sav)", type=["sav"], key="tab3_master_file")
+
+    portfolio_mode = st.selectbox(
+        "Select Portfolio Filter Mode:",
+        [
+            "Generate All (Combined, Growth, and R10M Separately)",
+            "Combined (Growth & R10M)",
+            "Growth Only",
+            "R10M Only"
+        ],
+        key="tab3_portfolio_mode"
+    )
+
+    filter_option = st.radio("Select Wave Filter Option:", ["All Waves", "Custom Range (e.g., Wave 1 to 10)", "Specific Waves List"], key="tab3_filter_option")
+
+    selected_waves_filter = 'ALL'
+
+    if filter_option == "Custom Range (e.g., Wave 1 to 10)":
+        col_w1, col_w2 = st.columns(2)
+        with col_w1:
+            start_w = st.number_input("Start Wave Number", min_value=1, max_value=30, value=1, key="tab3_start_w")
+        with col_w2:
+            end_w = st.number_input("End Wave Number", min_value=1, max_value=30, value=10, key="tab3_end_w")
+        selected_waves_filter = [f'Wave {i}' for i in range(int(start_w), int(end_w) + 1)]
+
+    elif filter_option == "Specific Waves List":
+        waves_input = st.text_input("Enter waves separated by commas:", "Wave 20, Wave 21, Wave 22", key="tab3_waves_input")
+        selected_waves_filter = [w.strip() for w in waves_input.split(',')]
+
+    def generate_report_bytes(df_subset, prefix_label):
+        is_combined = (prefix_label == "Combined")
+        
+        excel_name = f"Overall NPS Rating per BM RM Portfolio_{prefix_label}.xlsx"
+        sav_name = f"Project Star_NPS_Streamlined_{prefix_label}.sav"
+
+        temp_excel = f"temp_{prefix_label}.xlsx"
+        temp_sav = f"temp_{prefix_label}.sav"
+
+        pyreadstat.write_sav(df_subset, temp_sav)
+        with open(temp_sav, "rb") as f:
+            sav_bytes = f.read()
+
+        with pd.ExcelWriter(temp_excel, engine='openpyxl') as writer:
+            df_subset.to_excel(writer, sheet_name='data', index=False)
+
+        wb = openpyxl.load_workbook(temp_excel)
+        ws_toc = wb.create_sheet(title='TOC', index=0)
+        ws_nps = wb.create_sheet(title='NPS', index=1)
+        ws_data = wb['data']
+        ws_data.sheet_state = 'hidden'
+
+        TEAL_HEADER_FILL = PatternFill(start_color="00A3AD", end_color="00A3AD", fill_type="solid")
+        LIGHT_TEAL_FILL = PatternFill(start_color="D9F2F4", end_color="D9F2F4", fill_type="solid")
+        ORANGE_HEADER_FILL = PatternFill(start_color="F58220", end_color="F58220", fill_type="solid")
+        LIGHT_ORANGE_FILL = PatternFill(start_color="FDF3EC", end_color="FDF3EC", fill_type="solid")
+        BANNER_FILL = PatternFill(start_color="333333", end_color="333333", fill_type="solid")
+        ZEBRA_FILL = PatternFill(start_color="FAFAFA", end_color="FAFAFA", fill_type="solid")
+
+        WHITE_BOLD_FONT = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        TITLE_FONT = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
+        BOLD_FONT = Font(name="Calibri", size=11, bold=True)
+        REGULAR_FONT = Font(name="Calibri", size=11)
+        THIN_BORDER = Border(left=Side(style='thin', color='DDDDDD'), right=Side(style='thin', color='DDDDDD'), top=Side(style='thin', color='DDDDDD'), bottom=Side(style='thin', color='DDDDDD'))
+
+        ws_toc.cell(row=1, column=2, value=f"FNB Customer Satisfaction Study 2026: NPS Rating per BM/RM Portfolio ({prefix_label})")
+        ws_toc.cell(row=1, column=2).fill = TEAL_HEADER_FILL
+        ws_toc.cell(row=1, column=2).font = TITLE_FONT
+        ws_toc.cell(row=1, column=2).alignment = Alignment(horizontal="center", vertical="center")
+
+        ws_toc.append(["", "Select Wave:", "All Waves"])
+        ws_toc.cell(row=2, column=2).font = BOLD_FONT
+        ws_toc.cell(row=2, column=2).alignment = Alignment(horizontal="right")
+        ws_toc.cell(row=2, column=3).fill = LIGHT_TEAL_FILL
+        ws_toc.cell(row=2, column=3).border = THIN_BORDER
+
+        def wave_sort_key(val):
+            match = re.search(r'\d+', str(val))
+            return int(match.group()) if match else 0
+
+        raw_waves = df_subset['WAVE'].dropna().unique() if 'WAVE' in df_subset.columns else []
+        available_waves = sorted(raw_waves, key=wave_sort_key)
+        wave_list_str = '"All Waves,' + ','.join([str(w) for w in available_waves]) + '"'
+        wave_dv = DataValidation(type="list", formula1=wave_list_str, allow_blank=False)
+        ws_toc.add_data_validation(wave_dv)
+        wave_dv.add(ws_toc['C2'])
+
+        if is_combined:
+            ws_toc.append(["", "Select Type:", "All Types"])
+            ws_toc.cell(row=3, column=2).font = BOLD_FONT
+            ws_toc.cell(row=3, column=2).alignment = Alignment(horizontal="right")
+            ws_toc.cell(row=3, column=3).fill = LIGHT_TEAL_FILL
+            ws_toc.cell(row=3, column=3).border = THIN_BORDER
+
+            available_types = sorted(df_subset['TYPE'].dropna().unique()) if 'TYPE' in df_subset.columns else []
+            type_list_str = '"All Types,' + ','.join([str(t) for t in available_types]) + '"'
+            type_dv = DataValidation(type="list", formula1=type_list_str, allow_blank=False)
+            ws_toc.add_data_validation(type_dv)
+            type_dv.add(ws_toc['C3'])
+            toc_header_row = 5
         else:
-            with st.spinner("Processing data..."):
-                tmp_path = "temp_nps.sav"
-                with open(tmp_path, "wb") as f: f.write(nps_file.getbuffer())
-                df_raw, _ = pyreadstat.read_sav(tmp_path, apply_value_formats=False)
-                df_raw.columns = [str(c).strip().upper() for c in df_raw.columns]
-                if os.path.exists(tmp_path): os.remove(tmp_path)
+            toc_header_row = 4
 
-                def gen_bytes(df_sub, prefix):
-                    tp_excel, tp_sav = f"temp_{prefix}.xlsx", f"temp_{prefix}.sav"
-                    pyreadstat.write_sav(df_sub, tp_sav)
-                    with open(tp_sav, "rb") as f: sav_bytes = f.read()
-                    df_sub.to_excel(tp_excel, sheet_name="data", index=False)
-                    with open(tp_excel, "rb") as f: excel_bytes = f.read()
-                    for p in [tp_excel, tp_sav]:
-                        if os.path.exists(p): os.remove(p)
-                    return excel_bytes, f"FNB_Customer_Satisfaction_Report_{prefix}.xlsx", sav_bytes, f"FNB_Data_{prefix}.sav"
+        ws_toc.append([])
+        ws_toc.append(["", "Table of Contents", ""])
+        ws_toc.cell(row=toc_header_row, column=2).font = Font(name="Calibri", size=12, bold=True, color="F58220")
 
-                payloads = []
-                if portfolio_mode == "Generate All (Combined, Growth, and R10M Separately)":
-                    payloads.append(gen_bytes(df_raw, "Combined"))
-                    if "TYPE" in df_raw.columns:
-                        dg = df_raw[df_raw["TYPE"].astype(str).str.lower().str.contains("growth")]
-                        if not dg.empty: payloads.append(gen_bytes(dg, "Growth"))
-                        dr = df_raw[df_raw["TYPE"].astype(str).str.lower().str.contains("r10")]
-                        if not dr.empty: payloads.append(gen_bytes(dr, "R10M"))
+        toc_entries = []
+
+        def write_block(ws, title_text, officers_subset):
+            start_row = ws.max_row + 1 if ws.max_row > 1 else 1
+            if ws.max_row == 1 and ws['A1'].value is None:
+                start_row = 1
+            ws.append([title_text] + [""] * 13)
+            ws.merge_cells(start_row=ws.max_row, start_column=1, end_row=ws.max_row, end_column=14)
+            banner_cell = ws.cell(row=ws.max_row, column=1)
+            banner_cell.fill = BANNER_FILL
+            banner_cell.font = WHITE_BOLD_FONT
+            banner_cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            ws.append([""] * 14)
+            back_row = ws.max_row
+            back_cell = ws.cell(row=back_row, column=1, value="Back to TOC")
+            back_cell.hyperlink = f"#TOC!B{toc_header_row}"
+            back_cell.font = Font(name="Calibri", size=11, color="00A3AD", underline="single")
+            
+            h1_row = ws.max_row + 1
+            ws.append(["BM/RM Name", "Officer Code", "Sub-Region", "NPS Segments_BM", "", "", "", "Count", "NPS Segments_FNB Business", "", "", "", "Count", "Officer Code"])
+            h2_row = ws.max_row + 1
+            ws.append(["", "", "", "NPS Score", "Detractors", "Passives", "Promoters", "", "NPS Score", "Detractors", "Passives", "Promoters", "", ""])
+            
+            for c in [1, 2, 3, 8, 14]:
+                ws.cell(row=h1_row, column=c).fill = BANNER_FILL
+                ws.cell(row=h1_row, column=c).font = WHITE_BOLD_FONT
+                ws.cell(row=h1_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
+                ws.cell(row=h2_row, column=c).fill = BANNER_FILL
+                ws.cell(row=h2_row, column=c).font = WHITE_BOLD_FONT
+                ws.cell(row=h2_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
+
+            for c in range(4, 8):
+                ws.cell(row=h1_row, column=c).fill = TEAL_HEADER_FILL
+                ws.cell(row=h1_row, column=c).font = WHITE_BOLD_FONT
+                ws.cell(row=h1_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
+                ws.cell(row=h2_row, column=c).fill = LIGHT_TEAL_FILL
+                ws.cell(row=h2_row, column=c).font = BOLD_FONT
+                ws.cell(row=h2_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
+
+            for c in range(9, 14):
+                ws.cell(row=h1_row, column=c).fill = ORANGE_HEADER_FILL
+                ws.cell(row=h1_row, column=c).font = WHITE_BOLD_FONT
+                ws.cell(row=h1_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
+                ws.cell(row=h2_row, column=c).fill = LIGHT_ORANGE_FILL
+                ws.cell(row=h2_row, column=c).font = BOLD_FONT
+                ws.cell(row=h2_row, column=c).alignment = Alignment(horizontal="center", vertical="center")
+
+            row_counter = 0
+            for _, row in officers_subset.iterrows():
+                formula_row = ws.max_row + 1
+                row_counter += 1
+                rm_name = row['OFFICER_NAME']
+                prim_code = row['PRIM_OFCR_IND']
+                col_c_val = str(title_text) if title_text != "TOTAL" else str(row['SUBREG'])
+                office_code = row['OFFICE_CODE']
+                
+                if is_combined:
+                    bm_count_formula = f'=IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIFS(data!$H:$H, ">0", data!$M:$M, N{formula_row}), IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$H:$H, ">0", data!$M:$M, N{formula_row}), IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$H:$H, ">0", data!$M:$M, N{formula_row}), COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$H:$H, ">0", data!$M:$M, N{formula_row}))))'
+                    fnb_count_formula = f'=IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIFS(data!$I:$I, ">0", data!$M:$M, N{formula_row}), IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$I:$I, ">0", data!$M:$M, N{formula_row}), IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$I:$I, ">0", data!$M:$M, N{formula_row}), COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$I:$I, ">0", data!$M:$M, N{formula_row}))))'
+                    
+                    bm_det_formula = f'=IFERROR(IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIFS(data!$H:$H, 1, data!$M:$M, N{formula_row})/H{formula_row}, IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$H:$H, 1, data!$M:$M, N{formula_row})/H{formula_row}, IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$H:$H, 1, data!$M:$M, N{formula_row})/H{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$H:$H, 1, data!$M:$M, N{formula_row})/H{formula_row}))), 0)'
+                    bm_pas_formula = f'=IFERROR(IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIFS(data!$H:$H, 2, data!$M:$M, N{formula_row})/H{formula_row}, IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$H:$H, 2, data!$M:$M, N{formula_row})/H{formula_row}, IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$H:$H, 2, data!$M:$M, N{formula_row})/H{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$H:$H, 2, data!$M:$M, N{formula_row})/H{formula_row}))), 0)'
+                    bm_pro_formula = f'=IFERROR(IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIFS(data!$H:$H, 3, data!$M:$M, N{formula_row})/H{formula_row}, IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$H:$H, 3, data!$M:$M, N{formula_row})/H{formula_row}, IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$H:$H, 3, data!$M:$M, N{formula_row})/H{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$H:$H, 3, data!$M:$M, N{formula_row})/H{formula_row}))), 0)'
+                    
+                    fnb_det_formula = f'=IFERROR(IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIFS(data!$I:$I, 1, data!$M:$M, N{formula_row})/M{formula_row}, IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$I:$I, 1, data!$M:$M, N{formula_row})/M{formula_row}, IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$I:$I, 1, data!$M:$M, N{formula_row})/M{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$I:$I, 1, data!$M:$M, N{formula_row})/H{formula_row}))), 0)'
+                    fnb_pas_formula = f'=IFERROR(IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIFS(data!$I:$I, 2, data!$M:$M, N{formula_row})/M{formula_row}, IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$I:$I, 2, data!$M:$M, N{formula_row})/M{formula_row}, IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$I:$I, 2, data!$M:$M, N{formula_row})/M{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$I:$I, 2, data!$M:$M, N{formula_row})/H{formula_row}))), 0)'
+                    fnb_pro_formula = f'=IFERROR(IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIFS(data!$I:$I, 3, data!$M:$M, N{formula_row})/M{formula_row}, IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$I:$I, 3, data!$M:$M, N{formula_row})/M{formula_row}, IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$I:$I, 3, data!$M:$M, N{formula_row})/M{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$I:$I, 3, data!$M:$M, N{formula_row})/H{formula_row}))), 0)'
                 else:
-                    payloads.append(gen_bytes(df_raw, portfolio_mode.replace(" ", "_")))
-                st.session_state.nps_report_payloads = payloads
-                st.session_state.nps_reports_ready = True
-                st.success("✅ Processing complete!")
+                    bm_count_formula = f'=IF(TOC!$C$2="All Waves", COUNTIFS(data!$H:$H, ">0", data!$M:$M, N{formula_row}), COUNTIFS(data!$D:$D, TOC!$C$2, data!$H:$H, ">0", data!$M:$M, N{formula_row}))'
+                    fnb_count_formula = f'=IF(TOC!$C$2="All Waves", COUNTIFS(data!$I:$I, ">0", data!$M:$M, N{formula_row}), COUNTIFS(data!$D:$D, TOC!$C$2, data!$I:$I, ">0", data!$M:$M, N{formula_row}))'
+                    
+                    bm_det_formula = f'=IFERROR(IF(TOC!$C$2="All Waves", COUNTIFS(data!$H:$H, 1, data!$M:$M, N{formula_row})/H{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$H:$H, 1, data!$M:$M, N{formula_row})/H{formula_row}), 0)'
+                    bm_pas_formula = f'=IFERROR(IF(TOC!$C$2="All Waves", COUNTIFS(data!$H:$H, 2, data!$M:$M, N{formula_row})/H{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$H:$H, 2, data!$M:$M, N{formula_row})/H{formula_row}), 0)'
+                    bm_pro_formula = f'=IFERROR(IF(TOC!$C$2="All Waves", COUNTIFS(data!$H:$H, 3, data!$M:$M, N{formula_row})/H{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$H:$H, 3, data!$M:$M, N{formula_row})/H{formula_row}), 0)'
+                    
+                    fnb_det_formula = f'=IFERROR(IF(TOC!$C$2="All Waves", COUNTIFS(data!$I:$I, 1, data!$M:$M, N{formula_row})/M{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$I:$I, 1, data!$M:$M, N{formula_row})/M{formula_row}), 0)'
+                    fnb_pas_formula = f'=IFERROR(IF(TOC!$C$2="All Waves", COUNTIFS(data!$I:$I, 2, data!$M:$M, N{formula_row})/M{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$I:$I, 2, data!$M:$M, N{formula_row})/M{formula_row}), 0)'
+                    fnb_pro_formula = f'=IFERROR(IF(TOC!$C$2="All Waves", COUNTIFS(data!$I:$I, 3, data!$M:$M, N{formula_row})/M{formula_row}, COUNTIFS(data!$D:$D, TOC!$C$2, data!$I:$I, 3, data!$M:$M, N{formula_row})/M{formula_row}), 0)'
 
-    if st.session_state.nps_reports_ready and st.session_state.nps_report_payloads:
-        st.markdown("---")
-        for idx, (ex_name, ex_bytes, sav_name, sav_bytes) in enumerate(st.session_state.nps_report_payloads):
-            c1, c2 = st.columns(2)
-            c1.download_button(f"📥 Download Excel: {ex_name}", ex_bytes, file_name=ex_name, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key=f"dl_ex_{idx}")
-            c2.download_button(f"📥 Download SPSS: {sav_name}", sav_bytes, file_name=sav_name, mime="application/octet-stream", key=f"dl_sv_{idx}")
+                ws.append([
+                    rm_name, prim_code, col_c_val,
+                    f'=IF(H{formula_row}>0, SUM(G{formula_row}-E{formula_row})*100, "")',
+                    bm_det_formula, bm_pas_formula, bm_pro_formula, bm_count_formula,
+                    f'=IF(M{formula_row}>0, SUM(L{formula_row}-J{formula_row})*100, "")',
+                    fnb_det_formula, fnb_pas_formula, fnb_pro_formula, fnb_count_formula,
+                    office_code
+                ])
+                
+                ws[f'D{formula_row}'].number_format = '0'
+                ws[f'E{formula_row}'].number_format = '0%'
+                ws[f'F{formula_row}'].number_format = '0%'
+                ws[f'G{formula_row}'].number_format = '0%'
+                ws[f'I{formula_row}'].number_format = '0'
+                ws[f'J{formula_row}'].number_format = '0%'
+                ws[f'K{formula_row}'].number_format = '0%'
+                ws[f'L{formula_row}'].number_format = '0%'
+
+                for c in range(1, 15):
+                    cell = ws.cell(row=formula_row, column=c)
+                    cell.border = THIN_BORDER
+                    cell.font = REGULAR_FONT
+                    if row_counter % 2 == 0:
+                        cell.fill = ZEBRA_FILL
+
+            ws.append([])
+            return start_row
+
+        unique_officers_all = df_subset[['OFFICER_NAME', 'PRIM_OFCR_IND', 'SUBREG', 'OFFICE_CODE']].drop_duplicates().sort_values(by='OFFICE_CODE')
+        total_start_row = write_block(ws_nps, "TOTAL", unique_officers_all)
+        toc_entries.append(("Officer Name and Code by NPS Banner", total_start_row, "TOTAL"))
+
+        if 'SUBREG' in df_subset.columns:
+            for subreg in sorted(df_subset['SUBREG'].dropna().unique()):
+                df_subreg = df_subset[df_subset['SUBREG'] == subreg]
+                unique_officers_subreg = df_subreg[['OFFICER_NAME', 'PRIM_OFCR_IND', 'SUBREG', 'OFFICE_CODE']].drop_duplicates().sort_values(by='OFFICE_CODE')
+                subreg_start_row = write_block(ws_nps, str(subreg), unique_officers_subreg)
+                toc_entries.append((f"Officer Name and Code by NPS Banner {subreg}", subreg_start_row, str(subreg)))
+
+        for label, nps_row_num, subreg_filter in toc_entries:
+            row_idx = ws_toc.max_row + 1
+            if is_combined:
+                if subreg_filter == "TOTAL":
+                    filter_formula = f'=CONCATENATE("Filter: Wave ", TOC!$C$2, ", Type ", TOC!$C$3, ", base n =", IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNT(data!$A:$A), IF(TOC!$C$2="All Waves", COUNTIF(data!$C:$C, TOC!$C$3), IF(TOC!$C$3="All Types", COUNTIF(data!$D:$D, TOC!$C$2), COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3)))))'
+                else:
+                    filter_formula = f'=CONCATENATE("Filter: Wave ", TOC!$C$2, ", Type ", TOC!$C$3, ", base n =", IF(AND(TOC!$C$2="All Waves", TOC!$C$3="All Types"), COUNTIF(data!$F:$F, "{subreg_filter}"), IF(TOC!$C$2="All Waves", COUNTIFS(data!$C:$C, TOC!$C$3, data!$F:$F, "{subreg_filter}"), IF(TOC!$C$3="All Types", COUNTIFS(data!$D:$D, TOC!$C$2, data!$F:$F, "{subreg_filter}"), COUNTIFS(data!$D:$D, TOC!$C$2, data!$C:$C, TOC!$C$3, data!$F:$F, "{subreg_filter}")))))'
+            else:
+                if subreg_filter == "TOTAL":
+                    filter_formula = f'=CONCATENATE("Filter: Wave ", TOC!$C$2, ", base n =", IF(TOC!$C$2="All Waves", COUNT(data!$A:$A), COUNTIF(data!$D:$D, TOC!$C$2)))'
+                else:
+                    filter_formula = f'=CONCATENATE("Filter: Wave ", TOC!$C$2, ", base n =", IF(TOC!$C$2="All Waves", COUNTIF(data!$F:$F, "{subreg_filter}"), COUNTIFS(data!$D:$D, TOC!$C$2, data!$F:$F, "{subreg_filter}")))'
+
+            ws_toc.cell(row=row_idx, column=1, value="NPS").font = BOLD_FONT
+            ws_toc.cell(row=row_idx, column=1).alignment = Alignment(horizontal="center")
+            
+            link_cell = ws_toc.cell(row=row_idx, column=2, value=label)
+            link_cell.hyperlink = f"#NPS!A{nps_row_num}"
+            link_cell.font = Font(name="Calibri", size=11, color="F58220", underline="single")
+            
+            ws_toc.cell(row=row_idx, column=3, value=filter_formula).font = REGULAR_FONT
+
+        for ws in wb.worksheets:
+            if ws.title == 'TOC':
+                ws.column_dimensions['A'].width = 3.67
+                ws.column_dimensions['B'].width = 78.22
+                ws.column_dimensions['C'].width = 43.11
+            elif ws.title == 'NPS':
+                ws.column_dimensions['A'].width = 27.11
+                ws.column_dimensions['B'].width = 10.67
+                ws.column_dimensions['C'].width = 20.11
+                ws.column_dimensions['D'].width = 16.44
+                ws.column_dimensions['I'].width = 24.67
+                for col in ['E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N']:
+                    ws.column_dimensions[col].width = 11
+
+        wb.save(temp_excel)
+        with open(temp_excel, "rb") as f:
+            excel_bytes = f.read()
+
+        return excel_bytes, excel_name, sav_bytes, sav_name
+
+    if st.button("🚀 Run Processing & Generate Reports", type="primary", key="tab3_run_processing") or st.session_state.reports_ready:
+        if uploaded_file_tab3 is None:
+            st.error("Please upload a `.sav` file first!")
+            st.session_state.reports_ready = False
+        else:
+            if not st.session_state.reports_ready:
+                with st.spinner("Processing data and building formatted reports..."):
+                    temp_src_path = "temp_input.sav"
+                    with open(temp_src_path, "wb") as f:
+                        f.write(uploaded_file_tab3.getbuffer())
+
+                    df_raw, meta = pyreadstat.read_sav(temp_src_path, apply_value_formats=False)
+                    df_raw.columns = [str(col).strip().upper() for col in df_raw.columns]
+
+                    df_lbl, _ = pyreadstat.read_sav(temp_src_path, apply_value_formats=True)
+                    df_lbl.columns = [str(col).strip().upper() for col in df_lbl.columns]
+
+                    target_columns_mapping = {
+                        'UNIQUEID': ['UNIQUEID', 'ID'],
+                        'RUID': ['RUID'],
+                        'TYPE': ['TYPE'],
+                        'WAVE': ['WAVE'],
+                        'REGION': ['REGION'],
+                        'SUBREG': ['SUBREG'],
+                        'SEGMENT': ['SEGMENT'],
+                        'RM_NPS1': ['RM_NPS1', 'BM_NPS1', 'BMNPS01'],
+                        'FNB_NPS1': ['FNB_NPS1', 'FNBNPS01'],
+                        'PRIM_OFCR_IND': ['PRIM_OFCR_IND', 'PRIM_OFC'],
+                        'OFFICER_NAME': ['OFFICER_NAME', 'OFFICER_M', 'OFFICER_NAME_']
+                    }
+
+                    upper_to_orig = {str(c).strip().upper(): c for c in df_raw.columns}
+                    rename_map = {}
+                    for target, candidates in target_columns_mapping.items():
+                        for cand in candidates:
+                            if cand.upper() in upper_to_orig:
+                                rename_map[upper_to_orig[cand.upper()]] = target
+                                break
+
+                    orig_type_col = [k for k, v in rename_map.items() if v == 'TYPE'][0]
+                    raw_type_numeric = pd.to_numeric(df_raw[orig_type_col], errors='coerce')
+                    valid_mask = raw_type_numeric.isin([1, 2])
+
+                    df_raw = df_raw[valid_mask].reset_index(drop=True)
+                    df_lbl = df_lbl[valid_mask].reset_index(drop=True)
+                    raw_type_numeric = raw_type_numeric[valid_mask].reset_index(drop=True)
+
+                    df_base = pd.DataFrame()
+                    for orig_col, target in rename_map.items():
+                        if target in ['WAVE', 'REGION', 'SUBREG', 'SEGMENT'] and orig_col in df_lbl.columns:
+                            df_base[target] = df_lbl[orig_col]
+                        else:
+                            df_base[target] = df_raw[orig_col]
+
+                    if 'TYPE' in df_lbl.columns:
+                        df_base['TYPE'] = df_lbl[orig_type_col]
+
+                    if selected_waves_filter != 'ALL' and 'WAVE' in df_base.columns:
+                        df_base = df_base[df_base['WAVE'].isin(selected_waves_filter)].copy()
+
+                    def clean_officer_name(name):
+                        if pd.isna(name):
+                            return name
+                        s = str(name).strip()
+                        s = re.sub(r'\s*\(.*?\)', '', s)
+                        return ' '.join(s.split())
+
+                    if 'OFFICER_NAME' in df_base.columns:
+                        df_base['OFFICER_NAME'] = df_base['OFFICER_NAME'].apply(clean_officer_name)
+
+                    if 'OFFICER_NAME' in df_base.columns and 'PRIM_OFCR_IND' in df_base.columns:
+                        df_base['OFFICER_NAME'] = df_base['OFFICER_NAME'].astype(str).str.strip()
+                        df_base['PRIM_OFCR_IND'] = df_base['PRIM_OFCR_IND'].astype(str).str.strip()
+                        df_base['OFFICER_NAME2'] = df_base['OFFICER_NAME'] + df_base['PRIM_OFCR_IND']
+                        df_base = df_base.sort_values(by='OFFICER_NAME2').reset_index(drop=True)
+                        unique_names = df_base['OFFICER_NAME2'].unique()
+                        name_to_code = {name: idx + 1 for idx, name in enumerate(unique_names)}
+                        df_base['OFFICE_CODE'] = df_base['OFFICER_NAME2'].map(name_to_code)
+
+                    runs = []
+                    if 'TYPE' in df_raw.columns:
+                        subset_type_numeric = pd.to_numeric(df_raw[orig_type_col], errors='coerce')
+
+                        mask_comb = subset_type_numeric.isin([1, 2])
+                        mask_grow = subset_type_numeric == 1
+                        mask_r10m = subset_type_numeric == 2
+
+                        df_comb = df_base[mask_comb].copy()
+                        df_grow = df_base[mask_grow].copy()
+                        df_r10m = df_base[mask_r10m].copy()
+
+                        if portfolio_mode == "Generate All (Combined, Growth, and R10M Separately)":
+                            runs = [("Combined", df_comb), ("Growth", df_grow), ("R10M", df_r10m)]
+                        elif portfolio_mode == "Combined (Growth & R10M)":
+                            runs = [("Combined", df_comb)]
+                        elif portfolio_mode == "Growth Only":
+                            runs = [("Growth", df_grow)]
+                        elif portfolio_mode == "R10M Only":
+                            runs = [("R10M", df_r10m)]
+
+                    st.session_state.report_files = {}
+                    for label, subset_df in runs:
+                        ex_bytes, ex_name, sv_bytes, sv_name = generate_report_bytes(subset_df, label)
+                        st.session_state.report_files[label] = {
+                            "excel_bytes": ex_bytes, "excel_name": ex_name,
+                            "sav_bytes": sv_bytes, "sav_name": sv_name
+                        }
+                    st.session_state.reports_ready = True
+
+            st.success("🎉 Processing complete! Download your report files below:")
+
+            for label, files in st.session_state.report_files.items():
+                st.markdown(f"### 📁 {label} Reports")
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.download_button(
+                        label=f"📥 Download {label} Excel Dashboard",
+                        data=files["excel_bytes"],
+                        file_name=files["excel_name"],
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key=f"excel_{label}"
+                    )
+                with col_b:
+                    st.download_button(
+                        label=f"📥 Download {label} .sav File",
+                        data=files["sav_bytes"],
+                        file_name=files["sav_name"],
+                        mime="application/octet-stream",
+                        key=f"sav_{label}"
+                    )
 
 # ==========================================================================
 # ==========================================================================
@@ -1745,4 +2103,81 @@ with tab6:
                         raw_months_pub = list(set([k[0] for k in subsets_pub.keys()]))
                         months_pub = sort_months_list(raw_months_pub)
 
-                        col_start
+                        col_start_p = 2
+                        for m_name in months_pub:
+                            m_keys = [k for k in subsets_pub.keys() if k[0] == m_name]
+                            if not m_keys: continue
+                            block_start = col_start_p
+                            block_end = col_start_p + len(m_keys) - 1
+
+                            ws2.cell(row=1, column=block_start, value=m_name)
+                            if block_start != block_end:
+                                ws2.merge_cells(start_row=1, start_column=block_start, end_row=1, end_column=block_end)
+
+                            ws2.cell(row=2, column=block_start, value="SUBREG")
+                            ws2.merge_cells(start_row=2, start_column=block_start, end_row=2, end_column=block_end)
+
+                            curr_sub_c = block_start
+                            for k in m_keys:
+                                if k[2] == "Mean":
+                                    region_name = k[1]
+                                    ws2.cell(row=3, column=curr_sub_c, value=region_name)
+                                    ws2.merge_cells(start_row=3, start_column=curr_sub_c, end_row=3, end_column=curr_sub_c + 1)
+                                    ws2.cell(row=4, column=curr_sub_c, value="Mean")
+                                    ws2.cell(row=4, column=curr_sub_c + 1, value="Valid N")
+                                    curr_sub_c += 2
+
+                            col_start_p = block_end + 1
+
+                        max_col_pub = col_start_p - 1
+                        for r_idx, row_dict in enumerate(rows_pub, start=5):
+                            metric_cell = ws2.cell(row=r_idx, column=1, value=row_dict["Metric"])
+                            metric_cell.border = data_border
+                            metric_cell.alignment = Alignment(horizontal="left", vertical="center")
+                            col_idx = 2
+                            ordered_pub_keys = []
+                            for m_n in months_pub:
+                                ordered_pub_keys.extend([k for k in subsets_pub.keys() if k[0] == m_n])
+                            for col_key in ordered_pub_keys:
+                                val_cell = ws2.cell(row=r_idx, column=col_idx, value=row_dict[col_key])
+                                val_cell.border = data_border
+                                val_cell.alignment = Alignment(horizontal="center", vertical="center")
+                                col_idx += 1
+
+                        for row in range(1, 5):
+                            for col in range(1, max_col_pub + 1):
+                                cell = ws2.cell(row=row, column=col)
+                                cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                                cell.border = thin_border
+                                if row == 1: cell.fill = teal_fill; cell.font = white_font
+                                elif row == 2: cell.fill = orange_fill; cell.font = white_font
+                                elif row == 3: cell.fill = light_teal_fill; cell.font = dark_font
+                                else: cell.fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid"); cell.font = dark_font
+
+                        for col_num in range(1, max_col_pub + 1):
+                            col_letter = get_column_letter(col_num)
+                            max_len = 0
+                            for row_num in range(1, len(rows_pub) + 6):
+                                cell_val = ws2.cell(row=row_num, column=col_num).value
+                                if cell_val is not None: max_len = max(max_len, len(str(cell_val)))
+                            ws2.column_dimensions[col_letter].width = min(max(max_len + 4, 30), 65) if col_letter == "A" else max(max_len + 3, 12)
+
+                        if default_sheet in wb.worksheets:
+                            wb.remove(default_sheet)
+
+                        output = io.BytesIO()
+                        wb.save(output)
+                        excel_data = output.getvalue()
+
+                        st.download_button(
+                            label="📥 Download Complete Multi-Sheet Excel Report",
+                            data=excel_data,
+                            file_name="SME_ENT_and_PUBSC_Report.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            key="tab6_download_btn"
+                        )
+                except Exception as e:
+                    st.error(f"❌ Error processing SME/ENT dataset: {e}")
+                finally:
+                    if os.path.exists(tmp_path):
+                        os.remove(tmp_path)
