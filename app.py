@@ -1741,21 +1741,21 @@ with tab4:
 
 # ==========================================================================
 # ==========================================================================
-# TAB 5: NPS YEARLY DASHBOARD GENERATOR (UPDATED CROSS-TABULATION ENGINE)
+# TAB 5: NPS YEARLY DASHBOARD GENERATOR (CROSS-TABULATION GENERATOR)
 # ==========================================================================
 # ==========================================================================
 with tab5:
     st.markdown("### 📊 Project Star: Yearly Cross-Tabulation Generator")
     st.markdown("Upload your latest yearly SPSS file (`.sav`) below to generate and download the cross-tabulation report.")
 
-    uploaded_file_tab5 = st.file_uploader("Upload Yearly SPSS File (.sav)", type=["sav"], key="yearly_file_tab5")
+    uploaded_yearly_file = st.file_uploader("Upload Yearly SPSS File (.sav)", type=["sav"], key="tab5_yearly_sav")
 
-    if uploaded_file_tab5 is not None:
-        if st.button("Generate Yearly Dashboard Report", type="primary", key="btn_gen_yearly_tab5"):
+    if uploaded_yearly_file is not None:
+        if st.button("Generate Yearly Dashboard Report", type="primary", key="tab5_gen_yearly_btn"):
             with st.spinner("Processing SPSS file and generating cross-tabulation report... Please wait."):
                 
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
-                    tmp_file.write(uploaded_file_tab5.getvalue())
+                    tmp_file.write(uploaded_yearly_file.getvalue())
                     tmp_file_path = tmp_file.name
 
                 try:
@@ -2074,99 +2074,4 @@ with tab5:
 
                     fill_teal_header = PatternFill(start_color=FNB_TEAL, end_color=FNB_TEAL, fill_type="solid")
                     fill_amber_header = PatternFill(start_color=FNB_AMBER, end_color=FNB_AMBER, fill_type="solid")
-                    fill_light_teal = PatternFill(start_color=LIGHT_TEAL, end_color=LIGHT_TEAL, fill_type="solid")
-                    fill_light_amber = PatternFill(start_color=LIGHT_AMBER, end_color=LIGHT_AMBER, fill_type="solid")
-
-                    thin_border_side = Side(border_style="thin", color="B0C4DE")
-                    thick_border_side = Side(border_style="medium", color=FNB_TEAL)
-                    border_cell = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
-                    border_box = Border(left=thick_border_side, right=thick_border_side, top=thick_border_side, bottom=thick_border_side)
-
-                    align_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
-                    align_left = Alignment(horizontal="left", vertical="center")
-
-                    ws_xtab.merge_cells("B2:E2")
-                    ws_xtab["B2"] = "PROJECT STAR: WAVE-BASED CROSS TABULATION ANALYSIS"
-                    ws_xtab["B2"].font, ws_xtab["B2"].fill = font_title_main, fill_teal_header
-
-                    ws_xtab.merge_cells("B3:E3")
-                    ws_xtab["B3"] = "Wave as Main Banner, Analysed by Type and Region Sub-Banners"
-                    ws_xtab["B3"].font, ws_xtab["B3"].fill = font_title_sub, fill_amber_header
-
-                    c_flbl = ws_xtab.cell(row=5, column=2, value="Type Filter:")
-                    c_flbl.font, c_flbl.fill, c_flbl.alignment, c_flbl.border = font_filter_lbl, fill_teal_header, align_center, border_box
-
-                    c_fval = ws_xtab.cell(row=5, column=3, value="All")
-                    c_fval.font, c_fval.fill, c_fval.alignment, c_fval.border = font_filter_val, fill_light_amber, align_center, border_box
-
-                    dv_xtab_type = DataValidation(type="list", formula1='"All,Growth,R10m+"', allow_blank=True)
-                    ws_xtab.add_data_validation(dv_xtab_type)
-                    dv_xtab_type.add(ws_xtab["C5"])
-
-                    type_sub_categories = ['Growth', 'R10m+']
-                    region_sub_categories = regions
-
-                    xtab_columns = []
-                    for w_num in sorted_wave_nums:
-                        for t_val in type_sub_categories: xtab_columns.append(('Type', w_num, t_val))
-                        for r_val in region_sub_categories: xtab_columns.append(('Region', w_num, r_val))
-
-                    active_xtab_columns = []
-                    for col_info in xtab_columns:
-                        b_type, w_num, cat_val = col_info
-                        sub_df = summary_xtab_wave_type[(summary_xtab_wave_type['wave_num'] == w_num) & (summary_xtab_wave_type['Type'] == cat_val)] if b_type == 'Type' else summary_xtab_wave_region[(summary_xtab_wave_region['wave_num'] == w_num) & (summary_xtab_wave_region['REGION'] == cat_val)]
-                        if not sub_df.empty and sub_df['Total_n'].sum() > 0:
-                            active_xtab_columns.append(col_info)
-
-                    def xtab_wt_sumifs(col_name, w_num, type_val):
-                        if col_name not in summary_xtab_wave_type.columns: return "0"
-                        col_let = get_column_letter(list(summary_xtab_wave_type.columns).index(col_name) + 1)
-                        return f'SUMIFS(_CrossTab_WaveType_Data!{col_let}:{col_let}, _CrossTab_WaveType_Data!A:A, {w_num}, _CrossTab_WaveType_Data!B:B, "{type_val}")'
-
-                    nps_section = [("BASE & NET PROMOTER SCORES (NPS)", "banner", None), ("Base Count (n)", "count", "Total_n"), ("FNB Net Promoter Score (NPS)", "nps", ("FNB_Pro", "FNB_Det", "FNB_Base")), ("BM Net Promoter Score (NPS)", "nps", ("BM_Pro", "BM_Det", "BM_Base"))]
-                    channel_section = [("CHANNEL USAGE", "banner", None), ("Base Count (n)", "count", "Channel_Base")] + [(l, "pct_flag", f) for l, f in channel_items]
-                    pref_channel_section = [("Preferred Channel usage", "banner", None), ("Base Count (n)", "count", "Pref_Channel_Base")] + [(l, "pref_pct_flag", f"pref_chan_{c}") for l, c in pref_channel_items]
-                    bm_interaction_xtab_section = [("Business Manager Interaction", "banner", None)] + [(rm_labels[c], "mean", (f"{c}_sum", f"{c}_count")) for c in rm_driver_cols]
-                    personal_banker_section = [("PERSONAL BANKER", "banner", None), ("Base Count (n)", "count", "PB_Base")] + [(l, "pb_pct_flag", f"pb_code_{c}") for l, c in personal_banker_items]
-                    pb_sat_section = [("PERSONAL BANKER OVERALL SATISFACTION RATING", "banner", None), (pb_sat_label, "mean", (f"{pb_sat_col}_sum", f"{pb_sat_col}_count"))]
-                    branch_service_xtab_section = [("Branch Service Aspects", "banner", None)] + [(branch_labels[c], "mean", (f"{c}_sum", f"{c}_count")) for c in branch_service_cols]
-                    q5a_xtab_section = [("Motivations for Choosing In-Branch over Digital Channels/ Call centre", "banner", None), ("Base Count (n)", "count", "Q5A_Base")] + [(l, "q5a_pct_flag", f) for l, f in q5a_items]
-                    q6_xtab_section = [("Contact Centre Service Aspects", "banner", None), ("Base Count (n)", "count", "Q6_Base")] + [(l, "q6_pct_flag", c) for l, c in q6_items] + [("Contact Centre agent ratings", "sub_header", None)] + [(cc_labels[c], "mean", (f"{c}_sum", f"{c}_count")) for c in cc_cols]
-                    online_xtab_section = [("Online Banking through laptop or desktop PC Service Aspects", "banner", None)] + [(online_labels[c], "mean", (f"{c}_sum", f"{c}_count")) for c in online_cols]
-                    app_xtab_section = [("Banking App Service Aspects", "banner", None)] + [(app_labels[c], "mean", (f"{c}_sum", f"{c}_count")) for c in app_cols]
-                    overall_ratings_xtab_section = [("OVERALL ratings", "banner", None)] + [(l, "mean", (f"{v}_sum", f"{v}_count")) for l, v in explicit_chan_sat_items]
-                    product_sat_xtab_section = [("Satisfaction with products", "banner", None)] + [(l, "mean", (f"{v}_sum", f"{v}_count")) for l, v in explicit_product_sat_items] + [("Drivers of Dissatisfaction", "sub_header", None)]
-                    for k, items in q11a_groups.items():
-                        product_sat_xtab_section.append((f"Base Count (n) - {k}", "count", f"{k}_Base"))
-                        for lbl, code in items: product_sat_xtab_section.append((lbl, "q11a_pct_flag", (code, f"{k}_Base")))
-                    expectations_xtab_section = [("Satisfaction: Quality of service and product solutions", "banner", None)] + [(l, "mean", (f"{v}_sum", f"{v}_count")) for l, v in expectations_items]
-                    consideration_xtab_section = [("Business banking consideration", "banner", None), ("Q16. Consideration to switch", "sub_header", None), ("Base Count (n)", "count", "Q16_Base"), ("Yes (n)", "count", "Q16_Yes"), ("Yes (%)", "q16_pct_flag", "Q16_Yes"), ("No (n)", "count", "Q16_No"), ("No (%)", "q16_pct_flag", "Q16_No"), ("Q16a. Banks/Financial service providers considered", "sub_header", None), ("Base Count (n)", "count", "Q16A_Base")] + [(l, "q16a_pct_flag", f) for l, f in consideration_items]
-
-                    full_xtab_sections = [
-                        nps_section, channel_section, pref_channel_section, bm_interaction_xtab_section,
-                        personal_banker_section, pb_sat_section, branch_service_xtab_section, q5a_xtab_section,
-                        q6_xtab_section, online_xtab_section, app_xtab_section, overall_ratings_xtab_section,
-                        product_sat_xtab_section, expectations_xtab_section, consideration_xtab_section
-                    ]
-
-                    SLATE_HEADER = "2F4F4F"
-                    FILL_TEAL, FILL_SLATE = PatternFill(start_color=FNB_TEAL, end_color=FNB_TEAL, fill_type="solid"), PatternFill(start_color=SLATE_HEADER, end_color=SLATE_HEADER, fill_type="solid")
-
-                    curr_row, total_cols_span = 7, 2 + len(active_xtab_columns)
-
-                    for section in full_xtab_sections:
-                        ws_xtab.merge_cells(start_row=curr_row, start_column=2, end_row=curr_row, end_column=total_cols_span)
-                        b_cell = ws_xtab.cell(row=curr_row, column=2, value=section[0][0])
-                        b_cell.font, b_cell.fill, b_cell.alignment = Font(name="Calibri", size=10, bold=True, italic=True, color=WHITE), fill_amber_header, align_left
-                        curr_row += 1
-
-                        # Tier 1
-                        ws_xtab.cell(row=curr_row, column=2, value="Metric / Question Driver").font, ws_xtab.cell(row=curr_row, column=2).fill, ws_xtab.cell(row=curr_row, column=2).alignment, ws_xtab.cell(row=curr_row, column=2).border = font_header, fill_teal_header, align_center, border_cell
-                        wave_groups = [(w_num, len(list(group))) for w_num, group in groupby(active_xtab_columns, key=lambda x: x[1])]
-                        col_ptr = 3
-                        for wave_idx, (w_num, span_len) in enumerate(wave_groups):
-                            wave_fill = FILL_TEAL if wave_idx % 2 == 0 else FILL_SLATE
-                            ws_xtab.merge_cells(start_row=curr_row, start_column=col_ptr, end_row=curr_row, end_column=col_ptr + span_len - 1)
-                            w_cell = ws_xtab.cell(row=curr_row, column=col_ptr, value=f"Wave {w_num}")
-                            w_cell.font, w_cell.fill, w_cell.alignment = font_header, wave_fill, align_center
-                            for c_i in range(col_ptr, col_ptr + span_len): ws_xtab.
+                    fill_light_teal = PatternFill(start_color=LIGHT_TEAL, end_color=LIGHT_TEAL, fill_type="solid
