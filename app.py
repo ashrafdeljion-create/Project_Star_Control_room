@@ -969,7 +969,7 @@ with tab2:
                 df_filtered['NYEAR'] = df_filtered['STIME_CLEAN'].str[:4]
                 df_filtered['NMONTH'] = df_filtered['STIME_CLEAN'].str[4:6]
                 df_filtered['NDAY'] = df_filtered['STIME_CLEAN'].str[6:8]
-                df_filtered['RECORDED_DATE'] = df_filtered['NYEAR'] + "/" + df_filtered['NMONTH'] + "/" + df_filtered['NDAY']
+                df_filtered['RECORDED_DATE'] = df_filtered['NYEAR'] + "-" + df_filtered['NMONTH'] + "-" + df_filtered['NDAY']
 
             df_filtered['Qualifier'] = "Not Priority"
             if 'Q14_2' in df_filtered.columns:
