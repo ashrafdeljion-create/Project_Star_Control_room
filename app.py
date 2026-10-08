@@ -837,7 +837,7 @@ with tab1:
 # ==========================================================================
 # ==========================================================================
 with tab2:
-    st.subheader("📅 Global Execution Parameters")
+    st.subheader("📅 Weekly Automated 911 extractions")
     date_mode = st.radio("Select Date Filtering Mode for Runs:", ["Dynamic Past 7 Days (Auto Friday)", "Custom Date Range"], horizontal=True, key="911_date_mode")
 
     today = datetime.now()
