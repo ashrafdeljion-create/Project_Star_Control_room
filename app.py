@@ -1121,7 +1121,7 @@ with tab2:
 # ==========================================================================
 with tab3:
     st.markdown("### 📈 BM/RM NPS Portfolio Generator")
-    st.markdown("Upload your master SPSS (`.sav`) data file below, select your wave preferences and portfolio filter, then click **Run Processing** to generate your reports.")
+    st.markdown("Upload your master SPSS (`Project Star_W? to W?.sav`) data file below, select your wave preferences and portfolio filter, then click **Run Processing** to generate your reports.")
 
     if "reports_ready" not in st.session_state:
         st.session_state.reports_ready = False
@@ -1747,7 +1747,7 @@ with tab4:
 # ==========================================================================
 with tab5:
     st.markdown("### 📅 NPS Yearly Dashboard Generator")
-    st.markdown("Upload your latest yearly SPSS file (`.sav`) below to generate and download the cross-tabulation report.")
+    st.markdown("Upload your latest yearly SPSS file (`Project Star_W? to W?.sav`) below to generate and download the cross-tabulation report.")
 
     yearly_file = st.file_uploader("Upload Yearly SPSS File (.sav)", type=["sav"], key="yearly_spss_file")
     if "yearly_ready" not in st.session_state:
@@ -2366,7 +2366,7 @@ with tab5:
 with tab6:
     st.markdown("### 📊 SME-ENT Tables Generator: R10MIL_GROWTH & PUBSC")
     st.write(
-        "Upload your SPSS `.sav` data file below. Automatically sorts months"
+        "Upload your SPSS (`E.g. Combined July to Sep 2026.sav`) data file below. Automatically sorts months"
         " chronologically, suppresses zero-count columns, and generates the styled"
         " multi-sheet workbook."
     )
