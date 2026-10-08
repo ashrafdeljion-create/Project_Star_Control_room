@@ -105,6 +105,17 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 # ==========================================================================
 # ==========================================================================
 with tab1:
+    st.markdown("### `[02 // CONTROL ROOM]` &nbsp;&nbsp;&nbsp; `SYS.READY // PIPELINE 2.2`")
+    st.markdown("Execute and monitor each section of the Project Star 911 market research data pipeline.")
+    st.markdown("---")
+
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    col_m1.metric("Pipeline Status", "IDLE / READY", "Stable")
+    col_m2.metric("Active Wave", "Wave 22", "2026")
+    col_m3.metric("Modules Loaded", "3 / 3", "Growth, R10Mil, PUBSC")
+    col_m4.metric("Environment", "Cloud Control Room", "Secure")
+
+    st.markdown("---")
     st.markdown("### 📊 Live Status Calculation & Quota Tracker")
     st.markdown("---")
 
