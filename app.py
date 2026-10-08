@@ -106,7 +106,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 # ==========================================================================
 with tab1:
     st.markdown("### `[02 // CONTROL ROOM]` &nbsp;&nbsp;&nbsp; `SYS.READY // PIPELINE 2.2`")
-    st.markdown("Execute and monitor each section of the Project Star 911 market research data pipeline.")
+    st.markdown("Tracking live data for Project Star: Status and Qoutas monitor.")
     st.markdown("---")
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
