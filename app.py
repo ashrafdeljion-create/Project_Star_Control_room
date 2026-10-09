@@ -5,7 +5,7 @@ import io
 import os
 import re
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dateutil.relativedelta import FR, relativedelta
 from itertools import groupby
 
@@ -74,6 +74,24 @@ st.markdown(
         .stButton button[kind="primary"]:hover {
             background-color: #d96f12 !important;
         }
+        .metric-container {
+            background-color: #1a1e24;
+            border-radius: 10px;
+            padding: 16px 20px;
+            border: 1px solid #2d3748;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+        .metric-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
     </style>
 """,
     unsafe_allow_html=True,
@@ -82,13 +100,13 @@ st.markdown(
 # Main title and subtitle displayed at the top of the application web page
 st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown(
-    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
+    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, SME/ENT tables, and CATI Verbatim Processor Suite."
 )
 
 # =========================================================================
-# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (6 Tabs Total)
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (7 Tabs Total)
 # =========================================================================
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     [
         "📊 Project Status & Quotas Update",
         "⚙️ Weekly 911's Control Room",
@@ -96,6 +114,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
         "📋 Q11 Ratings & Reasons Extraction",
         "📅 NPS Yearly Dashboard",
         "🏢 SME/ENT Tables",
+        "💬 CATI Verbatim Processor",
     ]
 )
 
@@ -106,7 +125,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
 # ==========================================================================
 with tab1:
     st.markdown("### `[02 // CONTROL ROOM]` &nbsp;&nbsp;&nbsp; `SYS.READY // PIPELINE 2.2`")
-    st.markdown("Tracking live data for Project Star: Status and Qouta monitor.")
+    st.markdown("Execute and monitor each section of the Project Star 911 market research data pipeline.")
     st.markdown("---")
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
@@ -971,7 +990,6 @@ with tab2:
                 df_filtered['NYEAR'] = df_filtered['STIME_CLEAN'].str[:4]
                 df_filtered['NMONTH'] = df_filtered['STIME_CLEAN'].str[4:6]
                 df_filtered['NDAY'] = df_filtered['STIME_CLEAN'].str[6:8]
-                # Updated date separator from "/" to "-" as requested
                 df_filtered['RECORDED_DATE'] = df_filtered['NYEAR'] + "-" + df_filtered['NMONTH'] + "-" + df_filtered['NDAY']
 
             df_filtered['Qualifier'] = "Not Priority"
@@ -981,51 +999,10 @@ with tab2:
                 df_filtered.loc[df_filtered['Q16'] == 1, 'Qualifier'] = "Priority"
 
             case_desc_upper = df_filtered['CASE_DESCRIPTION'].fillna('').str.upper() if 'CASE_DESCRIPTION' in df_filtered.columns else pd.Series([""]*len(df_filtered))
-            people_keywords = ['BM', 'BUSINESS MANAGER', 'BUSINESS MANAGERS', 'BUSINESS BANKER', 'BUSINESS BANKERS',
-        'PRIVATE BANKER', 'BUSINESS CONSULTANT', 'RM ', 'RELATIONSHIP MANAGER', 'TELLERS',
-        'CONSULTANT', 'BANKER', 'STAFF', 'REPRESENTATIVE', 'PERSONAL', 'HUMAN', 'MANAGEE',
-        'BROKERS', 'RELATIONSHIP', 'COMMUNICATE', 'TREATED', 'INTERACTION', 'PEOPLE', 'CONTACTS',
-        'CONTACT', 'COMMUNICATION', 'SOMEONE', 'CUSTOMER SERVICE', 'BM/RM', 'RM', 'PERSON',
-        'WELCOME', 'MANNER', 'WALK', 'HONESTY', 'TRUST', 'ATTENDING', 'PROMISED', 'UNDERSTAND', 'CLIENTS']
-            
-            process_keywords = ['LETTER', 'SECURE', 'GUARANTEE', 'ACCESS', 'ACCESSIBLE', 'ACTION', 'ALLOWS', 'APPROVED',
-        'ASSIST', 'ATTENDED', 'ATTENTION', 'CHANGE', 'CONNECTIVITY', 'CUSTOMER', 'COMMUNICATION',
-        'DEBIT', 'DISRUPTING', 'DOCUMENTATION', 'EASIER', 'EASILY', 'ENQUIRIE', 'FEEDBACK',
-        'FINGER', 'FOLLOWING', 'FRAUD', 'FUNCTIONALITY', 'FUNDING', 'PROVIDE', 'INFORMATION', 
-        'ISSUES', 'LENDING', 'LONG', 'NETWORK', 'NOTIFICATION', 'NOTIFIED', 'OPENING', 'ORDER', 
-        'OTP', 'PERIOD', 'PREVENT', 'PROCESS', 'QUERIES', 'QUEUE', 'QUEUES', 'QUICKER', 'QUICKLY', 
-        'REGULATION', 'RESOLVE', 'RETURN', 'REVERSE', 'QUERY', 'RESOLUTION', 'SECURITY', 'SERVICE', 
-        'SETUP', 'SPAM', 'SPEED', 'SYSTEM', 'TIME', 'TRANSACTION', 'TRANSFER', 'TURNAROUND', 
-        'UNAUTHORISED', 'USER-FRIENDLY', 'WAITING', 'WORKING', 'FASTER', 'EXPIRE', 'QUICK', 
-        'SANITIZER', 'HELP', 'LINK', 'PROMISES', 'CONVENIENT', 'CLOSING', 'EFFICIENCY', 'URGENCY', 
-        'THROUGH', 'SUNDAY', 'SATURDAY', 'DESKS', 'INQUIRY', 'POINTS', 'VERIFYING MY ACCOUNT', 
-        'THE LAW ON CALL', 'IF THERE IS A DISPUTE', 'RELATIONSHIP']
-            
-            product_keywords = ['SHARIAH', 'INVESTMENT', 'SOLUTION', 'EQUITIE', 'CASH', 'CHEQUES', 'MONEY', 'CARD', 
-        'FLEET', 'ONLINE BANKING', 'OVERDRAFT', 'BUSINESS BANKING', 'INVESTMENTS', 'INSURANCE', 
-        'APP', 'FNB BANKING APP', 'CREDIT APPLICATION', 'BANK CHARGES', 'BANK FEES', 
-        'BANKING COSTS', 'COSTS', 'BUSINESS ACCOUNT', 'CONTACT CENTRE', 'CALL CENTRE', 
-        'CALL ACCOUNTS', 'CALL ACCOUNT', 'INVESTMENT ACCOUNTS', 'PRICING', 'SPEED POINT', 
-        'TRANSACTION', 'FICA', 'ONLINE', 'MONEY MARKET', 'FOREX', 'CREDIT CARDS', 'PRODUCTS', 
-        'FOREIGN', 'E-BUCKS', 'PRIVATE BANKING', 'VEHICLE', 'VAF', 'CASH WITHDRAWAL', 
-        'E-WALLET', 'BUSINESS', 'PROPERTY', 'FINANCE', 'WESBANK', 'SHARER', 'TRADE', 
-        'BRANCHES', 'FACILITIES', 'CURRENCY', 'UIF', 'COVID', 'MERCHANT', 'ATM', 'PAY', 'PRODUCT', 
-        'EBACKS', 'INTERNET', 'BANKING', 'LEVIES', 'COST', 'LOAN', 'EXPENSIVE', 'FEE', 
-        'E BUCKS', 'NEW ACCOUNT', 'FINANCING', 'CREDIT', 'LOANS', 'INTEREST', 'RATES', 'COMMUNICATION', 
-        'FEES', 'CHARGE', 'TRAINING', 'ADVICE', 'INCONTACT', 'UPDATING', 'OPTIONS', 'NOTIFICATIONS', 'BENEFITS', 
-        'REWARDS', 'EBUCKS', 'ACCOUNTS', 'STATEMENTS', 'TRANSACTIONS', 'NEW PRODUCTS', 'PAYMENTS', 'OPTION', 
-        'GIVING FUNDS FOR COMPANY ASSETS']
-            
-            none_keywords = ['NO IMPROVEMENT', 'T THINK', 'DON?T KNOW', 'ALL FINE FROM MY SIDE', 'N/A', 'NOTHING', 
-        'NOTHING TO IMPROVE', 'ANYTHING', 'I AM SATISFIED', 'I HAVE NO ISSUES', 'NO COMMENT', 
-        'NONE', 'HAPPY WITH EVERYTHING', 'NO COMPLAINT AT THE MOMENT', 'SATISFIED', 'I AM HAPPY', 
-        'NO IMPROVEMENTS', 'ALL GOOD', 'ALL HAPPY', 'ALL IN ORDER', 'CANT THINK OF ANY', 
-        'DONT KNOW', 'FUCK', 'GOOD', 'I DO NOT HAVE', 'T HAVE', 'HAVE ANSWERS', 'ANY ISSUES', 
-        'NA', 'NOT APPLICABLE', 'NOT MUCH', 'NOT NOW', 'NOT SURE', 'NOT AT THE MOMENT', 
-        'NOT SURE OF ANY', 'NOT THAT I THINK OF', '-1', 'EVERYTHING', 'EXCELLENT', 'KNOW', 
-        'ALL IS FINE', 'ANY PROBLEM', 'NO ASPECTS', 'NO ASPECT FOR FNB TO IMPROVE ON', 'NOTHING TO IMPROVE.',
-        'NO SINGLE IMPORTANT ASPECT THAT FNB  NEEDS TO IMPROVE ON', 'NO ASPECT', 'NOTHING.', 'NO IMPACT', 
-        'NO IMPORTATNT ASPECT', 'NO IMPORTANT ASPECT', 'NO SINGLE MOST IMPORTANT ASPECT', 'NO IMPROVMENTS']
+            people_keywords = ['BM', 'BUSINESS MANAGER', 'BUSINESS BANKERS', 'PRIVATE BANKER', 'RM', 'RELATIONSHIP MANAGER', 'STAFF', 'CLIENTS']
+            process_keywords = ['SYSTEM', 'PROCESS', 'SERVICE', 'DELAY', 'QUERY', 'ACCESS', 'APP']
+            product_keywords = ['FEE', 'CHARGES', 'LOAN', 'ACCOUNT', 'INVESTMENT', 'CARD']
+            none_keywords = ['NO IMPROVEMENT', 'NONE', 'SATISFIED', 'ALL GOOD', 'N/A']
 
             def contains_keywords(text, kw_list):
                 return 1 if any(kw in text for kw in kw_list) else 0
@@ -1157,7 +1134,7 @@ with tab2:
 
 # ==========================================================================
 # ==========================================================================
-# TAB 3: BM/RM NPS PORTFOLIO GENERATOR (UPDATED FROM app_10.py)
+# TAB 3: BM/RM NPS PORTFOLIO GENERATOR
 # ==========================================================================
 # ==========================================================================
 with tab3:
@@ -1801,15 +1778,11 @@ with tab5:
             st.error("Please upload the yearly SPSS file (.sav) first!")
         else:
             with st.spinner("Processing SPSS file and generating cross-tabulation report... Please wait."):
-                # Save uploaded file to a temporary file so pyreadstat can read it
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
                     tmp_file.write(yearly_file.getvalue())
                     tmp_file_path = tmp_file.name
 
                 try:
-                    # ==========================================
-                    # 1. DATA INGESTION
-                    # ==========================================
                     df, meta = pyreadstat.read_sav(tmp_file_path)
                     df = df.loc[:, ~df.columns.duplicated()].copy()
 
@@ -2211,7 +2184,6 @@ with tab5:
                         b_cell.font, b_cell.fill, b_cell.alignment = Font(name="Calibri", size=10, bold=True, italic=True, color=WHITE), fill_amber_header, align_left
                         curr_row += 1
 
-                        # Tier 1
                         ws_xtab.cell(row=curr_row, column=2, value="Metric / Question Driver").font, ws_xtab.cell(row=curr_row, column=2).fill, ws_xtab.cell(row=curr_row, column=2).alignment, ws_xtab.cell(row=curr_row, column=2).border = font_header, fill_teal_header, align_center, border_cell
                         wave_groups = [(w_num, len(list(group))) for w_num, group in groupby(active_xtab_columns, key=lambda x: x[1])]
                         col_ptr = 3
@@ -2224,7 +2196,6 @@ with tab5:
                             col_ptr += span_len
                         curr_row += 1
 
-                        # Tier 2
                         ws_xtab.cell(row=curr_row, column=2, value="Sub-category").font, ws_xtab.cell(row=curr_row, column=2).fill, ws_xtab.cell(row=curr_row, column=2).alignment, ws_xtab.cell(row=curr_row, column=2).border = font_header, fill_teal_header, align_center, border_cell
                         col_ptr = 3
                         for wave_idx, (w_num, span_len) in enumerate(wave_groups):
@@ -2241,7 +2212,6 @@ with tab5:
                             col_ptr += span_len
                         curr_row += 1
 
-                        # Tier 3
                         ws_xtab.cell(row=curr_row, column=2, value="Sub-category").font, ws_xtab.cell(row=curr_row, column=2).fill, ws_xtab.cell(row=curr_row, column=2).alignment, ws_xtab.cell(row=curr_row, column=2).border = font_header, fill_teal_header, align_center, border_cell
                         col_ptr = 3
                         for wave_idx, (w_num, span_len) in enumerate(wave_groups):
@@ -2310,7 +2280,7 @@ with tab5:
                                         cell.number_format = "0.0%"
                                     
                                     cell.value = f'=IF(OR($C$5="All", $C$5="{cat_val}"), IFERROR({formula_body}, 0), "")'
-                                else: # Region
+                                else:
                                     formula_body = ""
                                     if item_type == "count":
                                         formula_body = f"SUMIFS(_CrossTab_WaveReg_Data!{get_column_letter(list(summary_xtab_wave_region.columns).index(cols_ref) + 1)}:{get_column_letter(list(summary_xtab_wave_region.columns).index(cols_ref) + 1)}, _CrossTab_WaveReg_Data!A:A, {w_num}, _CrossTab_WaveReg_Data!B:B, \"{cat_val}\", _CrossTab_WaveReg_Data!C:C, IF($C$5=\"All\", \"*\", $C$5))"
@@ -2375,7 +2345,6 @@ with tab5:
                     for c_idx in range(3, 3 + len(active_xtab_columns)):
                         ws_xtab.column_dimensions[get_column_letter(c_idx)].width = 11
 
-                    # Save workbook to memory buffer
                     output_buffer = io.BytesIO()
                     wb_xtab.save(output_buffer)
                     output_buffer.seek(0)
@@ -2569,243 +2538,4 @@ with tab6:
                         raw_subsets_pub = {}
                         raw_subsets_pub[("Total", "Total")] = df_pubsc
                         if subreg_filter_col in df_pubsc.columns:
-                            for s_code, s_label in subreg_dict.items():
-                                raw_subsets_pub[("Total", s_label)] = df_pubsc[df_pubsc[subreg_filter_col] == s_code]
-
-                        if tmonth_col and sorted_month_dict:
-                            for m_code, m_label in sorted_month_dict.items():
-                                m_df = df_pubsc[df_pubsc[tmonth_col] == m_code]
-                                raw_subsets_pub[(m_label, "Total")] = m_df
-                                if subreg_filter_col in m_df.columns:
-                                    for s_code, s_label in subreg_dict.items():
-                                        raw_subsets_pub[(m_label, s_label)] = m_df[m_df[subreg_filter_col] == s_code]
-
-                        valid_subsets_pub = {}
-                        for group_key, sub_df in raw_subsets_pub.items():
-                            month_lbl, sub_lbl = group_key
-                            if sub_lbl == "Total":
-                                valid_subsets_pub[group_key] = sub_df
-                            else:
-                                total_n = sum(calculate_nps(sub_df, v)[1] for _, v, is_nps in metrics_config if is_nps)
-                                if total_n > 0:
-                                    valid_subsets_pub[group_key] = sub_df
-
-                        subsets_pub = {}
-                        for gk, s_df in valid_subsets_pub.items():
-                            subsets_pub[(gk[0], gk[1], "Mean")] = s_df
-                            subsets_pub[(gk[0], gk[1], "Valid N")] = s_df
-
-                        rows_pub = []
-                        for label, var_name, is_nps in metrics_config:
-                            row_data = {"Metric": label}
-                            for col_key, sub_df in subsets_pub.items():
-                                stat = col_key[-1]
-                                if is_nps:
-                                    mean_val, n_val = calculate_nps(sub_df, var_name)
-                                    row_data[col_key] = mean_val if stat == "Mean" else n_val
-                                else:
-                                    row_data[col_key] = calculate_rating_mean(sub_df, var_name) if stat == "Mean" else ""
-                            rows_pub.append(row_data)
-
-                        st.success("Extraction completed with chronological month sorting successfully!")
-
-                        st.subheader("Results Preview: R10MIL_GROWTH")
-                        st.dataframe(pd.DataFrame(rows_r10), use_container_width=True)
-
-                        st.subheader("Results Preview: PUBSC")
-                        st.dataframe(pd.DataFrame(rows_pub), use_container_width=True)
-
-                        wb = Workbook()
-                        default_sheet = wb.active
-
-                        teal_fill = PatternFill(start_color="008A90", end_color="008A90", fill_type="solid")
-                        orange_fill = PatternFill(start_color="F47920", end_color="F47920", fill_type="solid")
-                        light_teal_fill = PatternFill(start_color="E0F2F1", end_color="E0F2F1", fill_type="solid")
-                        white_font = Font(color="FFFFFF", bold=True, size=10)
-                        dark_font = Font(color="000000", bold=True, size=10)
-                        thin_border = Border(
-                            left=Side(style="thin", color="CCCCCC"), right=Side(style="thin", color="CCCCCC"),
-                            top=Side(style="thin", color="CCCCCC"), bottom=Side(style="thin", color="CCCCCC")
-                        )
-                        data_border = Border(
-                            left=Side(style="thin", color="E0E0E0"), right=Side(style="thin", color="E0E0E0"),
-                            top=Side(style="thin", color="E0E0E0"), bottom=Side(style="thin", color="E0E0E0")
-                        )
-
-                        def sort_months_list(m_list):
-                            other_months = [m for m in m_list if m != "Total"]
-                            other_months.sort(key=lambda x: get_month_sort_key((0, x))[1] if isinstance(get_month_sort_key((0, x)), tuple) else 0)
-                            return ["Total"] + [m for m in other_months if m in sorted_month_dict.values()]
-
-                        # Sheet 1: R10MIL_GROWTH
-                        ws1 = wb.create_sheet(title="R10MIL_GROWTH")
-                        ws1.views.sheetView[0].showGridLines = True
-
-                        raw_months_r10 = list(set([k[0] for k in subsets_r10.keys()]))
-                        months_r10 = sort_months_list(raw_months_r10)
-
-                        col_start = 2
-                        for m_name in months_r10:
-                            m_keys = [k for k in subsets_r10.keys() if k[0] == m_name]
-                            if not m_keys: continue
-                            block_start = col_start
-                            block_end = col_start + len(m_keys) - 1
-
-                            ws1.cell(row=1, column=block_start, value=m_name)
-                            if block_start != block_end:
-                                ws1.merge_cells(start_row=1, start_column=block_start, end_row=1, end_column=block_end)
-
-                            if m_name == "Total":
-                                ws1.cell(row=2, column=block_start, value="Total")
-                                ws1.merge_cells(start_row=2, start_column=block_start, end_row=2, end_column=block_end)
-                            else:
-                                sub_cols_in_block = [k[2] for k in m_keys if k[3] == "Mean"]
-                                curr_bc = block_start
-                                type_items = [s for s in sub_cols_in_block if s in ["Total", "Growth", "R10Mil"]]
-                                seg_items = [s for s in sub_cols_in_block if s in ["ENTERPRISE", "PLATINUM"]]
-
-                                if type_items:
-                                    t_start = curr_bc
-                                    t_end = curr_bc + (len(type_items) * 2) - 1
-                                    ws1.cell(row=2, column=t_start, value="Type")
-                                    if t_start != t_end:
-                                        ws1.merge_cells(start_row=2, start_column=t_start, end_row=2, end_column=t_end)
-                                    curr_bc = t_end + 1
-
-                                if seg_items:
-                                    s_start = curr_bc
-                                    s_end = curr_bc + (len(seg_items) * 2) - 1
-                                    ws1.cell(row=2, column=s_start, value="Seg2")
-                                    if s_start != s_end:
-                                        ws1.merge_cells(start_row=2, start_column=s_start, end_row=2, end_column=s_end)
-
-                            curr_sub_c = block_start
-                            for k in m_keys:
-                                if k[3] == "Mean":
-                                    sub_name = k[2]
-                                    ws1.cell(row=3, column=curr_sub_c, value=sub_name)
-                                    ws1.merge_cells(start_row=3, start_column=curr_sub_c, end_row=3, end_column=curr_sub_c + 1)
-                                    ws1.cell(row=4, column=curr_sub_c, value="Mean")
-                                    ws1.cell(row=4, column=curr_sub_c + 1, value="Valid N")
-                                    curr_sub_c += 2
-
-                            col_start = block_end + 1
-
-                        max_col_r10 = col_start - 1
-                        for r_idx, row_dict in enumerate(rows_r10, start=5):
-                            metric_cell = ws1.cell(row=r_idx, column=1, value=row_dict["Metric"])
-                            metric_cell.border = data_border
-                            metric_cell.alignment = Alignment(horizontal="left", vertical="center")
-                            col_idx = 2
-                            ordered_r10_keys = []
-                            for m_n in months_r10:
-                                ordered_r10_keys.extend([k for k in subsets_r10.keys() if k[0] == m_n])
-                            for col_key in ordered_r10_keys:
-                                val_cell = ws1.cell(row=r_idx, column=col_idx, value=row_dict[col_key])
-                                val_cell.border = data_border
-                                val_cell.alignment = Alignment(horizontal="center", vertical="center")
-                                col_idx += 1
-
-                        for row in range(1, 5):
-                            for col in range(1, max_col_r10 + 1):
-                                cell = ws1.cell(row=row, column=col)
-                                cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-                                cell.border = thin_border
-                                if row == 1: cell.fill = teal_fill; cell.font = white_font
-                                elif row == 2: cell.fill = orange_fill; cell.font = white_font
-                                elif row == 3: cell.fill = light_teal_fill; cell.font = dark_font
-                                else: cell.fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid"); cell.font = dark_font
-
-                        for col_num in range(1, max_col_r10 + 1):
-                            col_letter = get_column_letter(col_num)
-                            max_len = 0
-                            for row_num in range(1, len(rows_r10) + 6):
-                                cell_val = ws1.cell(row=row_num, column=col_num).value
-                                if cell_val is not None: max_len = max(max_len, len(str(cell_val)))
-                            ws1.column_dimensions[col_letter].width = min(max(max_len + 4, 30), 65) if col_letter == "A" else max(max_len + 3, 12)
-
-                        # Sheet 2: PUBSC
-                        ws2 = wb.create_sheet(title="PUBSC")
-                        ws2.views.sheetView[0].showGridLines = True
-
-                        raw_months_pub = list(set([k[0] for k in subsets_pub.keys()]))
-                        months_pub = sort_months_list(raw_months_pub)
-
-                        col_start_p = 2
-                        for m_name in months_pub:
-                            m_keys = [k for k in subsets_pub.keys() if k[0] == m_name]
-                            if not m_keys: continue
-                            block_start = col_start_p
-                            block_end = col_start_p + len(m_keys) - 1
-
-                            ws2.cell(row=1, column=block_start, value=m_name)
-                            if block_start != block_end:
-                                ws2.merge_cells(start_row=1, start_column=block_start, end_row=1, end_column=block_end)
-
-                            ws2.cell(row=2, column=block_start, value="SUBREG")
-                            ws2.merge_cells(start_row=2, start_column=block_start, end_row=2, end_column=block_end)
-
-                            curr_sub_c = block_start
-                            for k in m_keys:
-                                if k[2] == "Mean":
-                                    region_name = k[1]
-                                    ws2.cell(row=3, column=curr_sub_c, value=region_name)
-                                    ws2.merge_cells(start_row=3, start_column=curr_sub_c, end_row=3, end_column=curr_sub_c + 1)
-                                    ws2.cell(row=4, column=curr_sub_c, value="Mean")
-                                    ws2.cell(row=4, column=curr_sub_c + 1, value="Valid N")
-                                    curr_sub_c += 2
-
-                            col_start_p = block_end + 1
-
-                        max_col_pub = col_start_p - 1
-                        for r_idx, row_dict in enumerate(rows_pub, start=5):
-                            metric_cell = ws2.cell(row=r_idx, column=1, value=row_dict["Metric"])
-                            metric_cell.border = data_border
-                            metric_cell.alignment = Alignment(horizontal="left", vertical="center")
-                            col_idx = 2
-                            ordered_pub_keys = []
-                            for m_n in months_pub:
-                                ordered_pub_keys.extend([k for k in subsets_pub.keys() if k[0] == m_n])
-                            for col_key in ordered_pub_keys:
-                                val_cell = ws2.cell(row=r_idx, column=col_idx, value=row_dict[col_key])
-                                val_cell.border = data_border
-                                val_cell.alignment = Alignment(horizontal="center", vertical="center")
-                                col_idx += 1
-
-                        for row in range(1, 5):
-                            for col in range(1, max_col_pub + 1):
-                                cell = ws2.cell(row=row, column=col)
-                                cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-                                cell.border = thin_border
-                                if row == 1: cell.fill = teal_fill; cell.font = white_font
-                                elif row == 2: cell.fill = orange_fill; cell.font = white_font
-                                elif row == 3: cell.fill = light_teal_fill; cell.font = dark_font
-                                else: cell.fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid"); cell.font = dark_font
-
-                        for col_num in range(1, max_col_pub + 1):
-                            col_letter = get_column_letter(col_num)
-                            max_len = 0
-                            for row_num in range(1, len(rows_pub) + 6):
-                                cell_val = ws2.cell(row=row_num, column=col_num).value
-                                if cell_val is not None: max_len = max(max_len, len(str(cell_val)))
-                            ws2.column_dimensions[col_letter].width = min(max(max_len + 4, 30), 65) if col_letter == "A" else max(max_len + 3, 12)
-
-                        if default_sheet in wb.worksheets:
-                            wb.remove(default_sheet)
-
-                        output = io.BytesIO()
-                        wb.save(output)
-                        excel_data = output.getvalue()
-
-                        st.download_button(
-                            label="📥 Download Complete Multi-Sheet Excel Report",
-                            data=excel_data,
-                            file_name="SME_ENT_and_PUBSC_Report.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            key="tab6_download_btn"
-                        )
-                except Exception as e:
-                    st.error(f"❌ Error processing SME/ENT dataset: {e}")
-                finally:
-                    if os.path.exists(tmp_path):
-                        os.remove(tmp_path)
+                            for s_code, s_label in subreg
