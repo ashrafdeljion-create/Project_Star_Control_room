@@ -32,42 +32,46 @@ st.markdown(
     <style>
         /* Styles the main background container holding the navigation tabs */
         .stTabs [data-baseweb="tab-list"] {
-            /* existing styles */
+            ...
         }
         
-        /* Enhanced Hub Card Styling */
-        .hub-card {
+        /* --- PASTE YOUR NEW CSS STYLES RIGHT HERE --- */
+        /* Added styles for Tab 7 Metric Cards */
+        .metric-container {
             background-color: #1a1e24;
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 16px 20px;
             border: 1px solid #2d3748;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            margin-bottom: 15px;
-            height: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
-        .hub-card-title {
-            font-size: 1.15rem;
+        .metric-value {
+            font-size: 1.8rem;
             font-weight: 700;
             color: #60a5fa;
-            margin-bottom: 8px;
         }
-        .hub-card-desc {
-            font-size: 0.88rem;
+        .metric-label {
+            font-size: 0.85rem;
+            font-weight: 600;
             color: #94a3b8;
-            margin-bottom: 15px;
-            line-height: 1.4;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
+# Main title and subtitle displayed at the top of the application web page
+st.title("⭐ Project Star: One-Stop Operations Hub")
+st.markdown(
+    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
+)
+
 # =========================================================================
-# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (8 Tabs Total)
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (7 Tabs Total)
 # =========================================================================
-tab0, tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     [
-        "🏠 Home / Navigation Hub",
         "📊 Project Status & Quotas Update",
         "⚙️ Weekly 911's Control Room",
         "📈 BM/RM NPS Portfolio Generator",
@@ -78,118 +82,8 @@ tab0, tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     ]
 )
 
-# ==========================================================================
-# ==========================================================================
-# TAB 0: HOME / NAVIGATION HUB
-# ==========================================================================
-# ==========================================================================
-with tab0:
-    st.markdown("### 🏠 Project Star: Unified Command Center")
-    st.markdown("Your centralized research operations hub. Select any module below or use the navigation tabs at the top to get started.")
-    st.markdown("---")
 
-    # Row 1: Core Modules (3 Columns)
-    col_h1, col_h2, col_h3 = st.columns(3)
-    
-    with col_h1:
-        st.markdown(
-            """
-            <div class="hub-card">
-                <div class="hub-card-title">📊 Project Status & Quotas</div>
-                <div class="hub-card-desc">Monitor live completion counts, target adjustments, and regional/segment breakdowns across Growth, Enterprise, and PUBSC.</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        if st.button("🚀 Open Quota Tracker", key="nav_tab1", use_container_width=True):
-            st.info("👆 Click the **Project Status & Quotas Update** tab at the top to access this module.")
 
-    with col_h2:
-        st.markdown(
-            """
-            <div class="hub-card">
-                <div class="hub-card-title">⚙️ Weekly 911's Control Room</div>
-                <div class="hub-card-desc">Automate weekly 911 data pipeline extractions, process detractor classifications, and generate structured CSV outputs.</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        if st.button("🚀 Open 911 Control Room", key="nav_tab2", use_container_width=True):
-            st.info("👆 Click the **Weekly 911's Control Room** tab at the top to access this module.")
-
-    with col_h3:
-        st.markdown(
-            """
-            <div class="hub-card">
-                <div class="hub-card-title">📈 BM/RM NPS Generator</div>
-                <div class="hub-card-desc">Build executive Excel dashboards and streamlined SPSS files for BM/RM portfolios with dynamic wave and type filtering.</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        if st.button("🚀 Open NPS Generator", key="nav_tab3", use_container_width=True):
-            st.info("👆 Click the **BM/RM NPS Portfolio Generator** tab at the top to access this module.")
-
-    st.write("")
-
-    # Row 2: Secondary Modules (4 Columns)
-    col_h4, col_h5, col_h6, col_h7 = st.columns(4)
-
-    with col_h4:
-        st.markdown(
-            """
-            <div class="hub-card">
-                <div class="hub-card-title" style="font-size: 1rem;">📋 Q11 Ratings</div>
-                <div class="hub-card-desc">Extract Q11 product ratings, coded reasons, and open-ended text.</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        if st.button("Open Q11", key="nav_tab4", use_container_width=True):
-            st.info("👆 Click the **Q11 Ratings & Reasons Extraction** tab at the top.")
-
-    with col_h5:
-        st.markdown(
-            """
-            <div class="hub-card">
-                <div class="hub-card-title" style="font-size: 1rem;">📅 Yearly Dashboard</div>
-                <div class="hub-card-desc">Generate yearly cross-tabulation reports from master SPSS files.</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        if st.button("Open Yearly", key="nav_tab5", use_container_width=True):
-            st.info("👆 Click the **NPS Yearly Dashboard** tab at the top.")
-
-    with col_h6:
-        st.markdown(
-            """
-            <div class="hub-card">
-                <div class="hub-card-title" style="font-size: 1rem;">🏢 SME/ENT Tables</div>
-                <div class="hub-card-desc">Sort months chronologically and export multi-sheet tables.</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        if st.button("Open SME/ENT", key="nav_tab6", use_container_width=True):
-            st.info("👆 Click the **SME/ENT Tables** tab at the top.")
-
-    with col_h7:
-        st.markdown(
-            """
-            <div class="hub-card">
-                <div class="hub-card-title" style="font-size: 1rem;">💬 CATI Verbatim</div>
-                <div class="hub-card-desc">Process verbatims with spellchecking and SPSS syntax output.</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        if st.button("Open CATI", key="nav_tab7", use_container_width=True):
-            st.info("👆 Click the **CATI Verbatim Processor** tab at the top.")
-
-    st.markdown("---")
-    st.info("💡 **Navigation Tip:** Streamlit organizes tabs at the top bar. Clicking the action buttons above will point you directly to the correct tab header.")
-    
 # ==========================================================================
 # ==========================================================================
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
