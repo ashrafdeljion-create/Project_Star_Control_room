@@ -770,11 +770,11 @@ with tab1:
             bottom=Side(style='thin', color='D3D3D3')
         )
 
-        header_rows = [1]
+header_rows = [1]
         for r in range(2, ws.max_row + 1):
             val_col1 = ws.cell(row=r, column=1).value
             val_col2 = ws.cell(row=r, column=2).value
-            iif val_col1 in ["R0m-R1m", "R10m-R60m"] or val_col2 in ["R0m-R1m", "R10m-R60m", "R1m-R5m", "R150m+", "Gauteng North", "Gauteng South and Central"]:
+            if val_col1 in ["R0m-R1m", "R10m-R60m"] or val_col2 in ["R0m-R1m", "R10m-R60m", "R1m-R5m", "R150m+", "Gauteng North", "Gauteng South and Central"]:
                 header_rows.append(r)
 
         for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
