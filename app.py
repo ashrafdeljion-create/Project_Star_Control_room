@@ -5,7 +5,7 @@ import io
 import os
 import re
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from dateutil.relativedelta import FR, relativedelta
 from itertools import groupby
 
