@@ -68,10 +68,11 @@ st.markdown(
 )
 
 # =========================================================================
-# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (7 Tabs Total)
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (8 Tabs Total)
 # =========================================================================
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+tab0, tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     [
+        "🏠 Home / Navigation Hub",
         "📊 Project Status & Quotas Update",
         "⚙️ Weekly 911's Control Room",
         "📈 BM/RM NPS Portfolio Generator",
@@ -82,7 +83,95 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     ]
 )
 
+# ==========================================================================
+# ==========================================================================
+# TAB 0: HOME / NAVIGATION HUB
+# ==========================================================================
+# ==========================================================================
+with tab0:
+    st.markdown("### 🏠 Project Star: Unified Command Center")
+    st.markdown("Welcome to your centralized research operations hub. Use the navigation cards below to explore each module or jump directly using the tabs at the top.")
+    st.markdown("---")
 
+    col_h1, col_h2, col_h3 = st.columns(3)
+    
+    with col_h1:
+        st.markdown(
+            """
+            <div class="metric-container" style="height: 100%;">
+                <h4 style="color: #60a5fa; margin-top: 0;">📊 Project Status & Quotas</h4>
+                <p style="color: #94a3b8; font-size: 0.9rem;">Monitor live completion counts, target adjustments, and regional/segment breakdowns across Growth, Enterprise, and PUBSC.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    with col_h2:
+        st.markdown(
+            """
+            <div class="metric-container" style="height: 100%;">
+                <h4 style="color: #60a5fa; margin-top: 0;">⚙️ Weekly 911's Control Room</h4>
+                <p style="color: #94a3b8; font-size: 0.9rem;">Automate weekly 911 data pipeline extractions, process detractor classifications, and generate structured CSV outputs.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    with col_h3:
+        st.markdown(
+            """
+            <div class="metric-container" style="height: 100%;">
+                <h4 style="color: #60a5fa; margin-top: 0;">📈 BM/RM NPS Generator</h4>
+                <p style="color: #94a3b8; font-size: 0.9rem;">Build executive Excel dashboards and streamlined SPSS files for BM/RM portfolios with dynamic wave and type filtering.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.write("")
+    col_h4, col_h5, col_h6, col_h7 = st.columns(4)
+
+    with col_h4:
+        st.markdown(
+            """
+            <div class="metric-container" style="height: 100%;">
+                <h4 style="color: #60a5fa; margin-top: 0; font-size: 1.1rem;">📋 Q11 Ratings</h4>
+                <p style="color: #94a3b8; font-size: 0.85rem;">Extract Q11 product ratings, coded reasons, and open-ended text.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    with col_h5:
+        st.markdown(
+            """
+            <div class="metric-container" style="height: 100%;">
+                <h4 style="color: #60a5fa; margin-top: 0; font-size: 1.1rem;">📅 Yearly Dashboard</h4>
+                <p style="color: #94a3b8; font-size: 0.85rem;">Generate yearly cross-tabulation reports from master SPSS files.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    with col_h6:
+        st.markdown(
+            """
+            <div class="metric-container" style="height: 100%;">
+                <h4 style="color: #60a5fa; margin-top: 0; font-size: 1.1rem;">🏢 SME/ENT Tables</h4>
+                <p style="color: #94a3b8; font-size: 0.85rem;">Sort months chronologically and export multi-sheet tables.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    with col_h7:
+        st.markdown(
+            """
+            <div class="metric-container" style="height: 100%;">
+                <h4 style="color: #60a5fa; margin-top: 0; font-size: 1.1rem;">💬 CATI Verbatim</h4>
+                <p style="color: #94a3b8; font-size: 0.85rem;">Process verbatims with spellchecking and SPSS syntax output.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown("---")
+    st.info("💡 **Navigation Tip:** Click any of the tabs at the top of your screen to jump instantly into your desired workflow module.")
 
 # ==========================================================================
 # ==========================================================================
