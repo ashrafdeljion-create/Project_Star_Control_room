@@ -150,7 +150,7 @@ with tab1:
         )
     with seg_cols_2[1]:
         q_r150m_plus = st.number_input(
-            "R150M+ Quota", min_value=0, value250, step=5, key="q_r150_plus_1"
+            "R150M+ Quota", min_value=0, value=250, step=5, key="q_r150_plus_1"
         )
 
     total_segment_quota = (
