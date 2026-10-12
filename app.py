@@ -175,8 +175,23 @@ with tab1:
     with up_col3:
         file_pubw = st.file_uploader("Upload PUBSC (.sav)", type=["sav"], key="up_pub_1")
 
-    # (Your load_spss_data function is here...)
+    # 1. DEFINE THE FUNCTION FIRST
+    def load_spss_data(uploaded_file):
+        if uploaded_file is not None:
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
+                    tmp_file.write(uploaded_file.getvalue())
+                    tmp_path = tmp_file.name
 
+                df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
+                df.columns = [str(c).upper() for c in df.columns]
+                return df
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+                return None
+        return None
+
+    # 2. THEN CALL IT AFTERWARDS
     df_grow = load_spss_data(file_grow)
     df_rmw = load_spss_data(file_rmw)
     df_pubw = load_spss_data(file_pubw)
@@ -192,7 +207,6 @@ with tab1:
     achieved_rmw = count_completions(df_rmw)
     achieved_pubw = count_completions(df_pubw)
 
-    # --- PASTE THE ADJUSTED TOTALS BLOCK RIGHT HERE ---
     def get_segment_achieved(target_df, segment_keywords):
         count = 0
         if target_df is not None and "V9999" in target_df.columns and "V44011" in target_df.columns:
