@@ -369,18 +369,20 @@ def process_verbatims(df_raw, start_date=None, end_date=None, date_sep='/', colu
         
     df_out = pd.DataFrame(rows)
     df_audit = pd.DataFrame(audit_logs)
-    
     col_order = [
-        'RUID', 'RECORDED_DATE', 'AGRIC_IND', 'ISLAMIC_IND', 'REGION', 'SUB_REGION', 'SEGMENT',
-        *['SOLOPRENEUR'] if column_preset == 'Legacy/Client CSV' else [], 'TEAM', 'BM_NPS', 'FNB_NPS',
-        'Q13_IMPROVEMENT', 'PRODUCT_PEOPLE_PROCESS', 'PRODUCT_CHANNEL', 'TENDER', 'SME_SMME', 'CHANNELS',
-        *['Q14_1', 'Q14_2', 'Q16'] if column_preset == 'Legacy/Client CSV' else ['GQ14_1', 'GQ14_2', 'GQ16_1'],
+        'RUID', 'RECORDED_DATE', 'AGRIC_IND', 'ISLAMIC_IND', 'REGION', 'SUB_REGION', 'SEGMENT'
+    ] + (['SOLOPRENEUR'] if column_preset == 'Legacy/Client CSV' else []) + [
+        'TEAM', 'BM_NPS', 'FNB_NPS',
+        'Q13_IMPROVEMENT', 'PRODUCT_PEOPLE_PROCESS', 'PRODUCT_CHANNEL', 'TENDER', 'SME_SMME', 'CHANNELS'
+    ] + (['Q14_1', 'Q14_2', 'Q16'] if column_preset == 'Legacy/Client CSV' else ['GQ14_1', 'GQ14_2', 'GQ16_1']) + [
         'Q16A', 'Q16_1_A', 'Q16_1_B', 'Q16_1_C', 'Q16_1_D', 'Q16_1_E', 'Q16_1_F', 'Q16_1_G', 'Q16_1_H', 'Q16_2',
         'BUSINESS_NAME', 'CUSTOMER_NAME', 'CUST_CNTCT_TEL_NO', 'CUST_CELL_NO', 'STAT_CDE', 'SUB_PROD_CDE',
         'OPEN_DATE', 'PRI_SUB_SEG', 'PRIM_OFCR_IND', 'OFFICER_NAME', 'CUST_AGE', 'CUST_SEX_CDE', 'RACE_CDE',
-        'BRN_NAME', 'EMAIL_ADDR', 'LEAD_CREATE_DATE', 'UCN', *CHAN_COL_ORDER
-    ]
-    return df_out[[c for c in col_order if c in df_out.columns]], df_audit
+        'BRN_NAME', 'EMAIL_ADDR', 'LEAD_CREATE_DATE', 'UCN'
+    ] + CHAN_COL_ORDER
+
+    valid_cols = [c for c in col_order if c in df_out.columns]
+    return df_out[valid_cols], df_audit
 
 # ==========================================================================
 # ==========================================================================
