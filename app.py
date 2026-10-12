@@ -809,7 +809,7 @@ def style_excel_sheet(ws):
                         max_len = len(val_str)
             ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
 
-    def create_pm_workbook():
+def create_pm_workbook():
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df_summary.to_excel(writer, sheet_name='Summary', index=False)
