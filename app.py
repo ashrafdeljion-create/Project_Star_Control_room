@@ -30,31 +30,202 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-        /* Styles the main background container holding the navigation tabs */
-        .stTabs [data-baseweb="tab-list"] {
-            ...
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --hub-ink: #18312f;
+            --hub-muted: #607572;
+            --hub-accent: #16776e;
+            --hub-accent-soft: #e6f2ef;
+            --hub-border: #dce7e4;
+            --hub-surface: #ffffff;
         }
-        
-        /* --- PASTE YOUR NEW CSS STYLES RIGHT HERE --- */
-        /* Added styles for Tab 7 Metric Cards */
+
+        html, body, [class*="css"] {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .stApp {
+            background: #f5f8f7;
+            color: var(--hub-ink);
+        }
+
+        .block-container {
+            padding-top: 2.2rem;
+            padding-bottom: 3rem;
+        }
+
+        [data-testid="stHeading"] h1 {
+            color: var(--hub-ink);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .stMarkdown h3, .stMarkdown h4 {
+            color: var(--hub-ink);
+            font-weight: 600;
+        }
+
+        .stMarkdown h3 {
+            border-left: 3px solid var(--hub-accent);
+            padding-left: 0.7rem;
+            margin-top: 1.6rem;
+        }
+
+        .stMarkdown p {
+            color: var(--hub-muted);
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid var(--hub-border);
+            margin: 1.35rem 0;
+        }
+
+        [role="tablist"] {
+            gap: 0.35rem;
+            background: #eaf0ee;
+            border: 1px solid var(--hub-border);
+            border-radius: 12px;
+            padding: 0.4rem;
+        }
+
+        [role="tab"] {
+            height: auto;
+            min-height: 2.75rem;
+            border-radius: 8px;
+            color: #526864;
+            font-weight: 600;
+            transition: background-color 160ms ease, color 160ms ease;
+        }
+
+        [role="tab"]:hover {
+            background: #dce9e5;
+            color: var(--hub-ink);
+        }
+
+        [role="tab"][aria-selected="true"] {
+            background: var(--hub-accent);
+            color: #ffffff;
+        }
+
+        .react-aria-SelectionIndicator {
+            display: none;
+        }
+
+        div[data-testid="stMetric"] {
+            box-sizing: border-box;
+            min-height: 112px;
+            padding: 1rem 1.1rem;
+            background: var(--hub-surface);
+            border: 1px solid var(--hub-border);
+            border-left: 3px solid var(--hub-accent);
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(24, 49, 47, 0.045);
+            transition: transform 160ms ease, box-shadow 160ms ease;
+        }
+
+        div[data-testid="stMetric"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 18px rgba(24, 49, 47, 0.09);
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: var(--hub-muted);
+            font-weight: 600;
+        }
+
+        [data-testid="stMetricValue"] {
+            color: var(--hub-ink);
+            font-weight: 700;
+            font-size: 1.3rem !important;
+            line-height: 1.25;
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+        }
+
+        [data-testid="stMetricValue"] > div {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            overflow-wrap: anywhere;
+        }
+
+        [data-testid="stMetricValue"] p {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            white-space: normal !important;
+            overflow-wrap: normal;
+        }
+
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            border-color: var(--hub-border);
+            border-radius: 10px;
+            box-shadow: 0 3px 12px rgba(24, 49, 47, 0.04);
+        }
+
+        .stButton button {
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 140ms ease, box-shadow 140ms ease;
+        }
+
+        .stButton button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(22, 119, 110, 0.14);
+        }
+
+        [data-baseweb="input"] > div,
+        [data-baseweb="textarea"] > div,
+        [data-baseweb="select"] > div {
+            border-radius: 8px;
+            border-color: var(--hub-border);
+        }
+
+        [data-testid="stFileUploaderDropzone"] {
+            border: 1px dashed #a9c3bd;
+            border-radius: 10px;
+            background: #fbfdfc;
+        }
+
+        @media (max-width: 720px) {
+            .block-container {
+                padding: 1.2rem 1rem 2rem;
+            }
+
+            [role="tablist"] {
+                gap: 0.15rem;
+                padding: 0.25rem;
+            }
+
+            [role="tab"] {
+                min-height: 2.5rem;
+                padding: 0.35rem 0.55rem;
+                font-size: 0.85rem;
+            }
+        }
+
         .metric-container {
-            background-color: #1a1e24;
+            background-color: var(--hub-surface);
             border-radius: 10px;
             padding: 16px 20px;
-            border: 1px solid #2d3748;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--hub-border);
+            box-shadow: 0 3px 10px rgba(24, 49, 47, 0.045);
         }
+
         .metric-value {
             font-size: 1.8rem;
             font-weight: 700;
-            color: #60a5fa;
+            color: var(--hub-accent);
         }
+
         .metric-label {
             font-size: 0.85rem;
             font-weight: 600;
-            color: #94a3b8;
+            color: var(--hub-muted);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
     </style>
 """,
