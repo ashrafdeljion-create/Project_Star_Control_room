@@ -164,7 +164,7 @@ with tab1:
 
     st.markdown("---")
 
-    # SECTION 3: UPLOAD SPSS DATASETS (.sav)
+# SECTION 3: UPLOAD SPSS DATASETS (.sav)
     st.markdown("### 📁 Upload Latest SPSS Datasets for Live Status Calculation")
     up_col1, up_col2, up_col3 = st.columns(3)
 
@@ -175,20 +175,7 @@ with tab1:
     with up_col3:
         file_pubw = st.file_uploader("Upload PUBSC (.sav)", type=["sav"], key="up_pub_1")
 
-    def load_spss_data(uploaded_file):
-        if uploaded_file is not None:
-            try:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
-                    tmp_file.write(uploaded_file.getvalue())
-                    tmp_path = tmp_file.name
-
-                df, meta = pyreadstat.read_sav(tmp_path, apply_value_formats=True)
-                df.columns = [str(c).upper() for c in df.columns]
-                return df
-            except Exception as e:
-                st.error(f"Error reading file: {e}")
-                return None
-        return None
+    # (Your load_spss_data function is here...)
 
     df_grow = load_spss_data(file_grow)
     df_rmw = load_spss_data(file_rmw)
@@ -205,14 +192,38 @@ with tab1:
     achieved_rmw = count_completions(df_rmw)
     achieved_pubw = count_completions(df_pubw)
 
-    total_achieved = achieved_growth + achieved_rmw + achieved_pubw
+    # --- PASTE THE ADJUSTED TOTALS BLOCK RIGHT HERE ---
+    def get_segment_achieved(target_df, segment_keywords):
+        count = 0
+        if target_df is not None and "V9999" in target_df.columns and "V44011" in target_df.columns:
+            str_val = target_df["V9999"].astype(str).str.lower()
+            completed = str_val.str.contains("continue", na=False)
+
+            matched_seg = pd.Series(False, index=target_df.index)
+            for kw in segment_keywords:
+                matched_seg = matched_seg | (
+                    target_df["V44011"]
+                    .astype(str)
+                    .str.contains(kw, case=False, na=False)
+                )
+            count = int((completed & matched_seg).sum())
+        return count
+
+    ach_r10_r60m = get_segment_achieved(df_rmw, ["r10m-r60m"])
+
+    # Adjusted totals: Business includes R10-R60M; Enterprise excludes it
+    effective_achieved_growth = achieved_growth + ach_r10_r60m
+    effective_achieved_rmw = max(0, achieved_rmw - ach_r10_r60m)
+
+    total_achieved = effective_achieved_growth + effective_achieved_rmw + achieved_pubw
     total_outstanding = max(0, total_target_quota - total_achieved)
     overall_progress = (
         (total_achieved / total_target_quota * 100)
         if total_target_quota > 0
         else 0.0
     )
-
+    
+    
     st.markdown("---")
 
     # SECTION 4: EXECUTIVE SUMMARY OVERVIEW
@@ -241,14 +252,14 @@ with tab1:
             total_target_quota,
         ],
         "TOTAL Achieved": [
-            achieved_growth,
-            achieved_rmw,
+            effective_achieved_growth,
+            effective_achieved_rmw,
             achieved_pubw,
             total_achieved,
         ],
         "TOTAL Outstanding": [
-            max(0, business_target - achieved_growth),
-            max(0, enterprise_target - achieved_rmw),
+            max(0, business_target - effective_achieved_growth),
+            max(0, enterprise_target - effective_achieved_rmw),
             max(0, pubsc_target - achieved_pubw),
             total_outstanding,
         ],
