@@ -64,7 +64,7 @@ st.markdown(
 # Main title and subtitle displayed at the top of the application web page
 st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown(
-    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
+    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, SME/ENT tables and Verbatim extractions."
 )
 
 # =========================================================================
