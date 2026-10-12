@@ -33,11 +33,13 @@ st.markdown(
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-            --hub-ink: #18312f;
-            --hub-muted: #607572;
-            --hub-accent: #16776e;
-            --hub-accent-soft: #e6f2ef;
-            --hub-border: #dce7e4;
+            --hub-ink: #191916;
+            --hub-muted: #655d50;
+            --hub-accent: #008684;
+            --hub-accent-soft: #e4f4f2;
+            --hub-highlight: #ef991b;
+            --hub-highlight-soft: #fff1d8;
+            --hub-border: #eadfcd;
             --hub-surface: #ffffff;
         }
 
@@ -46,7 +48,7 @@ st.markdown(
         }
 
         .stApp {
-            background: #f5f8f7;
+            background: #fffaf3;
             color: var(--hub-ink);
         }
 
@@ -67,7 +69,7 @@ st.markdown(
         }
 
         .stMarkdown h3 {
-            border-left: 3px solid var(--hub-accent);
+            border-left: 3px solid var(--hub-highlight);
             padding-left: 0.7rem;
             margin-top: 1.6rem;
         }
@@ -84,7 +86,7 @@ st.markdown(
 
         [role="tablist"] {
             gap: 0.35rem;
-            background: #eaf0ee;
+            background: #edf5f3;
             border: 1px solid var(--hub-border);
             border-radius: 12px;
             padding: 0.4rem;
@@ -94,19 +96,19 @@ st.markdown(
             height: auto;
             min-height: 2.75rem;
             border-radius: 8px;
-            color: #526864;
+            color: #425653;
             font-weight: 600;
             transition: background-color 160ms ease, color 160ms ease;
         }
 
         [role="tab"]:hover {
-            background: #dce9e5;
+            background: #d9ece8;
             color: var(--hub-ink);
         }
 
         [role="tab"][aria-selected="true"] {
-            background: var(--hub-accent);
-            color: #ffffff;
+            background: var(--hub-accent) !important;
+            color: #ffffff !important;
         }
 
         .react-aria-SelectionIndicator {
@@ -119,15 +121,15 @@ st.markdown(
             padding: 1rem 1.1rem;
             background: var(--hub-surface);
             border: 1px solid var(--hub-border);
-            border-left: 3px solid var(--hub-accent);
+            border-left: 3px solid var(--hub-highlight);
             border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(24, 49, 47, 0.045);
+            box-shadow: 0 3px 10px rgba(42, 34, 20, 0.055);
             transition: transform 160ms ease, box-shadow 160ms ease;
         }
 
         div[data-testid="stMetric"]:hover {
             transform: translateY(-2px);
-            box-shadow: 0 7px 18px rgba(24, 49, 47, 0.09);
+            box-shadow: 0 7px 18px rgba(42, 34, 20, 0.11);
         }
 
         [data-testid="stMetricLabel"] {
@@ -163,7 +165,7 @@ st.markdown(
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border-color: var(--hub-border);
             border-radius: 10px;
-            box-shadow: 0 3px 12px rgba(24, 49, 47, 0.04);
+            box-shadow: 0 3px 12px rgba(42, 34, 20, 0.045);
         }
 
         .stButton button {
@@ -174,7 +176,7 @@ st.markdown(
 
         .stButton button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(22, 119, 110, 0.14);
+            box-shadow: 0 4px 12px rgba(0, 134, 132, 0.18);
         }
 
         [data-baseweb="input"] > div,
@@ -185,9 +187,9 @@ st.markdown(
         }
 
         [data-testid="stFileUploaderDropzone"] {
-            border: 1px dashed #a9c3bd;
+            border: 1px dashed #a5c9c3;
             border-radius: 10px;
-            background: #fbfdfc;
+            background: #fffdf9;
         }
 
         @media (max-width: 720px) {
@@ -212,13 +214,13 @@ st.markdown(
             border-radius: 10px;
             padding: 16px 20px;
             border: 1px solid var(--hub-border);
-            box-shadow: 0 3px 10px rgba(24, 49, 47, 0.045);
+            box-shadow: 0 3px 10px rgba(42, 34, 20, 0.055);
         }
 
         .metric-value {
             font-size: 1.8rem;
             font-weight: 700;
-            color: var(--hub-accent);
+            color: var(--hub-highlight);
         }
 
         .metric-label {
