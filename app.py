@@ -776,7 +776,7 @@ header_rows = [1]
             val_col2 = ws.cell(row=r, column=2).value
             if val_col1 in ["R0m-R1m", "R10m-R60m"] or val_col2 in ["R0m-R1m", "R10m-R60m", "R1m-R5m", "R150m+", "Gauteng North", "Gauteng South and Central"]:
                 header_rows.append(r)
-
+                
         for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
             for cell in row:
                 if cell.value is not None:
