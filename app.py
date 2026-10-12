@@ -32,42 +32,10 @@ st.markdown(
     <style>
         /* Styles the main background container holding the navigation tabs */
         .stTabs [data-baseweb="tab-list"] {
-            ...
+            /* existing styles */
         }
         
-        /* --- PASTE YOUR NEW CSS STYLES RIGHT HERE --- */
-        /* Added styles for Tab 7 Metric Cards */
-        .metric-container {
-            background-color: #1a1e24;
-            border-radius: 10px;
-            padding: 16px 20px;
-            border: 1px solid #2d3748;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        }
-        .metric-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #60a5fa;
-        }
-        .metric-label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
-
-# Main title and subtitle displayed at the top of the application web page
-st.title("⭐ Project Star: One-Stop Operations Hub")
-st.markdown(
-    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
-)
-
-/* Enhanced Hub Card Styling */
+        /* Enhanced Hub Card Styling */
         .hub-card {
             background-color: #1a1e24;
             border-radius: 12px;
@@ -89,6 +57,11 @@ st.markdown(
             margin-bottom: 15px;
             line-height: 1.4;
         }
+    </style>
+""",
+    unsafe_allow_html=True,
+)
+
 # =========================================================================
 # SECTION 3: DEFINING MAIN APP NAVIGATION TABS (8 Tabs Total)
 # =========================================================================
