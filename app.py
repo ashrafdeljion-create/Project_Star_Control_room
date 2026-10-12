@@ -32,47 +32,29 @@ st.markdown(
     <style>
         /* Styles the main background container holding the navigation tabs */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 12px;
-            background-color: #f4fbfa;
-            padding: 10px 10px;
-            border-radius: 12px;
-            border: 2px solid #00A3AD;
+            ...
         }
-        /* Styles each individual unselected tab button */
-        .stTabs [data-baseweb="tab"] {
-            height: 50px;
-            white-space: pre-wrap;
-            background-color: #ffffff;
-            border-radius: 8px;
-            gap: 8px;
-            padding-left: 20px;
-            padding-right: 20px;
+        
+        /* --- PASTE YOUR NEW CSS STYLES RIGHT HERE --- */
+        /* Added styles for Tab 7 Metric Cards */
+        .metric-container {
+            background-color: #1a1e24;
+            border-radius: 10px;
+            padding: 16px 20px;
+            border: 1px solid #2d3748;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .metric-value {
+            font-size: 1.8rem;
             font-weight: 700;
-            font-size: 15px;
-            color: #333333;
-            border: 1px solid #00A3AD;
-            box-shadow: 0 2px 4px rgba(0,163,173,0.1);
-            transition: all 0.3s ease;
+            color: #60a5fa;
         }
-        /* Styles the currently active/selected tab */
-        .stTabs [aria-selected="true"] {
-            background: linear-gradient(135deg, #00A3AD 0%, #00828a 100%) !important;
-            color: #ffffff !important;
-            border: none !important;
-            box-shadow: 0 4px 12px rgba(0, 163, 173, 0.4) !important;
-        }
-        .stTabs [aria-selected="true"] p {
-            color: #ffffff !important;
-        }
-        /* Styles primary action buttons (FNB Orange) */
-        .stButton button[kind="primary"] {
-            background-color: #F58220 !important;
-            color: white !important;
-            border: none !important;
-            font-weight: bold !important;
-        }
-        .stButton button[kind="primary"]:hover {
-            background-color: #d96f12 !important;
+        .metric-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
     </style>
 """,
@@ -86,9 +68,9 @@ st.markdown(
 )
 
 # =========================================================================
-# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (6 Tabs Total)
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (7 Tabs Total)
 # =========================================================================
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     [
         "📊 Project Status & Quotas Update",
         "⚙️ Weekly 911's Control Room",
@@ -96,8 +78,309 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
         "📋 Q11 Ratings & Reasons Extraction",
         "📅 NPS Yearly Dashboard",
         "🏢 SME/ENT Tables",
+        "💬 CATI Verbatim Processor",
     ]
 )
+
+# ==============================================================================
+# TAB 7: CATI VERBATIM PROCESSOR - CONSTANTS & HELPERS
+# ==============================================================================
+PEOPLE_KEYWORDS = [
+    'ATTENDING', 'ATTEND ', 'BANKER', 'BANKERS', 'BM', 'BM/RM', "BM'S", "BM'S/RM'S",
+    'BROKER', 'BROKERS', 'BUSINESS BANKER', 'BUSINESS BANKERS', "BUSINESS BANKER'S",
+    'BUSINESS CONSULTANT', 'BUSINESS CONSULTANTS', 'BUSINESS MANAGER', 'BUSINESS MANAGERS',
+    "BUSINESS MANAGER'S", 'COMMUNICATE', 'COMMUNICATES', 'COMMUNICATION', 'COMMUNICATIONS',
+    'CONSULT', 'CONSULTANT', 'CONTACT', 'CONTACTS', 'CONTECTED', 'CUSTOMER SERVICE',
+    'CUSTOMER SERVICES', 'HONESTLY', 'HONESTY', 'HUMAN', 'HUMANS', 'INTERACTION',
+    'INTERACTIONS', 'MANAGEE', 'MANAGES', 'MANNER', 'MANNERS', 'PEOPLE', "PEOPLE'S",
+    'PERSON', 'PERSONAL', 'PERSONALLY', 'PERSONS', 'PRIVATE BANKER', 'PRIVATE BANKERS',
+    'PROMISED', 'PROMISES', 'RELATIONSHIP', 'RELATIONSHIP MANAGER', 'RELATIONSHIP MANANGERS',
+    'RELATIONSHIPS', 'REPRESENT', 'REPRESENTATIVE', 'RM ', "RM'S", 'SOMEONE', 'SOMEONES',
+    'STAFF', 'STAFFS', 'TELLER', 'TELLERS', 'TREAT', 'TREATED', 'TRUST', 'TRUSTED',
+    'UNDERSTAND', 'UNDERSTANDING', 'WALK', 'WALKED', 'WELCOME', 'WELCOMES'
+]
+
+PROCESS_KEYWORDS = [
+    'ACCESS', 'TRANSFERS', 'ACCESSES', 'ACCESSIBLE', 'ACCESSIBLES', 'ACTION', 'ACTIONS',
+    'ALLOW', 'ALLOWS', 'APPROVALS', 'APPROVED', 'ASSIST', 'ASSISTS', 'ATTEND', 'ATTENDED',
+    'ATTENTION', 'CHANGE', 'CHANGES', 'CLOSE', 'CLOSING', 'COMMUNICATION', 'COMMUNICATIONS',
+    'CONNECTIONS', 'CONNECTIVITY', 'CONVENIENCES', 'CONVENIENT', 'CUSTOMER', 'CUSTOMERS',
+    'DEBIT', 'DEBITS', 'DESK', 'DESKS', 'DISRUPTING', 'DISRUPTIONS', 'DOCUMENTATION',
+    'DOCUMENTS', 'EASIER', 'EASILY', 'EFFICIENCY', 'EFFICIENT', 'ENQUIRIES', 'ENQUIRY',
+    'EXPIRE', 'EXPIRED', 'FAST', 'FASTER', 'FEEDBACK', 'FINGER', 'FINGERS', 'FOLLOWING',
+    'FRAUD', 'FUNCTIONALITIES', 'FUNCTIONALITY', 'FUNDING', 'FUNDINGS', 'GUARANTEE',
+    'GUARANTEES', 'HELP', 'HELPS', 'INFORMATION', 'INQUIRIES', 'INQUIRY', 'ISSUE',
+    'ISSUES', 'LENDING', 'LENDINGS', 'LETTER', 'LETTERS', 'LINK', 'LINKS', 'LONG',
+    'NETWORK', 'NETWORKS', 'NOTIFICATION', 'NOTIFICATIONS', 'NOTIFIED', 'NOTIFY',
+    'OPENING', 'ORDER', 'ORDERS', 'OTP', 'OTPs', 'PERIOD', 'PERIODS', 'POINT',
+    'POINTS', 'PREVENT', 'PREVENTS', 'PROCESS', 'PROCESSES', 'PROMISE', 'PROMISES',
+    'PROVIDE', 'PROVIDES', 'QUERIES', 'QUERY', 'QUEUE', 'QUEUES', 'QUICK', 'QUICKER',
+    'QUICKLY', 'REGULATION', 'REGULATIONS', 'RESOLUTION', 'RESOLUTIONS', 'RESOLVE',
+    'RETURN', 'RETURNS', 'REVERSE', 'SANITIZER', 'SATURDAY', 'SATURDAYS', 'SECURE',
+    'SECURES', 'SECURITIES', 'SECURITY', 'SERVICE', 'SERVICES', 'SETUP', 'SETUPS',
+    'SPAM', 'SPAMS', 'SPEED', 'SPEEDS', 'SUNDAY', 'SUNDAYS', 'SYSTEM', 'SYSTEMS ',
+    'THROUGH', 'TIME', 'TIMES', 'TRANSACTION', 'TRANSACTIONS', 'TRANSFER', 'TURNAROUD',
+    'TURNAROUND', 'UNAUTHORISED', 'URGENCY', 'URGENTLY', 'USER-FRIENDLY',
+    'VERIFYING MY ACCOUNT', 'WAITING', 'WORKING'
+]
+
+PRODUCT1_KEYWORDS = [
+    'ACCOUNT', 'ACCOUNTS', 'ADVICE', 'BANK CHARGE', 'BANK CHARGES', 'BANK FEE',
+    'BANK FEES', 'BANKING', 'BANKING COST', 'BANKING COSTS', 'BANKS', 'BENEFIT',
+    'BENEFITS', 'BUSINESS', 'BUSINESS ACCOUNT', 'BUSINESSES', 'CALL ACCOUNT',
+    'CARD', 'CARDS', 'CASH', 'CASH WITHDRAWAL', 'CASH WITHDRAWALS', 'CHARGE',
+    'CHARGES', 'CHEQUE', 'CHEQUES', 'COST', 'COSTS', 'COVID', 'CREDIT',
+    'CREDIT APLICATIONS', 'CREDIT APPLICATION', 'CREDIT CARD', 'CREDIT CARDS',
+    'CREDITS', 'CURRENCY', 'E BUCK', 'E BUCKS', 'EBACK', 'EBACKS', 'EBUCK',
+    'E-BUCK', 'EBUCKS', 'E-BUCKS', 'EQUITIE', 'EQUITY', 'E-WALLET', 'E-WALLETS',
+    'EXPENSIVE', 'FACILITIES', 'FACILITY', 'FEE', 'FEES', 'FICA', 'FINANCE',
+    'FINANCING', 'FLEET', 'FLLEETS', 'FOREIGN', 'FOREIGNS', 'FOREX', 'INSURANCE',
+    'INTEREST', 'INTERESTS', 'INTERNET', 'INVESTEMENT ACCOUNT', 'INVESTMENT',
+    'INVESTMENT ACCOUNTS', 'INVESTMENTS', 'LEVIES', 'LEVY', 'LIMIT', 'LIMITS',
+    'LOAN', 'LOANS', 'MERCHANT', 'MERCHANTS', 'MONEY', 'MONEY MARKERTS',
+    'MONEY MARKET', 'MONEYS', 'NEW ACCOUNT', 'NEW ACCOUNTS', 'NOTIFICATION',
+    'NOTIFICATIONS', 'ONLINE', 'ONLINE BANKING', 'ONLINE BANKINGS', 'OVERDRAFT',
+    'OVERDRAFTS', 'PAY', 'PAYMANT', 'PAYMENTS', 'PRICING', 'PRIVATE BANKING',
+    'PRODUCT', 'PRODUCTS', 'PROPERTY', 'RATE', 'RATES', 'REWARD', 'REWARDS',
+    'SAVING', 'SAVINGS', 'SHARE', 'SHARER', 'SHARIAH', 'SOLUTION', 'SOLUTIONS',
+    'SPEED POINT', 'STATEMENT', 'STATEMENTS', 'TRADE', 'TRAINING', 'TRAININGS',
+    'TRANSACTION', 'TRANSACTIONS', 'UIF', 'VAF', 'VEHICLE', 'VIHICLES', 'WESBANK'
+]
+
+PRODUCT2_KEYWORDS = PRODUCT1_KEYWORDS.copy()
+
+CHANNEL2_KEYWORDS = [
+    'ATM', 'ATMs', 'APP', 'APPS', 'BRANCH', 'BRANCHES', 'BUSINESS BANKING',
+    'CALL CENTRE', 'CALL CENTRES', 'CONTACT CENTRE', 'FNB BANKING APP',
+    'INCONTACT', 'ONLINE', 'ERROR'
+]
+
+NONE_KEYWORDS = [
+    'ALL FINE FROM MY SIDE', 'ALL GOOD', 'ALL HAPPY', 'ALL IN ORDER', 'ALL IS FINE',
+    'ANY ISSUES', 'ANY PROBLEM', 'ANYTHING', "CANT THINK OF ANY", "DON’T KNOW",
+    "DONT KNOW", 'EVERYTHING', 'EXCELLENT', 'FUCK', 'GOOD', 'HAPPY WITH EVERYTHING',
+    'HAVE ANSWERS', 'I AM HAPPY', 'I AM SATISFIED', 'I DO NOT HAVE', 'I HAVE NO ISSUES',
+    'KNOW', 'N/A', 'NA', 'NO COMMENT', 'NO COMPLAINT AT THE MOMENT', 'NO IMPROVEMENT',
+    'NO IMPROVEMENTS', 'NONE', 'NOT APPLICABLE', 'NOT AT THE MOMENT', 'NOT MUCH',
+    'NOT NOW', 'NOT SURE', 'NOT SURE OF ANY', 'NOT THAT I THINK OF', 'NOTHING',
+    'NOTHING TO IMPROVE', 'SATISFIED', 'T HAVE', 'T THINK'
+]
+
+CHANNEL_RULES = {
+    'CHAN_ONLINEBANKING': [('ONLINE', 'ONLINE BANKING')],
+    'CHAN_BRANCH': [('BRANCH', 'BRANCH')],
+    'CHAN_BUSINESSAPP': [('APP', 'BUSINESS APP')],
+    'CHAN_CALLCENTRE': [('CALL CENTRE', 'CALL CENTRE'), ('CENTRE', 'CALL CENTRE')],
+    'CHAN_BM_RM': [('BM', 'BM/RM'), ('RM', 'BM/RM'), ('MANAGER', 'BM/RM')],
+    'CHAN_CREDIT': [('CREDIT', 'CREDIT')],
+    'CHAN_BUSINESSMANAGER': [('BUSINESS MANAGER', 'BUSINESS MANAGER')],
+    'CHAN_ATM': [('ATM', 'ATM')],
+    'CHAN_FEES': [('FEES', 'FEES')],
+    'CHAN_CARDS': [('CARD', 'CARDS')],
+    'CHAN_E_BUCKS': [('E-BUCKS', 'E-BUCKS'), ('BUCK', 'E-BUCKS')],
+    'CHAN_MERCHANT': [
+        ('MERCHANT', 'MERCHANT SERVICE/SPEED POINT/S'),
+        ('SPEED POINT', 'MERCHANT SERVICE/SPEED POINT/S'),
+        ('POINT', 'MERCHANT SERVICE/SPEED POINT/S'),
+        ('SWIPING ', 'MERCHANT SERVICE/SPEED POINT/S'),
+        ('MACHINE', 'MERCHANT SERVICE/SPEED POINT/S')
+    ],
+    'CHAN_TRANSACTIONAL': [
+        ('TRANSACTIONAL', 'TRANSACTIONAL ACCOUNTS/CHEQUE'),
+        ('ACCOUNT', 'TRANSACTIONAL ACCOUNTS/CHEQUE'),
+        (' BOARD', 'TRANSACTIONAL ACCOUNTS/CHEQUE')
+    ],
+    'CHAN_FOREX': [('FOREX', 'FOREX')],
+    'CHAN_INSTANTACC': [('INSTANT', 'INSTANT ACCOUNTING'), ('ACCOUNTING', 'INSTANT ACCOUNTING')]
+}
+
+CHAN_COL_ORDER = [
+    'CHAN_ONLINEBANKING', 'CHAN_BRANCH', 'CHAN_BUSINESSAPP', 'CHAN_CALLCENTRE',
+    'CHAN_BM_RM', 'CHAN_CREDIT', 'CHAN_BUSINESSMANAGER', 'CHAN_ATM',
+    'CHAN_FEES', 'CHAN_CARDS', 'CHAN_E_BUCKS', 'CHAN_MERCHANT',
+    'CHAN_TRANSACTIONAL', 'CHAN_FOREX', 'CHAN_INSTANTACC'
+]
+
+COMMON_TYPOS = {
+    r'\bDEACREASE\b': 'DECREASE',
+    r'\bTRASACT\b': 'TRANSACT',
+    r'\bCONTECTED\b': 'CONNECTED',
+    r'\bTURNAROUD\b': 'TURNAROUND',
+    r'\bPAYMANT\b': 'PAYMENT',
+    r'\bAPPLICATIONS?\b': 'APPLICATION',
+    r'\bINCOMET\b': 'INCOME',
+}
+
+BANKING_ACRONYMS = {
+    'fnb', 'atm', 'atms', 'otp', 'otps', 'sme', 'smes', 'smme', 'smmes',
+    'absa', 'fica', 'vaf', 'uif', 'forex', 'covid', 'e-bucks', 'ebucks',
+    'bm', 'rm', 'id', 'pin', 'app', 'apps', 'fnbapp', 'cib', 'wesbank'
+}
+
+def normalize_sentence_case(text):
+    if not isinstance(text, str) or not text.strip():
+        return text
+    sentences = re.split(r'([.!?]\s+)', text)
+    result_sentences = []
+    for i in range(0, len(sentences), 2):
+        sent = sentences[i]
+        punct = sentences[i+1] if i+1 < len(sentences) else ''
+        if not sent.strip():
+            result_sentences.append(sent + punct)
+            continue
+        words = sent.strip().split()
+        processed_words = []
+        for idx, word in enumerate(words):
+            clean_word = re.sub(r'[^a-zA-Z-]', '', word)
+            if clean_word.lower() in BANKING_ACRONYMS:
+                word_fixed = word.upper()
+            else:
+                word_fixed = word.capitalize() if idx == 0 else word.lower()
+            processed_words.append(word_fixed)
+        result_sentences.append(' '.join(processed_words) + punct)
+    return ''.join(result_sentences)
+
+def proofread_text(text):
+    if not isinstance(text, str) or not text.strip():
+        return text, False
+    original = text
+    corrected = text
+    for pattern, replacement in COMMON_TYPOS.items():
+        corrected = re.sub(pattern, replacement, corrected, flags=re.IGNORECASE)
+    corrected = normalize_sentence_case(corrected)
+    corrected = re.sub(r'\s+', ' ', corrected).strip()
+    corrected = re.sub(r'\s+([?.!,;:])', r'\1', corrected)
+    return corrected, (original != corrected)
+
+def clean_team_name(team_str):
+    if not isinstance(team_str, str) or not team_str.strip():
+        return team_str
+    return re.sub(r'^\d+[:\-]\s*', '', team_str.strip())
+
+def process_verbatims(df_raw, start_date=None, end_date=None, date_sep='/', column_preset='V3', enable_proofreading=False, is_pubsc=False):
+    df = df_raw.copy()
+    if 'V9999' in df.columns:
+        df = df[df['V9999'].astype(str).str.strip().isin(['1', '1.0'])].copy()
+    if 'STIME' in df.columns:
+        df['STIME_STR'] = df['STIME'].astype(str).str.strip().str[:8]
+        if start_date:
+            s_str = start_date.strftime('%Y%m%d') if isinstance(start_date, (datetime, date)) else str(start_date).replace('-', '').replace('/', '')[:8]
+            df = df[df['STIME_STR'] >= s_str]
+        if end_date:
+            e_str = end_date.strftime('%Y%m%d') if isinstance(end_date, (datetime, date)) else str(end_date).replace('-', '').replace('/', '')[:8]
+            df = df[df['STIME_STR'] <= e_str]
+    df = df.sort_values(by='INTNR').reset_index(drop=True) if 'INTNR' in df.columns else df.reset_index(drop=True)
+    
+    rows, audit_logs = [], []
+    text_capture_columns = ['Q13_IMPROVEMENT', 'Q16A', 'Q16_2', 'Q16_1_H', 'GQ14_1', 'GQ14_2', 'Q14_1', 'Q14_2']
+    
+    for _, row in df.iterrows():
+        intnr = row.get('INTNR', 0)
+        ruid_val = int(intnr) if (pd.notna(intnr) and str(intnr).strip() != '') else ''
+        stime = str(row.get('STIME', '')).strip()
+        nyear, nmonth, nday = (stime[0:4] if len(stime)>=4 else ''), (stime[4:6] if len(stime)>=6 else ''), (stime[6:8] if len(stime)>=8 else '')
+        rec_date = f"{nyear}{date_sep}{nmonth}{date_sep}{nday}" if (nyear and nmonth and nday) else ''
+        
+        q14_1_val = row.get('Q14_1', np.nan)
+        fnb_nps = "NPS - Detractor" if pd.notna(q14_1_val) and float(q14_1_val) < 7 else ("NPS - Passive" if pd.notna(q14_1_val) and float(q14_1_val) in (7, 8) else ("NPS - Promoter" if pd.notna(q14_1_val) and float(q14_1_val) > 8 else ''))
+        
+        q14_2_val = row.get('Q14_2', np.nan)
+        bm_nps = "NPS - Detractor" if pd.notna(q14_2_val) and float(q14_2_val) < 7 else ("NPS - Passive" if pd.notna(q14_2_val) and float(q14_2_val) in (7, 8) else ("NPS - Promoter" if pd.notna(q14_2_val) and float(q14_2_val) > 8 else ''))
+        
+        tq13_raw = str(row.get('TQ13_OPEN', '')) if pd.notna(row.get('TQ13_OPEN', '')) else ''
+        tq13_up = tq13_raw.upper()
+        q13_improvement = tq13_raw.replace(',', '~')
+        
+        people_1 = 1 if any(kw in tq13_up for kw in PEOPLE_KEYWORDS) else 0
+        process_1 = 1 if any(kw in tq13_up for kw in PROCESS_KEYWORDS) else 0
+        prod_1 = 1 if any(kw in tq13_up for kw in PRODUCT1_KEYWORDS) else 0
+        prod_2 = 1 if (any(kw in tq13_up for kw in PRODUCT2_KEYWORDS) or prod_1 == 1) else 0
+        chan_2 = 1 if any(kw in tq13_up for kw in CHANNEL2_KEYWORDS) else 0
+        has_none = any(kw in tq13_up for kw in NONE_KEYWORDS)
+        
+        ppp = "NONE" if has_none else ("PEOPLE ONLY" if people_1==1 and not process_1 and not prod_1 else ("PROCESS ONLY" if process_1==1 and not people_1 and not prod_1 else ("PRODUCT ONLY" if prod_1==1 and not people_1 and not process_1 else ("PEOPLE & PROCESS" if people_1 and process_1 and not prod_1 else ("PRODUCT & PEOPLE" if people_1 and prod_1 and not process_1 else ("PRODUCT & PROCESS" if prod_1 and process_1 and not people_1 else ("ALL" if people_1 and process_1 and prod_1 else "")))))))
+        pc = "NONE" if has_none else ("PRODUCT ONLY" if prod_2 and not chan_2 else ("CHANNEL ONLY" if chan_2 and not prod_2 else ("BOTH" if prod_2 and chan_2 else "")))
+        
+        if not q13_improvement.strip(): q13_improvement = "Nothing"
+        if not ppp.strip(): ppp = "NONE"
+        if not pc.strip(): pc = "NONE"
+            
+        tender = 'TENDER' if 'TENDER' in tq13_up else ''
+        sme_smme = 'SME' if 'SME' in tq13_up else ('SMME' if 'SMME' in tq13_up else '')
+        
+        chan_dict = {c: next((val for kw, val in rule_tuples if kw in tq13_up), '') for c, rule_tuples in CHANNEL_RULES.items()}
+        channels_str = "~".join([chan_dict[c] for c in CHAN_COL_ORDER if chan_dict[c]])
+        
+        tq14_1_open = str(row.get('TQ14_1_OPEN', '')) if pd.notna(row.get('TQ14_1_OPEN', '')) else ''
+        tq14_2_open = str(row.get('TQ14_2_OPEN', '')) if pd.notna(row.get('TQ14_2_OPEN', '')) else ''
+        tq16_open = str(row.get('TQ16_OPEN', '')) if pd.notna(row.get('TQ16_OPEN', '')) else ''
+        tq16_1c8 = str(row.get('TQ16_1C8', '')) if pd.notna(row.get('TQ16_1C8', '')) else ''
+        
+        gq14_1 = tq14_1_open.replace(',', '~') if (pd.notna(q14_1_val) and float(q14_1_val) < 7) else ''
+        gq14_2 = tq14_2_open.replace(',', '~') if (pd.notna(q14_2_val) and float(q14_2_val) < 7) else ''
+        
+        q16_val = row.get('Q16', np.nan)
+        q16_str = 'Yes' if (pd.notna(q16_val) and float(q16_val) == 1) else ('No' if (pd.notna(q16_val) and float(q16_val) == 2) else '')
+        
+        q16a = tq16_open.replace(',', '~') if (pd.notna(q16_val) and float(q16_val) == 1) else ''
+        q16_2 = tq16_open.replace(',', '~')
+        q16_1_h = tq16_1c8.strip().replace(',', '~')
+        
+        def bank_flag(var_name, bank_name):
+            b_val = row.get(var_name, np.nan)
+            return bank_name if (pd.notna(b_val) and float(b_val) == 1) else ''
+            
+        def sval(c):
+            v = row.get(c, '')
+            return str(v).strip() if pd.notna(v) else ''
+            
+        r_dict = {
+            'RUID': ruid_val, 'RECORDED_DATE': rec_date, 'AGRIC_IND': sval('V66012'), 'ISLAMIC_IND': sval('V66013'),
+            'REGION': sval('V12290'), 'SUB_REGION': sval('V44011') if is_pubsc else sval('V13290'),
+            'SEGMENT': sval('V13290') if is_pubsc else sval('V44011'), 'TEAM': clean_team_name(sval('V8018')),
+            'BM_NPS': bm_nps, 'FNB_NPS': fnb_nps, 'Q13_IMPROVEMENT': q13_improvement,
+            'PRODUCT_PEOPLE_PROCESS': ppp, 'PRODUCT_CHANNEL': pc, 'TENDER': tender, 'SME_SMME': sme_smme,
+            'CHANNELS': channels_str, 'Q16A': q16a,
+            'Q16_1_A': bank_flag('Q16_1_1', 'ABSA'), 'Q16_1_B': bank_flag('Q16_1_2', 'Capitec'),
+            'Q16_1_C': bank_flag('Q16_1_3', 'Investec'), 'Q16_1_D': bank_flag('Q16_1_4', 'Mercantile'),
+            'Q16_1_E': bank_flag('Q16_1_5', 'Nedbank'), 'Q16_1_F': bank_flag('Q16_1_6', 'Sasfin'),
+            'Q16_1_G': bank_flag('Q16_1_7', 'Standard Bank'), 'Q16_1_H': q16_1_h, 'Q16_2': q16_2,
+            'BUSINESS_NAME': sval('V56011'), 'CUSTOMER_NAME': sval('V9054_1'), 'CUST_CNTCT_TEL_NO': sval('V9001'),
+            'CUST_CELL_NO': sval('V9002'), 'STAT_CDE': sval('V44018'), 'SUB_PROD_CDE': sval('V44015'),
+            'OPEN_DATE': sval('V66011'), 'PRI_SUB_SEG': '', 'PRIM_OFCR_IND': sval('V8026'),
+            'OFFICER_NAME': sval('V8016'), 'CUST_AGE': '', 'CUST_SEX_CDE': '', 'RACE_CDE': '',
+            'BRN_NAME': sval('V80156'), 'EMAIL_ADDR': sval('V86011'), 'LEAD_CREATE_DATE': sval('V11205'), 'UCN': sval('V80116'),
+            **{c: chan_dict[c] for c in CHAN_COL_ORDER}
+        }
+        
+        if column_preset == 'Legacy/Client CSV':
+            r_dict.update({'SOLOPRENEUR': '', 'Q14_1': gq14_1, 'Q14_2': gq14_2, 'Q16': q16_str})
+        else:
+            r_dict.update({'GQ14_1': gq14_1, 'GQ14_2': gq14_2, 'GQ16_1': q16_str})
+            
+        if enable_proofreading:
+            for col_name in text_capture_columns:
+                if col_name in r_dict and r_dict[col_name] and isinstance(r_dict[col_name], str) and r_dict[col_name].strip():
+                    fixed_val, modified = proofread_text(r_dict[col_name])
+                    if modified:
+                        r_dict[col_name] = fixed_val
+                        audit_logs.append({'RUID': ruid_val, 'Column': col_name, 'Original_Text': r_dict[col_name], 'Corrected_Text': fixed_val})
+        rows.append(r_dict)
+        
+    df_out = pd.DataFrame(rows)
+    df_audit = pd.DataFrame(audit_logs)
+    
+    col_order = [
+        'RUID', 'RECORDED_DATE', 'AGRIC_IND', 'ISLAMIC_IND', 'REGION', 'SUB_REGION', 'SEGMENT',
+        *['SOLOPRENEUR'] if column_preset == 'Legacy/Client CSV' else [], 'TEAM', 'BM_NPS', 'FNB_NPS',
+        'Q13_IMPROVEMENT', 'PRODUCT_PEOPLE_PROCESS', 'PRODUCT_CHANNEL', 'TENDER', 'SME_SMME', 'CHANNELS',
+        *['Q14_1', 'Q14_2', 'Q16'] if column_preset == 'Legacy/Client CSV' else ['GQ14_1', 'GQ14_2', 'GQ16_1'],
+        'Q16A', 'Q16_1_A', 'Q16_1_B', 'Q16_1_C', 'Q16_1_D', 'Q16_1_E', 'Q16_1_F', 'Q16_1_G', 'Q16_1_H', 'Q16_2',
+        'BUSINESS_NAME', 'CUSTOMER_NAME', 'CUST_CNTCT_TEL_NO', 'CUST_CELL_NO', 'STAT_CDE', 'SUB_PROD_CDE',
+        'OPEN_DATE', 'PRI_SUB_SEG', 'PRIM_OFCR_IND', 'OFFICER_NAME', 'CUST_AGE', 'CUST_SEX_CDE', 'RACE_CDE',
+        'BRN_NAME', 'EMAIL_ADDR', 'LEAD_CREATE_DATE', 'UCN', *CHAN_COL_ORDER
+    ]
+    return df_out[[c for c in col_order if c in df_out.columns]], df_audit
 
 # ==========================================================================
 # ==========================================================================
@@ -2768,3 +3051,109 @@ with tab6:
                 finally:
                     if os.path.exists(tmp_path):
                         os.remove(tmp_path)
+
+# ==========================================================================
+# ==========================================================================
+# TAB 7: CATI VERBATIM PROCESSOR SUITE
+# ==========================================================================
+# ==========================================================================
+with tab7:
+    st.markdown("### 💬 CATI Verbatim Processor Suite")
+    st.markdown("Automated processing pipeline reproducing SPSS syntax for raw `.sav` datasets across Growth, Enterprise, and Public Sector.")
+    st.markdown("---")
+
+    with st.sidebar:
+        st.header("⚙️ CATI Settings")
+        enable_proofreading = st.checkbox("Smart sentence casing & typo correction", value=True, key="cati_proofread")
+        column_preset = st.radio("Output Column Preset", ["Legacy/Client CSV", "V3 (SPSS Syntax)"], index=0, key="cati_preset")
+        date_separator = st.selectbox("Date Delimiter in Output", ["/", "-"], index=0, key="cati_date_sep")
+
+    tab_growth, tab_enterprise, tab_pubsc = st.tabs(["📊 Growth / Business", "🏢 R10Mil / Enterprise", "🏛️ Public Sector / PUBSC"])
+
+    def render_processing_section(section_name, prefix_key, is_pubsc=False):
+        st.markdown(f"### Upload and Process: **{section_name}**")
+        uploaded_file = st.file_uploader(f"Upload Raw SPSS File (.sav) for {section_name}", type=["sav"], key=f"uploader_{prefix_key}")
+        
+        df_raw = None
+        if uploaded_file is not None:
+            with st.spinner(f"Reading SPSS file for {section_name}..."):
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp:
+                    tmp.write(uploaded_file.getbuffer())
+                    tmp_path = tmp.name
+                try:
+                    df_raw, meta = pyreadstat.read_sav(tmp_path)
+                    st.success(f"Successfully loaded {uploaded_file.name}")
+                except Exception as e:
+                    st.error(f"Error loading SPSS file: {e}")
+                finally:
+                    if os.path.exists(tmp_path): os.remove(tmp_path)
+                        
+        if df_raw is None:
+            st.info(f"👆 Please upload a raw `.sav` dataset above to begin processing **{section_name}**.")
+            return
+            
+        total_records = len(df_raw)
+        completed_mask = df_raw['V9999'].astype(str).str.strip().isin(['1', '1.0']) if 'V9999' in df_raw.columns else pd.Series([True]*total_records)
+        completed_records = int(completed_mask.sum())
+        
+        valid_dates = []
+        if 'STIME' in df_raw.columns:
+            for d_str in df_raw.loc[completed_mask, 'STIME'].dropna().astype(str).str.strip().str[:8].unique():
+                if len(d_str) == 8 and d_str.isdigit():
+                    try: valid_dates.append(datetime.strptime(d_str, '%Y%m%d').date())
+                    except: pass
+            min_date = max_date = min(valid_dates) if valid_dates else date.today()
+            if valid_dates: max_date = max(valid_dates)
+        else:
+            min_date = max_date = date.today()
+            
+        mc1, mc2, mc3, mc4 = st.columns(4)
+        mc1.markdown(f'<div class="metric-container"><div class="metric-label">Total Records</div><div class="metric-value">{total_records:,}</div></div>', unsafe_allow_html=True)
+        mc2.markdown(f'<div class="metric-container"><div class="metric-label">Completed</div><div class="metric-value">{completed_records:,}</div></div>', unsafe_allow_html=True)
+        mc3.markdown(f'<div class="metric-container"><div class="metric-label">Earliest Date</div><div class="metric-value" style="font-size: 1.3rem;">{min_date.strftime("%Y-%m-%d")}</div></div>', unsafe_allow_html=True)
+        mc4.markdown(f'<div class="metric-container"><div class="metric-label">Latest Date</div><div class="metric-value" style="font-size: 1.3rem;">{max_date.strftime("%Y-%m-%d")}</div></div>', unsafe_allow_html=True)
+            
+        st.write("")
+        dc1, dc2 = st.columns(2)
+        s_date = dc1.date_input("Start Date", value=min_date, min_value=min_date, max_value=max_date, key=f"start_{prefix_key}")
+        e_date = dc2.date_input("End Date", value=max_date, min_value=min_date, max_value=max_date, key=f"end_{prefix_key}")
+            
+        if s_date > e_date:
+            st.error("⚠️ Start Date cannot be after End Date.")
+            return
+            
+        df_transformed, df_audit = process_verbatims(df_raw=df_raw, start_date=s_date, end_date=e_date, date_sep=date_separator, column_preset=column_preset, enable_proofreading=enable_proofreading, is_pubsc=is_pubsc)
+        st.success(f"✅ Processed **{len(df_transformed):,}** completed interviews for **{section_name}**.")
+        
+        if df_transformed.empty:
+            st.warning("No records matched the selected date range.")
+            return
+            
+        edited_df = st.data_editor(df_transformed, num_rows="fixed", use_container_width=True, height=380, key=f"editor_{prefix_key}")
+        
+        date_str_file = e_date.strftime("%Y_%m_%d")
+        csv_bytes = edited_df.to_csv(sep='|', index=False, encoding='utf-8').encode('utf-8')
+        
+        sav_bytes = b""
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_sav: tmp_path = tmp_sav.name
+        try:
+            pyreadstat.write_sav(edited_df, tmp_path)
+            with open(tmp_path, "rb") as fp: sav_bytes = fp.read()
+        except: pass
+        finally:
+            if os.path.exists(tmp_path): os.remove(tmp_path)
+            
+        excel_buf = io.BytesIO()
+        with pd.ExcelWriter(excel_buf, engine='openpyxl') as writer:
+            edited_df.to_excel(writer, index=False, sheet_name='Verbatims')
+            if not df_audit.empty: df_audit.to_excel(writer, index=False, sheet_name='Audit_Log')
+        excel_bytes = excel_buf.getvalue()
+        
+        d1, d2, d3 = st.columns(3)
+        d1.download_button("📄 Pipe CSV (|)", data=csv_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.csv", mime="text/csv", use_container_width=True, key=f"dl_csv_{prefix_key}")
+        d2.download_button("💾 SPSS (.sav)", data=sav_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.sav", mime="application/x-spss-sav", use_container_width=True, key=f"dl_sav_{prefix_key}")
+        d3.download_button("📊 Excel (.xlsx)", data=excel_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, key=f"dl_xlsx_{prefix_key}")
+
+    with tab_growth: render_processing_section("Growth / Business", "Growth", is_pubsc=False)
+    with tab_enterprise: render_processing_section("R10Mil / Enterprise", "Enterprise", is_pubsc=False)
+    with tab_pubsc: render_processing_section("Public Sector / PUBSC", "PUBSC", is_pubsc=True)
