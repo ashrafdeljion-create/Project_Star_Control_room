@@ -110,15 +110,15 @@ with tab1:
 
     with col1:
         business_target = st.number_input(
-            "Business (Growth) Target", min_value=0, value=4700, step=50, key="bus_tgt_1"
+            "Business (Growth) Target", min_value=0, value=2250, step=10, key="bus_tgt_1"
         )
     with col2:
         enterprise_target = st.number_input(
-            "Enterprise (R10Mil) Target", min_value=0, value=1400, step=50, key="ent_tgt_1"
+            "Enterprise (R10Mil) Target", min_value=0, value=700, step=10, key="ent_tgt_1"
         )
     with col3:
         pubsc_target = st.number_input(
-            "PUBSC Target", min_value=0, value=500, step=50, key="pub_tgt_1"
+            "PUBSC Target", min_value=0, value=500, step=10, key="pub_tgt_1"
         )
 
     total_target_quota = business_target + enterprise_target + pubsc_target
@@ -131,26 +131,26 @@ with tab1:
 
     seg_cols = st.columns(4)
     with seg_cols[0]:
-        q_rom_r1m = st.number_input("R0M-R1M Quota", min_value=0, value=1600, step=25, key="q_r0_r1_1")
+        q_rom_r1m = st.number_input("R0M-R1M Quota", min_value=0, value=800, step=5, key="q_r0_r1_1")
     with seg_cols[1]:
-        q_r1m_r5m = st.number_input("R1M-R5M Quota", min_value=0, value=1100, step=25, key="q_r1_r5_1")
+        q_r1m_r5m = st.number_input("R1M-R5M Quota", min_value=0, value=500, step=5, key="q_r1_r5_1")
     with seg_cols[2]:
         q_r5m_r10m = st.number_input(
-            "R5M-R10M Quota", min_value=0, value=900, step=25, key="q_r5_r10_1"
+            "R5M-R10M Quota", min_value=0, value=450, step=5, key="q_r5_r10_1"
         )
     with seg_cols[3]:
         q_r10_r60m = st.number_input(
-            "R10-R60M Quota", min_value=0, value=1100, step=25, key="q_r10_r60_1"
+            "R10-R60M Quota", min_value=0, value=500, step=5, key="q_r10_r60_1"
         )
 
     seg_cols_2 = st.columns(2)
     with seg_cols_2[0]:
         q_r60_r150m = st.number_input(
-            "R60-R150M Quota", min_value=0, value=900, step=25, key="q_r60_r150_1"
+            "R60-R150M Quota", min_value=0, value=450, step=5, key="q_r60_r150_1"
         )
     with seg_cols_2[1]:
         q_r150m_plus = st.number_input(
-            "R150M+ Quota", min_value=0, value=500, step=25, key="q_r150_plus_1"
+            "R150M+ Quota", min_value=0, value250, step=5, key="q_r150_plus_1"
         )
 
     total_segment_quota = (
