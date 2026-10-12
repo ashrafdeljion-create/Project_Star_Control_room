@@ -90,6 +90,8 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
 # ==========================================================================
 # ==========================================================================
 with tab1:
+    st.markdown("### `[02 // CONTROL ROOM]` &nbsp;&nbsp;&nbsp; `SYS.READY // PIPELINE 2.2`")
+    st.markdown("Execute and monitor each section of the Project Star 911 market research data pipeline.")
     st.markdown("---")
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
@@ -162,7 +164,7 @@ with tab1:
 
     st.markdown("---")
 
-# SECTION 3: UPLOAD SPSS DATASETS (.sav)
+    # SECTION 3: UPLOAD SPSS DATASETS (.sav)
     st.markdown("### 📁 Upload Latest SPSS Datasets for Live Status Calculation")
     up_col1, up_col2, up_col3 = st.columns(3)
 
@@ -173,7 +175,6 @@ with tab1:
     with up_col3:
         file_pubw = st.file_uploader("Upload PUBSC (.sav)", type=["sav"], key="up_pub_1")
 
-    # 1. DEFINE THE FUNCTION FIRST
     def load_spss_data(uploaded_file):
         if uploaded_file is not None:
             try:
@@ -189,7 +190,6 @@ with tab1:
                 return None
         return None
 
-    # 2. THEN CALL IT AFTERWARDS
     df_grow = load_spss_data(file_grow)
     df_rmw = load_spss_data(file_rmw)
     df_pubw = load_spss_data(file_pubw)
@@ -223,7 +223,6 @@ with tab1:
 
     ach_r10_r60m = get_segment_achieved(df_rmw, ["r10m-r60m"])
 
-    # Adjusted totals: Business includes R10-R60M; Enterprise excludes it
     effective_achieved_growth = achieved_growth + ach_r10_r60m
     effective_achieved_rmw = max(0, achieved_rmw - ach_r10_r60m)
 
@@ -235,7 +234,41 @@ with tab1:
         else 0.0
     )
     
+    st.markdown("---")
+
+    # SECTION 3.5: FIELDWORK TIMELINE & SCHEDULE TRACKER
+    st.markdown("### ⏱️ Fieldwork Timeline & Schedule Tracker")
+    st.markdown("Adjust fieldwork start and end dates to monitor interview pace and schedule health:")
     
+    col_t1, col_t2 = st.columns(2)
+    with col_t1:
+        fieldwork_start_date = st.date_input("Fieldwork Start Date", value=date(2026, 1, 21), key="fw_start_date")
+    with col_t2:
+        fieldwork_end_date = st.date_input("Fieldwork End Date", value=date(2026, 5, 29), key="fw_end_date")
+
+    total_days_planned = max(1, (fieldwork_end_date - fieldwork_start_date).days)
+    today_dt = date.today()
+    days_elapsed = max(1, (today_dt - fieldwork_start_date).days)
+    days_remaining = max(0, (fieldwork_end_date - today_dt).days)
+
+    required_daily_rate = total_target_quota / total_days_planned if total_days_planned > 0 else 0
+    actual_daily_rate = total_achieved / days_elapsed if days_elapsed > 0 else 0
+    expected_interviews_to_date = required_daily_rate * days_elapsed
+    pace_variance = total_achieved - expected_interviews_to_date
+
+    if total_achieved >= total_target_quota:
+        schedule_status = "🟢 Target Achieved!"
+    elif actual_daily_rate >= required_daily_rate:
+        schedule_status = "🟢 On Track / Ahead"
+    else:
+        schedule_status = "🔴 Behind Schedule"
+
+    tc1, tc2, tc3, tc4 = st.columns(4)
+    tc1.metric("Planned Duration", f"{total_days_planned:,} Days", f"{days_remaining} Days Left")
+    tc2.metric("Required Pace", f"{required_daily_rate:.1f} int/day")
+    tc3.metric("Actual Pace", f"{actual_daily_rate:.1f} int/day", delta=f"{pace_variance:+,.0f} vs Expected")
+    tc4.metric("Schedule Status", schedule_status)
+
     st.markdown("---")
 
     # SECTION 4: EXECUTIVE SUMMARY OVERVIEW
@@ -283,22 +316,6 @@ with tab1:
 
     # SECTION 5: SEGMENT QUOTAS EXECUTIVE SUMMARY BREAKDOWN
     st.markdown("### 📊 Segment Quotas Executive Summary Breakdown")
-
-    def get_segment_achieved(target_df, segment_keywords):
-        count = 0
-        if target_df is not None and "V9999" in target_df.columns and "V44011" in target_df.columns:
-            str_val = target_df["V9999"].astype(str).str.lower()
-            completed = str_val.str.contains("continue", na=False)
-
-            matched_seg = pd.Series(False, index=target_df.index)
-            for kw in segment_keywords:
-                matched_seg = matched_seg | (
-                    target_df["V44011"]
-                    .astype(str)
-                    .str.contains(kw, case=False, na=False)
-                )
-            count = int((completed & matched_seg).sum())
-        return count
 
     ach_rom_r1m = get_segment_achieved(df_grow, ["r0m-r1m"])
     ach_r1m_r5m = get_segment_achieved(df_grow, ["r1m-r5m"])
