@@ -64,7 +64,7 @@ st.markdown(
 # Main title and subtitle displayed at the top of the application web page
 st.title("⭐ Project Star: One-Stop Operations Hub")
 st.markdown(
-    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, SME/ENT tables and Verbatim extractions."
+    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
 )
 
 # =========================================================================
@@ -90,6 +90,8 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
 # ==========================================================================
 # ==========================================================================
 with tab1:
+    st.markdown("### `[02 // CONTROL ROOM]` &nbsp;&nbsp;&nbsp; `SYS.READY // PIPELINE 2.2`")
+    st.markdown("Execute and monitor each section of the Project Star 911 market research data pipeline.")
     st.markdown("---")
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
@@ -752,7 +754,7 @@ with tab1:
     st.markdown("---")
     st.markdown("### 📥 Download PM Update Workbook")
 
-def style_excel_sheet(ws):
+    def style_excel_sheet(ws):
         teal_fill = PatternFill(start_color="005E5D", end_color="005E5D", fill_type="solid")
         teal_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
         teal_sub_fill = PatternFill(start_color="E0F2F1", end_color="E0F2F1", fill_type="solid")
@@ -774,7 +776,7 @@ def style_excel_sheet(ws):
         for r in range(2, ws.max_row + 1):
             val_col1 = ws.cell(row=r, column=1).value
             val_col2 = ws.cell(row=r, column=2).value
-            if val_col1 in ["R0m-R1m", "R10m-R60m"] or val_col2 in ["R0m-R1m", "R10m-R60m", "R1m-R5m", "R150m+", "Gauteng North", "Gauteng South and Central"]:
+            if val_col1 in ["R0m-R1m", "R10m-R60m", "NON-PROFIT ORGANISATION"] or val_col2 in ["R0m-R1m", "R10m-R60m", "R1m-R5m", "R150m+", "Gauteng North", "Gauteng South and Central"]:
                 header_rows.append(r)
 
         for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
@@ -809,7 +811,7 @@ def style_excel_sheet(ws):
                         max_len = len(val_str)
             ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
 
-def create_pm_workbook():
+    def create_pm_workbook():
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df_summary.to_excel(writer, sheet_name='Summary', index=False)
