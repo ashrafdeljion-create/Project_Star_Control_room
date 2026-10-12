@@ -3177,10 +3177,15 @@ with tab7:
             if not df_audit.empty: df_audit.to_excel(writer, index=False, sheet_name='Audit_Log')
         excel_bytes = excel_buf.getvalue()
         
-        d1, d2, d3 = st.columns(3)
+# Update columns from 3 to 4 to include the Audit Log
+        d1, d2, d3, d4 = st.columns(4)
         d1.download_button("📄 Pipe CSV (|)", data=csv_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.csv", mime="text/csv", use_container_width=True, key=f"dl_csv_{prefix_key}")
         d2.download_button("💾 SPSS (.sav)", data=sav_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.sav", mime="application/x-spss-sav", use_container_width=True, key=f"dl_sav_{prefix_key}")
         d3.download_button("📊 Excel (.xlsx)", data=excel_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, key=f"dl_xlsx_{prefix_key}")
+        
+        # Add the standalone Audit Log CSV download button
+        audit_csv_bytes = df_audit.to_csv(sep='|', index=False, encoding='utf-8').encode('utf-8') if not df_audit.empty else b"No corrections made."
+        d4.download_button("📝 Audit Log", data=audit_csv_bytes, file_name=f"{prefix_key}_AuditLog_{date_str_file}.csv", mime="text/csv", use_container_width=True, key=f"dl_audit_{prefix_key}")
 
     with tab_growth: render_processing_section("Growth / Business", "Growth", is_pubsc=False)
     with tab_enterprise: render_processing_section("R10Mil / Enterprise", "Enterprise", is_pubsc=False)
