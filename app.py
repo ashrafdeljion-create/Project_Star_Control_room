@@ -241,9 +241,18 @@ st.markdown(
     "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
 )
 
-st.markdown("---")
-st.markdown("## 🏠 Smart Home")
-st.caption("Click a module below to jump to the relevant dashboard section.")
+if "smart_home_page" not in st.session_state:
+    st.session_state.smart_home_page = "Home"
+
+module_names = [
+    "Project Status & Quotas Update",
+    "Weekly 911's Control Room",
+    "BM/RM NPS Portfolio Generator",
+    "Q11 Ratings & Reasons Extraction",
+    "NPS Yearly Dashboard",
+    "SME/ENT Tables",
+    "CATI Verbatim Processor",
+]
 
 home_cards = [
     ("📊", "Project Status & Quotas"),
@@ -255,88 +264,73 @@ home_cards = [
     ("💬", "CATI Verbatim Processor"),
 ]
 
-st.markdown(
-    """
-    <style>
-        .smart-home-card {
-            min-height: 150px;
-            width: 100%;
-            border: 1px solid #d9d2c6 !important;
-            border-radius: 14px !important;
-            background: linear-gradient(180deg, #f4fbf9 0%, #edf5f3 100%) !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-weight: 700;
-            font-size: 1.05rem;
-            color: #191916;
-            line-height: 1.25;
-            padding: 0.8rem 0.7rem;
-        }
-        .smart-home-card .icon {
-            font-size: 2.15rem;
-            margin-right: 0.6rem;
-            display: inline-block;
-            vertical-align: middle;
-        }
-        .smart-home-card .label {
-            display: inline-block;
-            vertical-align: middle;
-        }
-        div[data-testid="stButton"] > button {
-            background: linear-gradient(180deg, #f4fbf9 0%, #edf5f3 100%);
-            border: 1px solid #d9d2c6 !important;
-            border-radius: 14px !important;
-            color: #191916 !important;
-            height: 150px !important;
-            font-weight: 700 !important;
-            font-size: 1.05rem !important;
-            padding: 0.8rem 0.7rem !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
-            width: 100%;
-        }
-        div[data-testid="stButton"] > button:hover {
-            border-color: #008684 !important;
-            transform: translateY(-1px);
-            box-shadow: 0 8px 18px rgba(0,0,0,0.06);
-        }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+if st.session_state.smart_home_page == "Home":
+    st.markdown("---")
+    st.markdown("## 🏠 Smart Home")
+    st.caption("Click a module below to jump to the relevant dashboard section.")
 
-home_cols = st.columns(4)
-for idx, (icon, label) in enumerate(home_cards):
-    with home_cols[idx % 4]:
-        if st.button(
-            f"{icon} {label}",
-            key=f"home_nav_{idx}",
-            use_container_width=True,
-            help=f"Open {label}",
-        ):
-            components.html(
-                f"""
-                <script>
-                    try {{
-                        const tabs = window.parent.document.querySelectorAll('[role="tab"]');
-                        if (tabs && tabs[{idx}]) {{
-                            tabs[{idx}].click();
-                        }}
-                    }} catch (err) {{
-                        console.log('Smart home tab navigation failed:', err);
-                    }}
-                </script>
-                """,
-                height=0,
-            )
+    st.markdown(
+        """
+        <style>
+            .smart-home-card {
+                min-height: 150px;
+                width: 100%;
+                border: 1px solid #d9d2c6 !important;
+                border-radius: 14px !important;
+                background: linear-gradient(180deg, #f4fbf9 0%, #edf5f3 100%) !important;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                font-weight: 700;
+                font-size: 1.05rem;
+                color: #191916;
+                line-height: 1.25;
+                padding: 0.8rem 0.7rem;
+            }
+            div[data-testid="stButton"] > button {
+                background: linear-gradient(180deg, #f4fbf9 0%, #edf5f3 100%);
+                border: 1px solid #d9d2c6 !important;
+                border-radius: 14px !important;
+                color: #191916 !important;
+                height: 150px !important;
+                font-weight: 700 !important;
+                font-size: 1.05rem !important;
+                padding: 0.8rem 0.7rem !important;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+                width: 100%;
+            }
+            div[data-testid="stButton"] > button:hover {
+                border-color: #008684 !important;
+                transform: translateY(-1px);
+                box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-st.markdown("---")
+    home_cols = st.columns(4)
+    for idx, (icon, label) in enumerate(home_cards):
+        with home_cols[idx % 4]:
+            if st.button(f"{icon} {label}", key=f"home_nav_{idx}", use_container_width=True):
+                st.session_state.smart_home_page = module_names[idx]
+                st.rerun()
+
+    st.stop()
+
+st.sidebar.markdown("## 🧭 Navigation")
+if st.sidebar.button("🏠 Smart Home", key="nav_home_button"):
+    st.session_state.smart_home_page = "Home"
+    st.rerun()
+
+st.markdown("<style>[role='tablist']{display:none !important;}</style>", unsafe_allow_html=True)
 
 # =========================================================================
 # SECTION 3: DEFINING MAIN APP NAVIGATION TABS (7 Tabs Total)
 # =========================================================================
+# This keeps the full module content available while hiding the tab strip in the selected view.
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     [
         "📊 Project Status & Quotas Update",
@@ -349,7 +343,20 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     ]
 )
 
-
+selected_tab_index = module_names.index(st.session_state.smart_home_page) if st.session_state.smart_home_page in module_names else 0
+components.html(
+    f"""
+    <script>
+        setTimeout(() => {{
+            const tabs = [...document.querySelectorAll('[role="tab"]')];
+            if (tabs && tabs[{selected_tab_index}]) {{
+                tabs[{selected_tab_index}].click();
+            }}
+        }}, 100);
+    </script>
+    """,
+    height=0,
+)
 
 # ==========================================================================
 # ==========================================================================
