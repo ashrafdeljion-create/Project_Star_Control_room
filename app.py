@@ -325,7 +325,7 @@ with tab1:
         )
     with col3:
         pubsc_target = st.number_input(
-            "PUBSC Target", min_value=0, value=500, step=10, key="pub_tgt_1"
+            "PUBSC Target", min_value=0, value=250, step=10, key="pub_tgt_1"
         )
 
     total_target_quota = business_target + enterprise_target + pubsc_target
@@ -1030,6 +1030,8 @@ with tab1:
         ]
         if total_rows:
             styles.loc[total_rows, :] = "background-color: #d9d9d9; font-weight: bold"
+        if "TOTAL EXCL R10-R60MIL" in dataframe.index:
+            styles.loc["TOTAL EXCL R10-R60MIL", :] = "background-color: #d9d9d9; font-weight: bold"
         for total_column in ("Total", "TOTAL"):
             if total_column in dataframe.columns:
                 styles.loc[:, total_column] = "background-color: #d9d9d9; font-weight: bold"
@@ -1096,6 +1098,9 @@ with tab1:
                     is_lower_table = any(cell.row >= hr for hr in header_rows[1:]) if len(header_rows) > 1 else False
                     row_label = str(ws.cell(row=cell.row, column=1).value or "").upper()
                     if row_label.startswith("TOTAL"):
+                        cell.fill = PatternFill("solid", fgColor="D9D9D9")
+                        cell.font = Font(bold=True)
+                    if row_label == "TOTAL EXCL R10-R60MIL":
                         cell.fill = PatternFill("solid", fgColor="D9D9D9")
                         cell.font = Font(bold=True)
                     
