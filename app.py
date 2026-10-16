@@ -2,6 +2,7 @@
 # SECTION 1: IMPORTING PACKAGES & CONFIGURING PAGE LAYOUT
 # =========================================================================
 import io
+import hashlib
 import os
 import re
 import tempfile
@@ -18,6 +19,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 import pandas as pd
 import pyreadstat
 import streamlit as st
+from triple_p_classifier import OTHER_REVIEW, classify_case_description
 
 # Configures browser tab title, icon, and sets layout to wide mode
 st.set_page_config(
@@ -240,9 +242,31 @@ st.markdown(
     "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
 )
 
+# ============================================================================
+# SCRIPT PURPOSE
+# ============================================================================
+# This app acts as the Project Star operations control room for multiple
+# workstreams. It brings together quota tracking, weekly 911 processing,
+# BM/RM portfolio reporting, Q11 extraction logic, annual dashboard generation,
+# SME/ENT output workflows, and CATI verbatim processing in one central
+# interface. Each section is built as a separate Streamlit tab so team members
+# can run the relevant workflow without needing to switch tools or files.
+#
+# IMPORTANT FOR MAINTENANCE:
+# - Keep the data mapping logic aligned with the latest SPSS variable names.
+# - Review the quota and segmentation logic when business targets change.
+# - Re-test the download outputs after any changes to grouping, filters, or
+#   file naming conventions.
+# - When a new data file or wave is introduced, update both the upload logic
+#   and the region/segment mapping rules in the relevant tab.
+
 # =========================================================================
 # SECTION 3: DEFINING MAIN APP NAVIGATION TABS (7 Tabs Total)
 # =========================================================================
+# Each tab represents a distinct operational module. This tab structure keeps
+# the dashboard easy to navigate while maintaining separate logic for each
+# workflow. If a new module is added later, update both the tab list here and
+# the corresponding section below.
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     [
         "📊 Project Status & Quotas Update",
@@ -256,9 +280,23 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
 )
 
 # ==========================================================================
-# ==========================================================================
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
+# Purpose:
+# This tab acts as the live management dashboard for the overall project.
+# It allows operations teams to adjust quotas, load the latest .sav files,
+# measure progress against targets, and review regional / segment performance.
+#
+# Responsible for:
+# - Live target adjustment inputs for Business, Enterprise, and PUBSC.
+# - Uploading and validating the latest SPSS datasets.
+# - Calculating achieved interviews, projected pace, and outstanding quotas.
+# - Producing the PM-style Excel workbook for management updates.
+#
+# Typical updates:
+# - New quota targets or segment splits.
+# - Changes in fieldwork dates or reporting requirements.
+# - New mapping logic for region or business segment definitions.
 # ==========================================================================
 with tab1:
     st.markdown("---")
@@ -344,6 +382,16 @@ with tab1:
     with up_col3:
         file_pubw = st.file_uploader("Upload PUBSC (.sav)", type=["sav"], key="up_pub_1")
 
+    # ----------------------------------------------------------------------
+    # Helper function: load_spss_data
+    # ----------------------------------------------------------------------
+    # This function converts an uploaded .sav file into a Pandas DataFrame for
+    # processing. It writes the binary file to a temporary location so that
+    # pyreadstat can read it safely and return a usable table.
+    #
+    # Why it matters:
+    # All subsequent quota calculations rely on these imported datasets. If this
+    # function fails, the rest of the dashboard cannot calculate status.
     def load_spss_data(uploaded_file):
         if uploaded_file is not None:
             try:
@@ -363,6 +411,13 @@ with tab1:
     df_rmw = load_spss_data(file_rmw)
     df_pubw = load_spss_data(file_pubw)
 
+    # ----------------------------------------------------------------------
+    # Helper function: count_completions
+    # ----------------------------------------------------------------------
+    # Counts how many respondents in a dataset reached the completion marker.
+    # The code looks for the V9999 completion flag and treats values containing
+    # 'continue' as completed interviews. This is used as the base count for
+    # target achievement calculations.
     def count_completions(df):
         if df is not None and "V9999" in df.columns:
             str_val = df["V9999"].astype(str).str.lower()
@@ -374,6 +429,13 @@ with tab1:
     achieved_rmw = count_completions(df_rmw)
     achieved_pubw = count_completions(df_pubw)
 
+    # ----------------------------------------------------------------------
+    # Helper function: get_segment_achieved
+    # ----------------------------------------------------------------------
+    # Returns the number of completed respondents for a given segment keyword.
+    # This is used when business or enterprise segments are tracked by value in
+    # V44011 (segment variable). It filters both on completion and the relevant
+    # segment label so only valid completed interviews are counted.
     def get_segment_achieved(target_df, segment_keywords):
         count = 0
         if target_df is not None and "V9999" in target_df.columns and "V44011" in target_df.columns:
@@ -1026,9 +1088,23 @@ with tab1:
     )
 
 # ==========================================================================
-# ==========================================================================
 # TAB 2: WEEKLY 911'S CONTROL ROOM
 # ==========================================================================
+# Purpose:
+# This tab automates the 911 extraction workflow. It reads uploaded .sav files,
+# filters records to the required date window, enriches each record with
+# campaign metadata, and prepares output files for downstream priority review.
+#
+# Responsible for:
+# - Filtering to dynamic or custom date ranges.
+# - Converting raw SPSS records into client case outputs.
+# - Mapping business / regions / segments into the required fields.
+# - Producing NPS and reason-based CSV exports for operational teams.
+#
+# Typical updates:
+# - New campaign codes or ownership rules.
+# - Adjustments to bank lists, NPS scoring logic, or reason mapping.
+# - Changes to date windows or file naming conventions.
 # ==========================================================================
 with tab2:
     st.subheader("📅 Weekly Automated 911 extractions")
@@ -1059,6 +1135,16 @@ with tab2:
 
     st.markdown("---")
 
+    # ----------------------------------------------------------------------
+    # Function: run_pipeline
+    # ----------------------------------------------------------------------
+    # This is the main data-processing engine for the Weekly 911 workflow.
+    # It reads a raw .sav file, filters it by the date window, adds the required
+    # client case metadata, flags priority records, and exports four CSV outputs
+    # that are later used by operations teams for actioning.
+    #
+    # IMPORTANT: Any change in NPS logic, field renaming, or output schema must
+    # be mirrored here to keep the generated reports consistent.
     def run_pipeline(uploaded_file, section_choice):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
@@ -1174,33 +1260,8 @@ with tab2:
             if 'Q16' in df_filtered.columns:
                 df_filtered.loc[df_filtered['Q16'] == 1, 'Qualifier'] = "Priority"
 
-            case_desc_upper = df_filtered['CASE_DESCRIPTION'].fillna('').str.upper() if 'CASE_DESCRIPTION' in df_filtered.columns else pd.Series([""]*len(df_filtered))
-            people_keywords = ['BM', 'BUSINESS MANAGER', 'BUSINESS BANKERS', 'PRIVATE BANKER', 'RM', 'RELATIONSHIP MANAGER', 'STAFF', 'CLIENTS']
-            process_keywords = ['SYSTEM', 'PROCESS', 'SERVICE', 'DELAY', 'QUERY', 'ACCESS', 'APP']
-            product_keywords = ['FEE', 'CHARGES', 'LOAN', 'ACCOUNT', 'INVESTMENT', 'CARD']
-            none_keywords = ['NO IMPROVEMENT', 'NONE', 'SATISFIED', 'ALL GOOD', 'N/A']
-
-            def contains_keywords(text, kw_list):
-                return 1 if any(kw in text for kw in kw_list) else 0
-
-            df_filtered['People_1'] = case_desc_upper.apply(lambda x: contains_keywords(x, people_keywords))
-            df_filtered['PROCESS_1'] = case_desc_upper.apply(lambda x: contains_keywords(x, process_keywords))
-            df_filtered['PRODUCT_1'] = case_desc_upper.apply(lambda x: contains_keywords(x, product_keywords))
-            df_filtered['NONE_OVERRIDE'] = case_desc_upper.apply(lambda x: contains_keywords(x, none_keywords))
-
-            def apply_triple_p_logic(row):
-                if row.get('NONE_OVERRIDE') == 1: return "NONE"
-                p, pp, pr = row.get('PRODUCT_1') == 1, row.get('People_1') == 1, row.get('PROCESS_1') == 1
-                if pp and pr and p: return "ALL"
-                if p and pr: return "PRODUCT & PROCESS"
-                if p and pp: return "PRODUCT & PEOPLE"
-                if pp and pr: return "PEOPLE & PROCESS"
-                if p: return "PRODUCT ONLY"
-                if pr: return "PROCESS ONLY"
-                if pp: return "PEOPLE ONLY"
-                return ""
-
-            df_filtered['PRODUCT_PEOPLE_PROCESS'] = df_filtered.apply(apply_triple_p_logic, axis=1)
+            case_descriptions = df_filtered['CASE_DESCRIPTION'] if 'CASE_DESCRIPTION' in df_filtered.columns else pd.Series("", index=df_filtered.index)
+            df_filtered['PRODUCT_PEOPLE_PROCESS'] = case_descriptions.map(classify_case_description)
             df_filtered = df_filtered.sort_values(by='INTNR', ascending=True).copy()
 
             verbatim_cols = ['CASE_DESCRIPTION', 'FNB_NPS_OPEN_ENDED', 'RM_BM_NPS_OPEN_ENDED', 'WOULD_CONSIDER_SWITCH_TO', 'REASON']
@@ -1225,20 +1286,14 @@ with tab2:
             base_priority_data = df_priority[keep_columns].copy()
             run_date_file = today.strftime("%Y_%m_%d")
 
-            if section_choice == "Growth": prefix = "Business_Client_911"
-            elif section_choice == "R10Mil": prefix = "Enterprise_Client_911"
-            else: prefix = "PUBSC_Client_911"
-
-            f1_data = base_priority_data[(base_priority_data.get('FNB_NPS') == "NPS - Detractor") | (base_priority_data.get('RM_BM_NPS') == "NPS - Detractor")]
-            f2_data = f1_data.drop(columns=['PRODUCT_PEOPLE_PROCESS'], errors='ignore')
-            f3_data = base_priority_data
-            f4_data = base_priority_data.drop(columns=['PRODUCT_PEOPLE_PROCESS'], errors='ignore')
-
             return {
-                "f1": (f1_data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'), f"{prefix}_NPS_D_classification_{run_date_file}.csv"),
-                "f2": (f2_data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'), f"{prefix}_NPS_D_NO_classification_{run_date_file}.csv"),
-                "f3": (f3_data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'), f"{prefix}_NPS_D_S_classification_{run_date_file}.csv"),
-                "f4": (f4_data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'), f"{prefix}_NPS_D_S_NO_classification_{run_date_file}.csv"),
+                "data": base_priority_data,
+                "run_date": run_date_file,
+                "prefix": (
+                    "Business_Client_911" if section_choice == "Growth"
+                    else "Enterprise_Client_911" if section_choice == "R10Mil"
+                    else "PUBSC_Client_911"
+                ),
                 "count": len(df_filtered)
             }
         except Exception as e:
@@ -1247,6 +1302,86 @@ with tab2:
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
+
+    def build_pipeline_downloads(edited_data, prefix, run_date_file):
+        f1_data = edited_data[
+            (edited_data['FNB_NPS'] == "NPS - Detractor")
+            | (edited_data['RM_BM_NPS'] == "NPS - Detractor")
+        ]
+        f3_data = edited_data
+        review_data = edited_data[
+            edited_data['PRODUCT_PEOPLE_PROCESS'] == OTHER_REVIEW
+        ]
+
+        def csv_download(data, filename):
+            return (
+                data.to_csv(sep='|', index=False, encoding='utf-8-sig').encode('utf-8-sig'),
+                filename,
+            )
+
+        csv_bytes, csv_filename = csv_download(
+            edited_data, f"{prefix}_911_edited_{run_date_file}.csv"
+        )
+        audit_bytes, audit_filename = csv_download(
+            review_data, f"{prefix}_911_Audit_Log_{run_date_file}.csv"
+        )
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+            edited_data.to_excel(writer, index=False, sheet_name="911 Extraction")
+            review_data.to_excel(writer, index=False, sheet_name="Audit Log")
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_sav:
+            sav_path = tmp_sav.name
+        try:
+            pyreadstat.write_sav(edited_data, sav_path)
+            with open(sav_path, "rb") as sav_file:
+                sav_bytes = sav_file.read()
+        finally:
+            if os.path.exists(sav_path):
+                os.remove(sav_path)
+
+        return {
+            "f1": csv_download(f1_data, f"{prefix}_NPS_D_classification_{run_date_file}.csv"),
+            "f2": csv_download(f1_data.drop(columns=['PRODUCT_PEOPLE_PROCESS'], errors='ignore'), f"{prefix}_NPS_D_NO_classification_{run_date_file}.csv"),
+            "f3": csv_download(f3_data, f"{prefix}_NPS_D_S_classification_{run_date_file}.csv"),
+            "f4": csv_download(f3_data.drop(columns=['PRODUCT_PEOPLE_PROCESS'], errors='ignore'), f"{prefix}_NPS_D_S_NO_classification_{run_date_file}.csv"),
+            "csv": (csv_bytes, csv_filename),
+            "sav": (sav_bytes, f"{prefix}_911_edited_{run_date_file}.sav"),
+            "excel": (excel_buffer.getvalue(), f"{prefix}_911_edited_{run_date_file}.xlsx"),
+            "audit": (audit_bytes, audit_filename),
+            "review_count": len(review_data),
+        }
+
+    def render_pipeline_result(result, section_key):
+        st.success(f"Processed {result['count']} records! Edit the extracted rows before downloading.")
+        edited_data = st.data_editor(
+            result["data"],
+            num_rows="fixed",
+            width="stretch",
+            height=380,
+            key=f"911_editor_{section_key}",
+        )
+        downloads = build_pipeline_downloads(
+            edited_data, result["prefix"], result["run_date"]
+        )
+        st.caption(f"{downloads['review_count']} priority respondents flagged as OTHER - REVIEW. They remain in the extraction and are also included in the Audit Log.")
+        d1, d2, d3, d4 = st.columns(4)
+        d1.download_button("📄 Pipe CSV (|)", downloads['csv'][0], file_name=downloads['csv'][1], mime="text/csv", key=f"{section_key}_csv")
+        d2.download_button("💾 SPSS (.sav)", downloads['sav'][0], file_name=downloads['sav'][1], mime="application/x-spss-sav", key=f"{section_key}_sav")
+        d3.download_button("📊 Excel (.xlsx)", downloads['excel'][0], file_name=downloads['excel'][1], mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key=f"{section_key}_xlsx")
+        d4.download_button("📝 Audit Log", downloads['audit'][0], file_name=downloads['audit'][1], mime="text/csv", key=f"{section_key}_audit")
+        st.markdown("**Legacy 911 CSV outputs**")
+        d1, d2, d3, d4 = st.columns(4)
+        d1.download_button("📥 Output 1", downloads['f1'][0], file_name=downloads['f1'][1], mime="text/csv", key=f"{section_key}_out1")
+        d2.download_button("📥 Output 2", downloads['f2'][0], file_name=downloads['f2'][1], mime="text/csv", key=f"{section_key}_out2")
+        d3.download_button("📥 Output 3", downloads['f3'][0], file_name=downloads['f3'][1], mime="text/csv", key=f"{section_key}_out3")
+        d4.download_button("📥 Output 4", downloads['f4'][0], file_name=downloads['f4'][1], mime="text/csv", key=f"{section_key}_out4")
+
+    def uploaded_file_signature(uploaded_file):
+        return (
+            uploaded_file.name,
+            hashlib.sha256(uploaded_file.getvalue()).hexdigest(),
+        )
 
     st.subheader("⚡ Pipeline Execution Control Room")
     col1, col2, col3 = st.columns(3)
@@ -1261,14 +1396,17 @@ with tab2:
                 if file_growth is None:
                     st.error("Upload a SAV file first.")
                 else:
+                    st.session_state.pop("911_result_Growth", None)
+                    st.session_state.pop("911_editor_growth", None)
                     with st.spinner("Processing Growth..."):
                         res = run_pipeline(file_growth, "Growth")
                         if res:
-                            st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="g1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="g2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="g3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="g4")
+                            st.session_state["911_result_Growth"] = {
+                                **res, "source": uploaded_file_signature(file_growth)
+                            }
+            growth_result = st.session_state.get("911_result_Growth")
+            if file_growth is not None and growth_result and growth_result["source"] == uploaded_file_signature(file_growth):
+                render_pipeline_result(growth_result, "growth")
 
     with col2:
         with st.container(border=True):
@@ -1280,14 +1418,17 @@ with tab2:
                 if file_r10 is None:
                     st.error("Upload a SAV file first.")
                 else:
+                    st.session_state.pop("911_result_R10Mil", None)
+                    st.session_state.pop("911_editor_r10mil", None)
                     with st.spinner("Processing R10Mil..."):
                         res = run_pipeline(file_r10, "R10Mil")
                         if res:
-                            st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="r1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="r2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="r3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="r4")
+                            st.session_state["911_result_R10Mil"] = {
+                                **res, "source": uploaded_file_signature(file_r10)
+                            }
+            r10_result = st.session_state.get("911_result_R10Mil")
+            if file_r10 is not None and r10_result and r10_result["source"] == uploaded_file_signature(file_r10):
+                render_pipeline_result(r10_result, "r10mil")
 
     with col3:
         with st.container(border=True):
@@ -1299,19 +1440,31 @@ with tab2:
                 if file_pub is None:
                     st.error("Upload a SAV file first.")
                 else:
+                    st.session_state.pop("911_result_PUBSC", None)
+                    st.session_state.pop("911_editor_pubsc", None)
                     with st.spinner("Processing PUBSC..."):
                         res = run_pipeline(file_pub, "PUBSC")
                         if res:
-                            st.success(f"Processed {res['count']} records!")
-                            st.download_button("📥 Output 1", res['f1'][0], file_name=res['f1'][1], mime="text/csv", key="p1")
-                            st.download_button("📥 Output 2", res['f2'][0], file_name=res['f2'][1], mime="text/csv", key="p2")
-                            st.download_button("📥 Output 3", res['f3'][0], file_name=res['f3'][1], mime="text/csv", key="p3")
-                            st.download_button("📥 Output 4", res['f4'][0], file_name=res['f4'][1], mime="text/csv", key="p4")
+                            st.session_state["911_result_PUBSC"] = {
+                                **res, "source": uploaded_file_signature(file_pub)
+                            }
+            pubsc_result = st.session_state.get("911_result_PUBSC")
+            if file_pub is not None and pubsc_result and pubsc_result["source"] == uploaded_file_signature(file_pub):
+                render_pipeline_result(pubsc_result, "pubsc")
 
 # ==========================================================================
+# TAB 3: BM/RM NPS PORTFOLIO GENERATOR
 # ==========================================================================
-# TAB 3: BM/RM NPS PORTFOLIO GENERATOR (UPDATED FROM app_10.py)
-# ==========================================================================
+# Purpose:
+# This tab builds the portfolio-level NPS outputs used to assess business and
+# relationship manager performance. It reads the master SPSS file, applies the
+# selected wave filter, and produces portfolio dashboards in Excel format.
+#
+# Responsible for:
+# - Master dataset uploads.
+# - Portfolio filtering by wave or combined groupings.
+# - Business and RM/BM output generation.
+# - Downloadable dashboard/report files for internal sharing.
 # ==========================================================================
 with tab3:
     st.markdown("### 📈 BM/RM NPS Portfolio Generator")
@@ -1721,9 +1874,18 @@ with tab3:
                     )
 
 # ==========================================================================
-# ==========================================================================
 # TAB 4: Q11 RATINGS & REASONS EXTRACTION
 # ==========================================================================
+# Purpose:
+# This tab is responsible for extracting Q11 ratings and the related open-ended
+# improvement or reason data. It summarises performance by date, filters the
+# needed records, and exports clean Excel reports for further analysis.
+#
+# Responsible for:
+# - Date-window filtering.
+# - Uploading and cleaning Q11 SPSS sources.
+# - Extracting ratings, coded reasons, and verbal comments.
+# - Generating deliverable Excel outputs for stakeholder review.
 # ==========================================================================
 with tab4:
     st.markdown("### 📋 Q11 Ratings & Reasons Extraction Control Room")
@@ -1935,9 +2097,17 @@ with tab4:
         )
 
 # ==========================================================================
-# ==========================================================================
 # TAB 5: NPS YEARLY DASHBOARD GENERATOR
 # ==========================================================================
+# Purpose:
+# This tab creates the annual NPS dashboard based on the yearly SPSS input.
+# It transforms raw survey data into a cross-tabulated report that can be shared
+# with leadership and stakeholders as an annual view of customer sentiment.
+#
+# Responsible for:
+# - Reading the yearly data file.
+# - Building channel / product / satisfaction cross-tabs.
+# - Producing a single Excel dashboard output.
 # ==========================================================================
 with tab5:
     st.markdown("### 📅 NPS Yearly Dashboard Generator")
@@ -2553,9 +2723,17 @@ with tab5:
         )
 
 # ==========================================================================
-# ==========================================================================
 # TAB 6: SME/ENT TABLES GENERATOR
 # ==========================================================================
+# Purpose:
+# This tab prepares SME and ENT output tables for downstream reporting.
+# These tables help teams review sector-specific client data and operational
+# profiles in a structured, downloadable format.
+#
+# Responsible for:
+# - Uploading the SME/ENT dataset.
+# - Structuring output tables.
+# - Providing export-ready result files for team analysis.
 # ==========================================================================
 with tab6:
     st.markdown("### 📊 SME-ENT Tables Generator: R10MIL_GROWTH & PUBSC")
@@ -3265,9 +3443,18 @@ def process_verbatims(df_raw, start_date=None, end_date=None, date_sep='/', colu
     valid_cols = [c for c in col_order if c in df_out.columns]
     return df_out[valid_cols], df_audit
 # ==========================================================================
-# ==========================================================================
 # TAB 7: CATI VERBATIM PROCESSOR SUITE
 # ==========================================================================
+# Purpose:
+# This tab processes raw CATI verbatim responses and standardises the output
+# into a usable table for client-ready review. It applies proofreading,
+# cleanup, and output formatting rules to support a maintainable reporting flow.
+#
+# Responsible for:
+# - Uploading raw CATI .sav files.
+# - Standardising text, dates, and columns.
+# - Proofreading and improving response quality.
+# - Delivering cleaned output tables for downstream use.
 # ==========================================================================
 with tab7:
     st.markdown("### 💬 CATI Verbatim Processor Suite")
