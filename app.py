@@ -720,11 +720,52 @@ with tab1:
                 seg_name = "R1M-R5M"
             elif "r5m-r10" in v44:
                 seg_name = "R5M-R10M"
-            elif "r10m-r60m" in v44:
-                seg_name = "R10-R60M"
                 
             if seg_name and seg_name in bus_seg_matrix.index and mapped_reg in bus_seg_matrix.columns:
                 bus_seg_matrix.loc[seg_name, mapped_reg] += 1
+
+    def map_r10_region_to_business_region(raw_subregion, raw_region):
+        subregion = str(raw_subregion).strip().lower()
+        region = str(raw_region).strip().lower()
+        if "eastern cape" in subregion or "western cape" in subregion:
+            return "Cape"
+        if any(term in subregion for term in ("free state", "limpopo", "mpumalanga", "north west", "northern cape")):
+            return "Inland"
+        if "kzn" in subregion or "kwazulu" in subregion or "kwazulu" in region:
+            return "KwaZulu-Natal"
+        if any(term in subregion for term in ("gauteng east", "klipriver", "gauteng north", "south-west")):
+            return "Gauteng North"
+        if any(term in subregion for term in ("gauteng tshwane", "tshwane", "sandton", "midrand")):
+            return "Gauteng South Central"
+
+        normalized_region = region.replace("-", " ").replace("  ", " ")
+        if "northern cape" in normalized_region:
+            return "Inland"
+        if "cape" in normalized_region:
+            return "Cape"
+        if "north" in normalized_region:
+            return "Gauteng North"
+        if "south" in normalized_region and "central" in normalized_region:
+            return "Gauteng South Central"
+        if "inland" in normalized_region:
+            return "Inland"
+        if "kwazulu" in normalized_region:
+            return "KwaZulu-Natal"
+        return "Unknown"
+
+    if df_rmw is not None and {"V9999", "V13290", "V44011"}.issubset(df_rmw.columns):
+        completed_rmw = df_rmw[
+            df_rmw["V9999"].astype(str).str.lower().str.contains("continue", na=False)
+        ]
+        for _, row in completed_rmw.iterrows():
+            segment = str(row.get("V44011", "")).lower()
+            if "r10m-r60m" not in segment and "r10-r60m" not in segment:
+                continue
+            mapped_region = map_r10_region_to_business_region(
+                row.get("V13290", ""), row.get("V12290", "")
+            )
+            if mapped_region in standard_regions:
+                bus_seg_matrix.loc["R10-R60M", mapped_region] += 1
 
     bus_seg_matrix["Total"] = bus_seg_matrix[standard_regions].sum(axis=1)
     for seg in standard_segments:
@@ -1044,7 +1085,7 @@ with tab1:
         for r in range(2, ws.max_row + 1):
             val_col1 = ws.cell(row=r, column=1).value
             val_col2 = ws.cell(row=r, column=2).value
-            if val_col1 in ["R0m-R1m", "R10m-R60m", "NON-PROFIT ORGANISATION"] or val_col2 in ["R0m-R1m", "R10m-R60m", "R1m-R5m", "R150m+", "Gauteng North", "Gauteng South and Central"]:
+            if val_col1 in ["R0m-R1m", "R10m-R60m"] or val_col2 in ["R0m-R1m", "R10m-R60m", "R1m-R5m", "R150m+", "Gauteng North", "Gauteng South and Central"]:
                 header_rows.append(r)
 
         for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
