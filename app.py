@@ -317,7 +317,7 @@ with tab1:
 
     with col1:
         business_target = st.number_input(
-            "Business (Growth) Target", min_value=0, value=2250, step=10, key="bus_tgt_1"
+            "Business (Growth) Target", min_value=0, value=2350, step=10, key="bus_tgt_1"
         )
     with col2:
         enterprise_target = st.number_input(
@@ -340,14 +340,14 @@ with tab1:
     with seg_cols[0]:
         q_rom_r1m = st.number_input("R0M-R1M Quota", min_value=0, value=800, step=5, key="q_r0_r1_1")
     with seg_cols[1]:
-        q_r1m_r5m = st.number_input("R1M-R5M Quota", min_value=0, value=500, step=5, key="q_r1_r5_1")
+        q_r1m_r5m = st.number_input("R1M-R5M Quota", min_value=0, value=550, step=5, key="q_r1_r5_1")
     with seg_cols[2]:
         q_r5m_r10m = st.number_input(
             "R5M-R10M Quota", min_value=0, value=450, step=5, key="q_r5_r10_1"
         )
     with seg_cols[3]:
         q_r10_r60m = st.number_input(
-            "R10-R60M Quota", min_value=0, value=500, step=5, key="q_r10_r60_1"
+            "R10-R60M Quota", min_value=0, value=550, step=5, key="q_r10_r60_1"
         )
 
     seg_cols_2 = st.columns(2)
@@ -701,7 +701,7 @@ with tab1:
 
     standard_segments = ["R0M-R1M", "R1M-R5M", "R5M-R10M", "R10-R60M"]
     bus_seg_matrix = pd.DataFrame(0, index=standard_segments, columns=standard_regions + ["Total", "Quota", "Outstanding"])
-    bus_quotas = {"R0M-R1M": 1600, "R1M-R5M": 1100, "R5M-R10M": 900, "R10-R60M": 1100}
+    bus_quotas = {"R0M-R1M": 800, "R1M-R5M": 550, "R5M-R10M": 450, "R10-R60M": 550}
 
     if df_grow is not None and "V9999" in df_grow.columns and "V13290" in df_grow.columns and "V44011" in df_grow.columns:
         str_val = df_grow["V9999"].astype(str).str.lower()
