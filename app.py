@@ -724,34 +724,72 @@ with tab1:
             if seg_name and seg_name in bus_seg_matrix.index and mapped_reg in bus_seg_matrix.columns:
                 bus_seg_matrix.loc[seg_name, mapped_reg] += 1
 
-    def map_r10_region_to_business_region(raw_subregion, raw_region):
-        subregion = str(raw_subregion).strip().lower()
-        region = str(raw_region).strip().lower()
-        if "eastern cape" in subregion or "western cape" in subregion:
-            return "Cape"
-        if any(term in subregion for term in ("free state", "limpopo", "mpumalanga", "north west", "northern cape")):
-            return "Inland"
-        if "kzn" in subregion or "kwazulu" in subregion or "kwazulu" in region:
-            return "KwaZulu-Natal"
-        if any(term in subregion for term in ("gauteng east", "klipriver", "gauteng north", "south-west")):
-            return "Gauteng North"
-        if any(term in subregion for term in ("gauteng tshwane", "tshwane", "sandton", "midrand")):
-            return "Gauteng South Central"
+    def map_ent_subregion_and_region(row_sub, row_reg):
+        sub_str = str(row_sub).strip() if pd.notnull(row_sub) else ""
+        reg_str = str(row_reg).strip() if pd.notnull(row_reg) else ""
+        sub_upper = sub_str.upper()
 
-        normalized_region = region.replace("-", " ").replace("  ", " ")
-        if "northern cape" in normalized_region:
-            return "Inland"
-        if "cape" in normalized_region:
-            return "Cape"
-        if "north" in normalized_region:
-            return "Gauteng North"
-        if "south" in normalized_region and "central" in normalized_region:
-            return "Gauteng South Central"
-        if "inland" in normalized_region:
-            return "Inland"
-        if "kwazulu" in normalized_region:
-            return "KwaZulu-Natal"
-        return "Unknown"
+        if "EASTERN CAPE" in sub_upper:
+            return "Eastern Cape", "Cape"
+        elif "FREE STATE" in sub_upper:
+            return "Free State", "Inland"
+        elif "GAUTENG EAST" in sub_upper:
+            return "Gauteng East", "Gauteng-North"
+        elif "GAUTENG KLIPRIVER" in sub_upper:
+            return "Gauteng Klipriver", "Gauteng-North"
+        elif "GAUTENG NORTH" in sub_upper:
+            return "Gauteng North", "Gauteng-North"
+        elif "GAUTENG WEST" in sub_upper or "SOUTH-WEST" in sub_upper:
+            return "Gauteng South-West", "Gauteng-North"
+        elif "GAUTENG TSHWANE" in sub_upper:
+            return "Gauteng Tshwane", "Gauteng South and Central"
+        elif "GREATER SANDTON" in sub_upper:
+            return "Greater Sandton", "Gauteng South and Central"
+        elif "KZN COASTAL" in sub_upper:
+            return "KZN Coastal", "KwaZulu-Natal"
+        elif "KZN INLAND" in sub_upper:
+            return "KZN Inland", "KwaZulu-Natal"
+        elif "LIMPOPO" in sub_upper:
+            return "Limpopo", "Inland"
+        elif "MIDRAND" in sub_upper:
+            return "Midrand", "Gauteng South and Central"
+        elif "MPUMALANGA" in sub_upper:
+            return "Mpumalanga", "Inland"
+        elif "NORTH WEST" in sub_upper:
+            return "North West", "Inland"
+        elif "NORTHERN CAPE" in sub_upper:
+            return "Northern Cape", "Inland"
+        elif "WESTERN CAPE INLAND" in sub_upper:
+            return "Western Cape Inland", "Cape"
+        elif "WESTERN CAPE METRO" in sub_upper:
+            return "Western Cape Metro", "Cape"
+
+        return sub_str if sub_str else "Unknown", reg_str if reg_str else "Unknown"
+
+    def map_r10_region_to_business_region(raw_subregion, raw_region):
+        subregion = str(raw_subregion).strip().upper()
+        region = str(raw_region).strip()
+        enterprise_region = None
+        if "EASTERN CAPE" in subregion or "WESTERN CAPE" in subregion:
+            enterprise_region = "Cape"
+        elif any(term in subregion for term in ("FREE STATE", "LIMPOPO", "MPUMALANGA", "NORTH WEST", "NORTHERN CAPE")):
+            enterprise_region = "Inland"
+        elif "GAUTENG EAST" in subregion or "GAUTENG KLIPRIVER" in subregion or "GAUTENG NORTH" in subregion or "GAUTENG WEST" in subregion or "SOUTH-WEST" in subregion:
+            enterprise_region = "Gauteng-North"
+        elif "GAUTENG TSHWANE" in subregion or "GREATER SANDTON" in subregion or "MIDRAND" in subregion:
+            enterprise_region = "Gauteng South and Central"
+        elif "KZN COASTAL" in subregion or "KZN INLAND" in subregion:
+            enterprise_region = "KwaZulu-Natal"
+        elif region in ("Cape", "Gauteng South and Central", "Gauteng-North", "Inland", "KwaZulu-Natal"):
+            enterprise_region = region
+
+        return {
+            "Cape": "Cape",
+            "Gauteng-North": "Gauteng North",
+            "Gauteng South and Central": "Gauteng South Central",
+            "Inland": "Inland",
+            "KwaZulu-Natal": "KwaZulu-Natal",
+        }.get(enterprise_region, "Unknown")
 
     if df_rmw is not None and {"V9999", "V13290", "V44011"}.issubset(df_rmw.columns):
         completed_rmw = df_rmw[
@@ -826,48 +864,6 @@ with tab1:
     ]
 
     ent_regions = ["Cape", "Gauteng South and Central", "Gauteng-North", "Inland", "KwaZulu-Natal"]
-
-    def map_ent_subregion_and_region(row_sub, row_reg):
-        sub_str = str(row_sub).strip() if pd.notnull(row_sub) else ""
-        reg_str = str(row_reg).strip() if pd.notnull(row_reg) else ""
-        sub_upper = sub_str.upper()
-        
-        if "EASTERN CAPE" in sub_upper:
-            return "Eastern Cape", "Cape"
-        elif "FREE STATE" in sub_upper:
-            return "Free State", "Inland"
-        elif "GAUTENG EAST" in sub_upper:
-            return "Gauteng East", "Gauteng-North"
-        elif "GAUTENG KLIPRIVER" in sub_upper:
-            return "Gauteng Klipriver", "Gauteng-North"
-        elif "GAUTENG NORTH" in sub_upper:
-            return "Gauteng North", "Gauteng-North"
-        elif "GAUTENG WEST" in sub_upper or "SOUTH-WEST" in sub_upper:
-            return "Gauteng South-West", "Gauteng-North"
-        elif "GAUTENG TSHWANE" in sub_upper:
-            return "Gauteng Tshwane", "Gauteng South and Central"
-        elif "GREATER SANDTON" in sub_upper:
-            return "Greater Sandton", "Gauteng South and Central"
-        elif "KZN COASTAL" in sub_upper:
-            return "KZN Coastal", "KwaZulu-Natal"
-        elif "KZN INLAND" in sub_upper:
-            return "KZN Inland", "KwaZulu-Natal"
-        elif "LIMPOPO" in sub_upper:
-            return "Limpopo", "Inland"
-        elif "MIDRAND" in sub_upper:
-            return "Midrand", "Gauteng South and Central"
-        elif "MPUMALANGA" in sub_upper:
-            return "Mpumalanga", "Inland"
-        elif "NORTH WEST" in sub_upper:
-            return "North West", "Inland"
-        elif "NORTHERN CAPE" in sub_upper:
-            return "Northern Cape", "Inland"
-        elif "WESTERN CAPE INLAND" in sub_upper:
-            return "Western Cape Inland", "Cape"
-        elif "WESTERN CAPE METRO" in sub_upper:
-            return "Western Cape Metro", "Cape"
-            
-        return sub_str if sub_str else "Unknown", reg_str if reg_str else "Unknown"
 
     ent_reg_matrix = pd.DataFrame(0, index=ent_subregions, columns=ent_regions + ["Total"])
 
@@ -1037,7 +1033,12 @@ with tab1:
         for total_column in ("Total", "TOTAL"):
             if total_column in dataframe.columns:
                 styles.loc[:, total_column] = "background-color: #d9d9d9; font-weight: bold"
-        return dataframe.style.apply(lambda _: styles, axis=None)
+        numeric_columns = dataframe.select_dtypes(include="number").columns
+        return (
+            dataframe.style
+            .format("{:,.0f}", subset=numeric_columns)
+            .apply(lambda _: styles, axis=None)
+        )
 
     with sub_tab1:
         st.markdown("#### Business Regional Breakdown")
