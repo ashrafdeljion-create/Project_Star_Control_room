@@ -32,204 +32,31 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        :root {
-            --hub-ink: #191916;
-            --hub-muted: #655d50;
-            --hub-accent: #008684;
-            --hub-accent-soft: #e4f4f2;
-            --hub-highlight: #ef991b;
-            --hub-highlight-soft: #fff1d8;
-            --hub-border: #eadfcd;
-            --hub-surface: #ffffff;
+        /* Styles the main background container holding the navigation tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            ...
         }
-
-        html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .stApp {
-            background: #fffaf3;
-            color: var(--hub-ink);
-        }
-
-        .block-container {
-            padding-top: 2.2rem;
-            padding-bottom: 3rem;
-        }
-
-        [data-testid="stHeading"] h1 {
-            color: var(--hub-ink);
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .stMarkdown h3, .stMarkdown h4 {
-            color: var(--hub-ink);
-            font-weight: 600;
-        }
-
-        .stMarkdown h3 {
-            border-left: 3px solid var(--hub-highlight);
-            padding-left: 0.7rem;
-            margin-top: 1.6rem;
-        }
-
-        .stMarkdown p {
-            color: var(--hub-muted);
-        }
-
-        hr {
-            border: 0;
-            border-top: 1px solid var(--hub-border);
-            margin: 1.35rem 0;
-        }
-
-        [role="tablist"] {
-            gap: 0.35rem;
-            background: #edf5f3;
-            border: 1px solid var(--hub-border);
-            border-radius: 12px;
-            padding: 0.4rem;
-        }
-
-        [role="tab"] {
-            height: auto;
-            min-height: 2.75rem;
-            border-radius: 8px;
-            color: #425653;
-            font-weight: 600;
-            transition: background-color 160ms ease, color 160ms ease;
-        }
-
-        [role="tab"]:hover {
-            background: #d9ece8;
-            color: var(--hub-ink);
-        }
-
-        [role="tab"][aria-selected="true"] {
-            background: var(--hub-accent) !important;
-            color: #ffffff !important;
-        }
-
-        .react-aria-SelectionIndicator {
-            display: none;
-        }
-
-        div[data-testid="stMetric"] {
-            box-sizing: border-box;
-            min-height: 112px;
-            padding: 1rem 1.1rem;
-            background: var(--hub-surface);
-            border: 1px solid var(--hub-border);
-            border-left: 3px solid var(--hub-highlight);
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(42, 34, 20, 0.055);
-            transition: transform 160ms ease, box-shadow 160ms ease;
-        }
-
-        div[data-testid="stMetric"]:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 18px rgba(42, 34, 20, 0.11);
-        }
-
-        [data-testid="stMetricLabel"] {
-            color: var(--hub-muted);
-            font-weight: 600;
-        }
-
-        [data-testid="stMetricValue"] {
-            color: var(--hub-ink);
-            font-weight: 700;
-            font-size: 1.3rem !important;
-            line-height: 1.25;
-            white-space: normal !important;
-            overflow: visible !important;
-            text-overflow: clip !important;
-        }
-
-        [data-testid="stMetricValue"] > div {
-            white-space: normal !important;
-            overflow: visible !important;
-            text-overflow: clip !important;
-            overflow-wrap: anywhere;
-        }
-
-        [data-testid="stMetricValue"] p {
-            display: block;
-            width: 100%;
-            max-width: 100%;
-            white-space: normal !important;
-            overflow-wrap: normal;
-        }
-
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            border-color: var(--hub-border);
-            border-radius: 10px;
-            box-shadow: 0 3px 12px rgba(42, 34, 20, 0.045);
-        }
-
-        .stButton button {
-            border-radius: 8px;
-            font-weight: 600;
-            transition: transform 140ms ease, box-shadow 140ms ease;
-        }
-
-        .stButton button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 134, 132, 0.18);
-        }
-
-        [data-baseweb="input"] > div,
-        [data-baseweb="textarea"] > div,
-        [data-baseweb="select"] > div {
-            border-radius: 8px;
-            border-color: var(--hub-border);
-        }
-
-        [data-testid="stFileUploaderDropzone"] {
-            border: 1px dashed #a5c9c3;
-            border-radius: 10px;
-            background: #fffdf9;
-        }
-
-        @media (max-width: 720px) {
-            .block-container {
-                padding: 1.2rem 1rem 2rem;
-            }
-
-            [role="tablist"] {
-                gap: 0.15rem;
-                padding: 0.25rem;
-            }
-
-            [role="tab"] {
-                min-height: 2.5rem;
-                padding: 0.35rem 0.55rem;
-                font-size: 0.85rem;
-            }
-        }
-
+        
+        /* --- PASTE YOUR NEW CSS STYLES RIGHT HERE --- */
+        /* Added styles for Tab 7 Metric Cards */
         .metric-container {
-            background-color: var(--hub-surface);
+            background-color: #1a1e24;
             border-radius: 10px;
             padding: 16px 20px;
-            border: 1px solid var(--hub-border);
-            box-shadow: 0 3px 10px rgba(42, 34, 20, 0.055);
+            border: 1px solid #2d3748;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
-
         .metric-value {
             font-size: 1.8rem;
             font-weight: 700;
-            color: var(--hub-highlight);
+            color: #60a5fa;
         }
-
         .metric-label {
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--hub-muted);
+            color: #94a3b8;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
     </style>
 """,
@@ -242,31 +69,9 @@ st.markdown(
     "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
 )
 
-# ============================================================================
-# SCRIPT PURPOSE
-# ============================================================================
-# This app acts as the Project Star operations control room for multiple
-# workstreams. It brings together quota tracking, weekly 911 processing,
-# BM/RM portfolio reporting, Q11 extraction logic, annual dashboard generation,
-# SME/ENT output workflows, and CATI verbatim processing in one central
-# interface. Each section is built as a separate Streamlit tab so team members
-# can run the relevant workflow without needing to switch tools or files.
-#
-# IMPORTANT FOR MAINTENANCE:
-# - Keep the data mapping logic aligned with the latest SPSS variable names.
-# - Review the quota and segmentation logic when business targets change.
-# - Re-test the download outputs after any changes to grouping, filters, or
-#   file naming conventions.
-# - When a new data file or wave is introduced, update both the upload logic
-#   and the region/segment mapping rules in the relevant tab.
-
 # =========================================================================
 # SECTION 3: DEFINING MAIN APP NAVIGATION TABS (7 Tabs Total)
 # =========================================================================
-# Each tab represents a distinct operational module. This tab structure keeps
-# the dashboard easy to navigate while maintaining separate logic for each
-# workflow. If a new module is added later, update both the tab list here and
-# the corresponding section below.
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     [
         "📊 Project Status & Quotas Update",
@@ -279,24 +84,12 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
     ]
 )
 
+
+
+# ==========================================================================
 # ==========================================================================
 # TAB 1: PROJECT STATUS & QUOTAS UPDATE
 # ==========================================================================
-# Purpose:
-# This tab acts as the live management dashboard for the overall project.
-# It allows operations teams to adjust quotas, load the latest .sav files,
-# measure progress against targets, and review regional / segment performance.
-#
-# Responsible for:
-# - Live target adjustment inputs for Business, Enterprise, and PUBSC.
-# - Uploading and validating the latest SPSS datasets.
-# - Calculating achieved interviews, projected pace, and outstanding quotas.
-# - Producing the PM-style Excel workbook for management updates.
-#
-# Typical updates:
-# - New quota targets or segment splits.
-# - Changes in fieldwork dates or reporting requirements.
-# - New mapping logic for region or business segment definitions.
 # ==========================================================================
 with tab1:
     st.markdown("---")
@@ -382,16 +175,6 @@ with tab1:
     with up_col3:
         file_pubw = st.file_uploader("Upload PUBSC (.sav)", type=["sav"], key="up_pub_1")
 
-    # ----------------------------------------------------------------------
-    # Helper function: load_spss_data
-    # ----------------------------------------------------------------------
-    # This function converts an uploaded .sav file into a Pandas DataFrame for
-    # processing. It writes the binary file to a temporary location so that
-    # pyreadstat can read it safely and return a usable table.
-    #
-    # Why it matters:
-    # All subsequent quota calculations rely on these imported datasets. If this
-    # function fails, the rest of the dashboard cannot calculate status.
     def load_spss_data(uploaded_file):
         if uploaded_file is not None:
             try:
@@ -411,13 +194,6 @@ with tab1:
     df_rmw = load_spss_data(file_rmw)
     df_pubw = load_spss_data(file_pubw)
 
-    # ----------------------------------------------------------------------
-    # Helper function: count_completions
-    # ----------------------------------------------------------------------
-    # Counts how many respondents in a dataset reached the completion marker.
-    # The code looks for the V9999 completion flag and treats values containing
-    # 'continue' as completed interviews. This is used as the base count for
-    # target achievement calculations.
     def count_completions(df):
         if df is not None and "V9999" in df.columns:
             str_val = df["V9999"].astype(str).str.lower()
@@ -429,13 +205,6 @@ with tab1:
     achieved_rmw = count_completions(df_rmw)
     achieved_pubw = count_completions(df_pubw)
 
-    # ----------------------------------------------------------------------
-    # Helper function: get_segment_achieved
-    # ----------------------------------------------------------------------
-    # Returns the number of completed respondents for a given segment keyword.
-    # This is used when business or enterprise segments are tracked by value in
-    # V44011 (segment variable). It filters both on completion and the relevant
-    # segment label so only valid completed interviews are counted.
     def get_segment_achieved(target_df, segment_keywords):
         count = 0
         if target_df is not None and "V9999" in target_df.columns and "V44011" in target_df.columns:
@@ -1088,23 +857,9 @@ with tab1:
     )
 
 # ==========================================================================
+# ==========================================================================
 # TAB 2: WEEKLY 911'S CONTROL ROOM
 # ==========================================================================
-# Purpose:
-# This tab automates the 911 extraction workflow. It reads uploaded .sav files,
-# filters records to the required date window, enriches each record with
-# campaign metadata, and prepares output files for downstream priority review.
-#
-# Responsible for:
-# - Filtering to dynamic or custom date ranges.
-# - Converting raw SPSS records into client case outputs.
-# - Mapping business / regions / segments into the required fields.
-# - Producing NPS and reason-based CSV exports for operational teams.
-#
-# Typical updates:
-# - New campaign codes or ownership rules.
-# - Adjustments to bank lists, NPS scoring logic, or reason mapping.
-# - Changes to date windows or file naming conventions.
 # ==========================================================================
 with tab2:
     st.subheader("📅 Weekly Automated 911 extractions")
@@ -1135,16 +890,6 @@ with tab2:
 
     st.markdown("---")
 
-    # ----------------------------------------------------------------------
-    # Function: run_pipeline
-    # ----------------------------------------------------------------------
-    # This is the main data-processing engine for the Weekly 911 workflow.
-    # It reads a raw .sav file, filters it by the date window, adds the required
-    # client case metadata, flags priority records, and exports four CSV outputs
-    # that are later used by operations teams for actioning.
-    #
-    # IMPORTANT: Any change in NPS logic, field renaming, or output schema must
-    # be mirrored here to keep the generated reports consistent.
     def run_pipeline(uploaded_file, section_choice):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".sav") as tmp_file:
             tmp_file.write(uploaded_file.getvalue())
@@ -1285,7 +1030,6 @@ with tab2:
 
             base_priority_data = df_priority[keep_columns].copy()
             run_date_file = today.strftime("%Y_%m_%d")
-
             return {
                 "data": base_priority_data,
                 "run_date": run_date_file,
@@ -1402,7 +1146,8 @@ with tab2:
                         res = run_pipeline(file_growth, "Growth")
                         if res:
                             st.session_state["911_result_Growth"] = {
-                                **res, "source": uploaded_file_signature(file_growth)
+                                **res,
+                                "source": uploaded_file_signature(file_growth),
                             }
             growth_result = st.session_state.get("911_result_Growth")
             if file_growth is not None and growth_result and growth_result["source"] == uploaded_file_signature(file_growth):
@@ -1424,7 +1169,8 @@ with tab2:
                         res = run_pipeline(file_r10, "R10Mil")
                         if res:
                             st.session_state["911_result_R10Mil"] = {
-                                **res, "source": uploaded_file_signature(file_r10)
+                                **res,
+                                "source": uploaded_file_signature(file_r10),
                             }
             r10_result = st.session_state.get("911_result_R10Mil")
             if file_r10 is not None and r10_result and r10_result["source"] == uploaded_file_signature(file_r10):
@@ -1446,25 +1192,17 @@ with tab2:
                         res = run_pipeline(file_pub, "PUBSC")
                         if res:
                             st.session_state["911_result_PUBSC"] = {
-                                **res, "source": uploaded_file_signature(file_pub)
+                                **res,
+                                "source": uploaded_file_signature(file_pub),
                             }
             pubsc_result = st.session_state.get("911_result_PUBSC")
             if file_pub is not None and pubsc_result and pubsc_result["source"] == uploaded_file_signature(file_pub):
                 render_pipeline_result(pubsc_result, "pubsc")
 
 # ==========================================================================
-# TAB 3: BM/RM NPS PORTFOLIO GENERATOR
 # ==========================================================================
-# Purpose:
-# This tab builds the portfolio-level NPS outputs used to assess business and
-# relationship manager performance. It reads the master SPSS file, applies the
-# selected wave filter, and produces portfolio dashboards in Excel format.
-#
-# Responsible for:
-# - Master dataset uploads.
-# - Portfolio filtering by wave or combined groupings.
-# - Business and RM/BM output generation.
-# - Downloadable dashboard/report files for internal sharing.
+# TAB 3: BM/RM NPS PORTFOLIO GENERATOR (UPDATED FROM app_10.py)
+# ==========================================================================
 # ==========================================================================
 with tab3:
     st.markdown("### 📈 BM/RM NPS Portfolio Generator")
@@ -1874,18 +1612,9 @@ with tab3:
                     )
 
 # ==========================================================================
+# ==========================================================================
 # TAB 4: Q11 RATINGS & REASONS EXTRACTION
 # ==========================================================================
-# Purpose:
-# This tab is responsible for extracting Q11 ratings and the related open-ended
-# improvement or reason data. It summarises performance by date, filters the
-# needed records, and exports clean Excel reports for further analysis.
-#
-# Responsible for:
-# - Date-window filtering.
-# - Uploading and cleaning Q11 SPSS sources.
-# - Extracting ratings, coded reasons, and verbal comments.
-# - Generating deliverable Excel outputs for stakeholder review.
 # ==========================================================================
 with tab4:
     st.markdown("### 📋 Q11 Ratings & Reasons Extraction Control Room")
@@ -2097,17 +1826,9 @@ with tab4:
         )
 
 # ==========================================================================
+# ==========================================================================
 # TAB 5: NPS YEARLY DASHBOARD GENERATOR
 # ==========================================================================
-# Purpose:
-# This tab creates the annual NPS dashboard based on the yearly SPSS input.
-# It transforms raw survey data into a cross-tabulated report that can be shared
-# with leadership and stakeholders as an annual view of customer sentiment.
-#
-# Responsible for:
-# - Reading the yearly data file.
-# - Building channel / product / satisfaction cross-tabs.
-# - Producing a single Excel dashboard output.
 # ==========================================================================
 with tab5:
     st.markdown("### 📅 NPS Yearly Dashboard Generator")
@@ -2723,17 +2444,9 @@ with tab5:
         )
 
 # ==========================================================================
+# ==========================================================================
 # TAB 6: SME/ENT TABLES GENERATOR
 # ==========================================================================
-# Purpose:
-# This tab prepares SME and ENT output tables for downstream reporting.
-# These tables help teams review sector-specific client data and operational
-# profiles in a structured, downloadable format.
-#
-# Responsible for:
-# - Uploading the SME/ENT dataset.
-# - Structuring output tables.
-# - Providing export-ready result files for team analysis.
 # ==========================================================================
 with tab6:
     st.markdown("### 📊 SME-ENT Tables Generator: R10MIL_GROWTH & PUBSC")
@@ -3443,18 +3156,9 @@ def process_verbatims(df_raw, start_date=None, end_date=None, date_sep='/', colu
     valid_cols = [c for c in col_order if c in df_out.columns]
     return df_out[valid_cols], df_audit
 # ==========================================================================
+# ==========================================================================
 # TAB 7: CATI VERBATIM PROCESSOR SUITE
 # ==========================================================================
-# Purpose:
-# This tab processes raw CATI verbatim responses and standardises the output
-# into a usable table for client-ready review. It applies proofreading,
-# cleanup, and output formatting rules to support a maintainable reporting flow.
-#
-# Responsible for:
-# - Uploading raw CATI .sav files.
-# - Standardising text, dates, and columns.
-# - Proofreading and improving response quality.
-# - Delivering cleaned output tables for downstream use.
 # ==========================================================================
 with tab7:
     st.markdown("### 💬 CATI Verbatim Processor Suite")
