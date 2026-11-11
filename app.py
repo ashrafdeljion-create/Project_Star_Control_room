@@ -398,36 +398,6 @@ with tab1:
 
     total_target_quota = business_target + enterprise_target + pubsc_target
 
-    validation_issues = []
-    if total_target_quota <= 0:
-        validation_issues.append("Target quota total is zero; please update the targets.")
-    if total_segment_quota > 0 and abs(total_segment_quota - total_target_quota) > 0:
-        validation_issues.append(
-            "Segment-level quota total does not match the overall target total. Review the segment inputs."
-        )
-
-    if validation_issues:
-        st.session_state["hub_dashboard_state"] = "warning"
-        st.session_state["hub_validation_message"] = "⚠️ " + " ".join(validation_issues)
-        st.warning(st.session_state["hub_validation_message"])
-    else:
-        st.session_state["hub_dashboard_state"] = "ready"
-        st.session_state["hub_validation_message"] = "✅ Input validation passed: quota targets are complete and internally consistent."
-        st.success(st.session_state["hub_validation_message"])
-
-    summary_snapshot = pd.DataFrame(
-        {
-            "Module": ["Business (Growth)", "Enterprise (R10Mil)", "PUBSC"],
-            "Target": [business_target, enterprise_target, pubsc_target],
-            "Segment Total": [
-                q_rom_r1m + q_r1m_r5m + q_r5m_r10m + q_r10_r60m + q_r60_r150m + q_r150m_plus,
-                0,
-                0,
-            ],
-        }
-    )
-    st.dataframe(summary_snapshot, hide_index=True, use_container_width=True)
-
     st.markdown("---")
 
     # SECTION 2: SEGMENT-LEVEL QUOTA BREAKDOWN
@@ -466,6 +436,36 @@ with tab1:
         + q_r60_r150m
         + q_r150m_plus
     )
+
+    validation_issues = []
+    if total_target_quota <= 0:
+        validation_issues.append("Target quota total is zero; please update the targets.")
+    if total_segment_quota > 0 and abs(total_segment_quota - total_target_quota) > 0:
+        validation_issues.append(
+            "Segment-level quota total does not match the overall target total. Review the segment inputs."
+        )
+
+    if validation_issues:
+        st.session_state["hub_dashboard_state"] = "warning"
+        st.session_state["hub_validation_message"] = "⚠️ " + " ".join(validation_issues)
+        st.warning(st.session_state["hub_validation_message"])
+    else:
+        st.session_state["hub_dashboard_state"] = "ready"
+        st.session_state["hub_validation_message"] = "✅ Input validation passed: quota targets are complete and internally consistent."
+        st.success(st.session_state["hub_validation_message"])
+
+    summary_snapshot = pd.DataFrame(
+        {
+            "Module": ["Business (Growth)", "Enterprise (R10Mil)", "PUBSC"],
+            "Target": [business_target, enterprise_target, pubsc_target],
+            "Segment Total": [
+                q_rom_r1m + q_r1m_r5m + q_r5m_r10m + q_r10_r60m + q_r60_r150m + q_r150m_plus,
+                0,
+                0,
+            ],
+        }
+    )
+    st.dataframe(summary_snapshot, hide_index=True, use_container_width=True)
 
     st.markdown("---")
 
