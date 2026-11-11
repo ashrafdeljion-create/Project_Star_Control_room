@@ -3340,6 +3340,9 @@ COMMON_TYPOS = {
     r'\bCONTECTED\b': 'CONNECTED',
     r'\bTURNAROUD\b': 'TURNAROUND',
     r'\bPAYMANT\b': 'PAYMENT',
+    r'\bINCORPPARATE\b': 'INCORPORATE',
+    r'\bABNKING\b': 'BANKING',
+    r'\bTHE\s+SHOULD\b': 'THEY SHOULD',
     r'\bAPPLICATIONS?\b': 'APPLICATION',
     r'\bINCOMET\b': 'INCOME',
 }
@@ -3365,7 +3368,9 @@ def normalize_sentence_case(text):
         processed_words = []
         for idx, word in enumerate(words):
             clean_word = re.sub(r'[^a-zA-Z-]', '', word)
-            if clean_word.lower() in BANKING_ACRONYMS:
+            if clean_word.lower() == 'i':
+                word_fixed = re.sub(r'\bi\b', 'I', word, flags=re.IGNORECASE)
+            elif clean_word.lower() in BANKING_ACRONYMS:
                 word_fixed = word.upper()
             else:
                 word_fixed = word.capitalize() if idx == 0 else word.lower()
@@ -3494,10 +3499,11 @@ def process_verbatims(df_raw, start_date=None, end_date=None, date_sep='/', colu
         if enable_proofreading:
             for col_name in text_capture_columns:
                 if col_name in r_dict and r_dict[col_name] and isinstance(r_dict[col_name], str) and r_dict[col_name].strip():
-                    fixed_val, modified = proofread_text(r_dict[col_name])
+                    original_val = r_dict[col_name]
+                    fixed_val, modified = proofread_text(original_val)
                     if modified:
                         r_dict[col_name] = fixed_val
-                        audit_logs.append({'RUID': ruid_val, 'Column': col_name, 'Original_Text': r_dict[col_name], 'Corrected_Text': fixed_val})
+                        audit_logs.append({'RUID': ruid_val, 'Column': col_name, 'Original_Text': original_val, 'Corrected_Text': fixed_val})
         rows.append(r_dict)
         
     df_out = pd.DataFrame(rows)
