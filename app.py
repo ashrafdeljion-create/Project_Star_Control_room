@@ -285,7 +285,7 @@ def _build_hub_export_df(business_target, enterprise_target, pubsc_target, achie
 
 _ensure_hub_preferences()
 
-with st.container():
+with st.expander("⚡ Quick action centre", expanded=True):
     st.markdown("### 🚀 Ops Controls")
     col_ops_1, col_ops_2, col_ops_3 = st.columns([1.3, 1.5, 2.6])
 
@@ -309,6 +309,17 @@ with st.container():
         st.caption(
             "Operational add-ons: KPI validation, summary export, and reset controls built in a separate version without touching the original app logic."
         )
+
+st.markdown("### 📊 Executive dashboard snapshot")
+preview_cols = st.columns(4)
+with preview_cols[0]:
+    st.metric("Target quota", "2,350", "growth")
+with preview_cols[1]:
+    st.metric("Enterprise quota", "700", "r10m")
+with preview_cols[2]:
+    st.metric("PUBSC quota", "250", "pubsc")
+with preview_cols[3]:
+    st.metric("Status", "READY", "stable")
 
 # ============================================================================
 # SCRIPT PURPOSE
@@ -562,7 +573,18 @@ with tab1:
         if total_target_quota > 0
         else 0.0
     )
-    
+
+    st.markdown("### ⚡ Executive dashboard snapshot")
+    exec_cols = st.columns(4)
+    with exec_cols[0]:
+        st.metric("Total target", f"{total_target_quota:,.0f}", "quota")
+    with exec_cols[1]:
+        st.metric("Total achieved", f"{total_achieved:,.0f}", f"{overall_progress:.1f}% complete")
+    with exec_cols[2]:
+        st.metric("Outstanding", f"{total_outstanding:,.0f}", "remaining")
+    with exec_cols[3]:
+        st.metric("Status", "READY" if st.session_state.get("hub_dashboard_state") != "warning" else "WARNING", "live")
+
     st.markdown("---")
 
     # SECTION 3.5: FIELDWORK TIMELINE & SCHEDULE TRACKER
@@ -640,6 +662,15 @@ with tab1:
     }
     df_summary = pd.DataFrame(summary_data)
     st.dataframe(df_summary, use_container_width=True, hide_index=True)
+
+    st.markdown("### ✅ Data quality summary")
+    dq_cols = st.columns(3)
+    with dq_cols[0]:
+        st.info(f"Target balance: {total_target_quota:,.0f}")
+    with dq_cols[1]:
+        st.info(f"Current achieved: {total_achieved:,.0f}")
+    with dq_cols[2]:
+        st.info(f"Outstanding: {total_outstanding:,.0f}")
 
     export_df = _build_hub_export_df(
         business_target,
