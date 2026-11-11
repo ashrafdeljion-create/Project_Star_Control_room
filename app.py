@@ -237,10 +237,14 @@ st.markdown(
 )
 
 # Main title and subtitle displayed at the top of the application web page
-st.title("⭐ Project Star: One-Stop Operations Hub")
-st.markdown(
-    "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
-)
+with st.container(border=True):
+    st.title("⭐ Project Star Operations Hub")
+    st.markdown(
+        "Your one-stop command center for operations, reporting, and data-processing workflows."
+    )
+    st.caption(
+        f"Wave 22 · 2026  |  Updated {datetime.now().astimezone().strftime('%d %b %Y, %H:%M %z')}"
+    )
 
 # ---------------------------------------------------------------------------
 # ENHANCED OPERATIONAL CONTROLS (SAFE ADD-ONS ONLY)
@@ -248,7 +252,6 @@ st.markdown(
 # These helpers extend the dashboard without changing the original workflow logic.
 def _ensure_hub_preferences():
     defaults = {
-        "hub_export_csv": "Module,Target,Achieved,Progress %\n",
         "hub_validation_message": "",
         "hub_dashboard_state": "ready",
     }
@@ -272,6 +275,12 @@ def _build_hub_export_df(business_target, enterprise_target, pubsc_target, achie
                 int(achieved_pubw),
                 int(total_achieved),
             ],
+            "Outstanding": [
+                max(0, int(business_target) - int(achieved_growth)),
+                max(0, int(enterprise_target) - int(achieved_rmw)),
+                max(0, int(pubsc_target) - int(achieved_pubw)),
+                max(0, int(total_target_quota) - int(total_achieved)),
+            ],
             "Progress %": [
                 round((achieved_growth / business_target) * 100, 2) if business_target else 0.0,
                 round((achieved_rmw / enterprise_target) * 100, 2) if enterprise_target else 0.0,
@@ -283,43 +292,29 @@ def _build_hub_export_df(business_target, enterprise_target, pubsc_target, achie
     return export_df
 
 
+def _build_hub_excel_report(summary_df, segment_df, dataset_status_df):
+    report_buffer = io.BytesIO()
+    with pd.ExcelWriter(report_buffer, engine="openpyxl") as writer:
+        summary_df.to_excel(writer, index=False, sheet_name="Executive Summary")
+        segment_df.to_excel(writer, index=False, sheet_name="Segment Quotas")
+        dataset_status_df.to_excel(writer, index=False, sheet_name="Data Quality")
+
+        for worksheet in writer.sheets.values():
+            worksheet.freeze_panes = "A2"
+            worksheet.auto_filter.ref = worksheet.dimensions
+            for column_cells in worksheet.columns:
+                max_length = max(
+                    (len(str(cell.value)) for cell in column_cells if cell.value is not None),
+                    default=0,
+                )
+                worksheet.column_dimensions[column_cells[0].column_letter].width = min(
+                    max(max_length + 2, 12), 36
+                )
+
+    return report_buffer.getvalue()
+
+
 _ensure_hub_preferences()
-
-with st.expander("⚡ Quick action centre", expanded=True):
-    st.markdown("### 🚀 Ops Controls")
-    col_ops_1, col_ops_2, col_ops_3 = st.columns([1.3, 1.5, 2.6])
-
-    with col_ops_1:
-        if st.button("Reset dashboard state", key="hub_reset_dashboard"):
-            st.session_state["hub_export_csv"] = "Module,Target,Achieved,Progress %\n"
-            st.session_state["hub_validation_message"] = ""
-            st.session_state["hub_dashboard_state"] = "ready"
-            st.rerun()
-
-    with col_ops_2:
-        st.download_button(
-            label="Download summary CSV",
-            data=st.session_state.get("hub_export_csv", "Module,Target,Achieved,Progress %\n"),
-            file_name="project_star_summary.csv",
-            mime="text/csv",
-            key="hub_download_summary",
-        )
-
-    with col_ops_3:
-        st.caption(
-            "Operational add-ons: KPI validation, summary export, and reset controls built in a separate version without touching the original app logic."
-        )
-
-st.markdown("### 📊 Executive dashboard snapshot")
-preview_cols = st.columns(4)
-with preview_cols[0]:
-    st.metric("Target quota", "2,350", "growth")
-with preview_cols[1]:
-    st.metric("Enterprise quota", "700", "r10m")
-with preview_cols[2]:
-    st.metric("PUBSC quota", "250", "pubsc")
-with preview_cols[3]:
-    st.metric("Status", "READY", "stable")
 
 # ============================================================================
 # SCRIPT PURPOSE
@@ -378,17 +373,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
 # - New mapping logic for region or business segment definitions.
 # ==========================================================================
 with tab1:
-    st.markdown("---")
-
-    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-    col_m1.metric("Pipeline Status", "IDLE / READY", "Stable")
-    col_m2.metric("Active Wave", "Wave 22", "2026")
-    col_m3.metric("Modules Loaded", "3 / 3", "Growth, R10Mil, PUBSC")
-    col_m4.metric("Environment", "Cloud Control Room", "Secure")
-
-    st.markdown("---")
-    st.markdown("### 📊 Live Status Calculation & Quota Tracker")
-    st.markdown("---")
+    st.header("Live status and quota tracker", icon=":material/monitoring:")
 
     # SECTION 1: LIVE QUOTA TARGET ADJUSTMENTS
     st.markdown("### 🎯 Live Quota Target Adjustments")
@@ -448,35 +433,18 @@ with tab1:
         + q_r150m_plus
     )
 
-    validation_issues = []
     if total_target_quota <= 0:
-        validation_issues.append("Target quota total is zero; please update the targets.")
-    if total_segment_quota > 0 and abs(total_segment_quota - total_target_quota) > 0:
-        validation_issues.append(
-            "Segment-level quota total does not match the overall target total. Review the segment inputs."
-        )
-
-    if validation_issues:
         st.session_state["hub_dashboard_state"] = "warning"
-        st.session_state["hub_validation_message"] = "⚠️ " + " ".join(validation_issues)
+        st.session_state["hub_validation_message"] = (
+            "At least one module target must be greater than zero."
+        )
         st.warning(st.session_state["hub_validation_message"])
     else:
         st.session_state["hub_dashboard_state"] = "ready"
-        st.session_state["hub_validation_message"] = "✅ Input validation passed: quota targets are complete and internally consistent."
+        st.session_state["hub_validation_message"] = (
+            "Quota targets are valid. Segment quotas are tracked separately and are not assumed to equal module totals."
+        )
         st.success(st.session_state["hub_validation_message"])
-
-    summary_snapshot = pd.DataFrame(
-        {
-            "Module": ["Business (Growth)", "Enterprise (R10Mil)", "PUBSC"],
-            "Target": [business_target, enterprise_target, pubsc_target],
-            "Segment Total": [
-                q_rom_r1m + q_r1m_r5m + q_r5m_r10m + q_r10_r60m + q_r60_r150m + q_r150m_plus,
-                0,
-                0,
-            ],
-        }
-    )
-    st.dataframe(summary_snapshot, hide_index=True, use_container_width=True)
 
     st.markdown("---")
 
@@ -538,6 +506,37 @@ with tab1:
     achieved_rmw = count_completions(df_rmw)
     achieved_pubw = count_completions(df_pubw)
 
+    dataset_status_rows = []
+    for module_name, uploaded_file, module_df, completed_count in [
+        ("Business (Growth)", file_grow, df_grow, achieved_growth),
+        ("Enterprise (R10Mil)", file_rmw, df_rmw, achieved_rmw),
+        ("PUBSC", file_pubw, df_pubw, achieved_pubw),
+    ]:
+        if uploaded_file is None:
+            load_status = "Not uploaded"
+        elif module_df is None:
+            load_status = "Read failed"
+        elif "V9999" not in module_df.columns:
+            load_status = "Missing V9999 completion field"
+        else:
+            load_status = "Ready"
+
+        dataset_status_rows.append(
+            {
+                "Module": module_name,
+                "Source file": uploaded_file.name if uploaded_file is not None else "—",
+                "Status": load_status,
+                "Rows": len(module_df) if module_df is not None else 0,
+                "Completed": completed_count,
+            }
+        )
+
+    dataset_status_df = pd.DataFrame(dataset_status_rows)
+    ready_dataset_count = int((dataset_status_df["Status"] == "Ready").sum())
+    schema_issues = dataset_status_df[
+        dataset_status_df["Status"] == "Missing V9999 completion field"
+    ]
+
     # ----------------------------------------------------------------------
     # Helper function: get_segment_achieved
     # ----------------------------------------------------------------------
@@ -574,16 +573,44 @@ with tab1:
         else 0.0
     )
 
-    st.markdown("### ⚡ Executive dashboard snapshot")
-    exec_cols = st.columns(4)
-    with exec_cols[0]:
-        st.metric("Total target", f"{total_target_quota:,.0f}", "quota")
-    with exec_cols[1]:
-        st.metric("Total achieved", f"{total_achieved:,.0f}", f"{overall_progress:.1f}% complete")
-    with exec_cols[2]:
-        st.metric("Outstanding", f"{total_outstanding:,.0f}", "remaining")
-    with exec_cols[3]:
-        st.metric("Status", "READY" if st.session_state.get("hub_dashboard_state") != "warning" else "WARNING", "live")
+    if total_target_quota <= 0:
+        dashboard_status = "Target needed"
+    elif not schema_issues.empty:
+        dashboard_status = "Check uploaded data"
+    elif ready_dataset_count == 3:
+        dashboard_status = "All data loaded"
+    elif ready_dataset_count > 0:
+        dashboard_status = "Partially loaded"
+    else:
+        dashboard_status = "Awaiting uploads"
+
+    st.markdown("### Executive overview")
+    with st.container(border=True):
+        exec_cols = st.columns(4)
+        exec_cols[0].metric("Total target", f"{total_target_quota:,.0f}")
+        exec_cols[1].metric(
+            "Completed interviews",
+            f"{total_achieved:,.0f}",
+            f"{overall_progress:.1f}% of target",
+        )
+        exec_cols[2].metric("Outstanding", f"{total_outstanding:,.0f}")
+        exec_cols[3].metric("Data status", dashboard_status)
+        st.progress(
+            min(max(overall_progress / 100, 0.0), 1.0),
+            text=f"Overall quota completion · {overall_progress:.1f}%",
+        )
+
+    with st.expander("Data upload and quality checks", expanded=False):
+        st.dataframe(dataset_status_df, hide_index=True)
+        if not schema_issues.empty:
+            st.warning(
+                "Some uploaded files do not contain the V9999 completion field. "
+                "Their completed-interview counts are reported as zero."
+            )
+        elif ready_dataset_count == 0:
+            st.caption("Upload one or more SPSS files above to populate live completion metrics.")
+        elif ready_dataset_count < 3:
+            st.caption(f"{ready_dataset_count} of 3 module files are ready.")
 
     st.markdown("---")
 
@@ -620,24 +647,7 @@ with tab1:
     tc3.metric("Actual Pace", f"{actual_daily_rate:.1f} int/day", delta=f"{pace_variance:+,.0f} vs Expected")
     tc4.metric("Schedule Status", schedule_status)
 
-    st.markdown("---")
-
-    # SECTION 4: EXECUTIVE SUMMARY OVERVIEW
-    st.markdown("### 📋 Executive Summary Overview")
-
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.metric(label="Total Target Quota", value=f"{total_target_quota:,.0f}")
-    with m2:
-        st.metric(
-            label="Total Achieved",
-            value=f"{total_achieved:,.0f}",
-            delta=f"{overall_progress:.1f}% Complete",
-        )
-    with m3:
-        st.metric(label="Total Outstanding", value=f"{total_outstanding:,.0f}")
-    with m4:
-        st.metric(label="Overall Progress", value=f"{overall_progress:.1f}%")
+    st.markdown("### Module performance")
 
     summary_data = {
         "Segment": ["Business", "Enterprise", "PUBSC", "Total"],
@@ -661,16 +671,7 @@ with tab1:
         ],
     }
     df_summary = pd.DataFrame(summary_data)
-    st.dataframe(df_summary, use_container_width=True, hide_index=True)
-
-    st.markdown("### ✅ Data quality summary")
-    dq_cols = st.columns(3)
-    with dq_cols[0]:
-        st.info(f"Target balance: {total_target_quota:,.0f}")
-    with dq_cols[1]:
-        st.info(f"Current achieved: {total_achieved:,.0f}")
-    with dq_cols[2]:
-        st.info(f"Outstanding: {total_outstanding:,.0f}")
+    st.dataframe(df_summary, hide_index=True)
 
     export_df = _build_hub_export_df(
         business_target,
@@ -682,7 +683,38 @@ with tab1:
         total_target_quota,
         total_achieved,
     )
-    st.session_state["hub_export_csv"] = export_df.to_csv(index=False)
+
+    st.markdown("### Quota progress by module")
+    chart_options = ["Achieved", "Target", "Outstanding"]
+    selected_chart_metric = st.selectbox(
+        "Compare modules by",
+        options=chart_options,
+        key="hub_module_chart_metric",
+    )
+    module_chart_df = export_df.iloc[:3][["Module", selected_chart_metric]].rename(
+        columns={selected_chart_metric: "Interview count"}
+    )
+    if ready_dataset_count == 0 and selected_chart_metric == "Achieved":
+        st.info("Upload an SPSS dataset above to display achieved-interview comparisons.")
+    else:
+        st.bar_chart(
+            module_chart_df,
+            x="Module",
+            y="Interview count",
+            horizontal=True,
+        )
+
+    progress_cols = st.columns(3)
+    for column, row in zip(progress_cols, export_df.iloc[:3].to_dict("records")):
+        target = row["Target"]
+        achieved = row["Achieved"]
+        progress_fraction = min(achieved / target, 1.0) if target > 0 else 0.0
+        with column:
+            st.markdown(f"**{row['Module']}**")
+            st.progress(
+                progress_fraction,
+                text=f"{achieved:,.0f} of {target:,.0f} · {row['Progress %']:.1f}%",
+            )
 
     st.markdown("---")
 
@@ -747,7 +779,72 @@ with tab1:
     }
 
     df_seg_breakdown = pd.DataFrame(seg_breakdown_data)
-    st.dataframe(df_seg_breakdown, use_container_width=True, hide_index=True)
+    st.dataframe(df_seg_breakdown, hide_index=True)
+
+    st.markdown("### Segment quota comparison")
+    segment_options = df_seg_breakdown.loc[
+        df_seg_breakdown["Segment"] != "Total", "Segment"
+    ].tolist()
+    selected_segments = st.multiselect(
+        "Show segments",
+        options=segment_options,
+        default=segment_options,
+        key="hub_segment_chart_filter",
+    )
+    segment_chart_metric = st.selectbox(
+        "Compare segment values",
+        options=["TOTAL Target", "TOTAL Achieved", "TOTAL Outstanding"],
+        key="hub_segment_chart_metric",
+    )
+    if not selected_segments:
+        st.caption("Select at least one segment to display the comparison chart.")
+    elif ready_dataset_count == 0 and segment_chart_metric == "TOTAL Achieved":
+        st.info("Upload an SPSS dataset above to display achieved-interview comparisons.")
+    else:
+        segment_chart_df = df_seg_breakdown.loc[
+            df_seg_breakdown["Segment"].isin(selected_segments),
+            ["Segment", segment_chart_metric],
+        ].rename(columns={segment_chart_metric: "Interview count"})
+        st.bar_chart(
+            segment_chart_df,
+            x="Segment",
+            y="Interview count",
+            horizontal=True,
+        )
+
+    with st.container(border=True):
+        st.subheader("Export this dashboard")
+        st.caption(
+            "The Excel report contains executive totals, segment quotas, and a file-readiness summary. Uploaded respondent-level data is not included."
+        )
+        export_cols = st.columns(3)
+        report_date = date.today().strftime("%Y%m%d")
+        with export_cols[0]:
+            st.download_button(
+                "Download executive summary CSV",
+                data=export_df.to_csv(index=False).encode("utf-8-sig"),
+                file_name=f"project_star_summary_{report_date}.csv",
+                mime="text/csv",
+                key="hub_download_summary_csv",
+            )
+        with export_cols[1]:
+            st.download_button(
+                "Download segment quotas CSV",
+                data=df_seg_breakdown.to_csv(index=False).encode("utf-8-sig"),
+                file_name=f"project_star_segments_{report_date}.csv",
+                mime="text/csv",
+                key="hub_download_segments_csv",
+            )
+        with export_cols[2]:
+            st.download_button(
+                "Download full Excel report",
+                data=_build_hub_excel_report(
+                    export_df, df_seg_breakdown, dataset_status_df
+                ),
+                file_name=f"project_star_report_{report_date}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="hub_download_report_xlsx",
+            )
 
     st.markdown("---")
 
@@ -1186,23 +1283,23 @@ with tab1:
 
     with sub_tab1:
         st.markdown("#### Business Regional Breakdown")
-        st.dataframe(style_total_rows_and_columns(bus_reg_matrix), use_container_width=True)
+        st.dataframe(style_total_rows_and_columns(bus_reg_matrix), width="stretch")
         st.markdown("#### Business Segment Breakdown Matrix (Quota & Outstanding)")
-        st.dataframe(style_total_rows_and_columns(bus_seg_matrix), use_container_width=True)
+        st.dataframe(style_total_rows_and_columns(bus_seg_matrix), width="stretch")
         st.markdown("#### Business Regional vs. Segments Crosstab (Sub-regions as Rows, Segments as Columns)")
-        st.dataframe(style_total_rows_and_columns(bus_reg_seg_crosstab), use_container_width=True)
+        st.dataframe(style_total_rows_and_columns(bus_reg_seg_crosstab), width="stretch")
 
     with sub_tab2:
         st.markdown("#### Enterprise Regional Breakdown")
-        st.dataframe(style_total_rows_and_columns(ent_reg_matrix), use_container_width=True)
+        st.dataframe(style_total_rows_and_columns(ent_reg_matrix), width="stretch")
         st.markdown("#### Enterprise Segment Breakdown Matrix (Quota & Outstanding)")
-        st.dataframe(style_total_rows_and_columns(ent_seg_matrix), use_container_width=True)
+        st.dataframe(style_total_rows_and_columns(ent_seg_matrix), width="stretch")
         st.markdown("#### Enterprise Regional vs. Segments Crosstab (Sub-regions as Rows, Segments as Columns)")
-        st.dataframe(style_total_rows_and_columns(ent_reg_seg_crosstab), use_container_width=True)
+        st.dataframe(style_total_rows_and_columns(ent_reg_seg_crosstab), width="stretch")
 
     with sub_tab3:
         st.markdown("#### Public Sector (PUBSC) Regional vs. Sector Crosstab")
-        st.dataframe(pubsc_crosstab, use_container_width=True)
+        st.dataframe(pubsc_crosstab, width="stretch")
 
     # EXCEL WORKBOOK GENERATION
     st.markdown("---")
@@ -1607,7 +1704,7 @@ with tab2:
             st.caption("Target: Business Client Pipeline")
             file_growth = st.file_uploader("Upload GROW SAV (.sav)", type=["sav"], key="growth_file")
             
-            if st.button("▶ Run Growth Stage", key="btn_growth", type="primary", use_container_width=True):
+            if st.button("▶ Run Growth Stage", key="btn_growth", type="primary", width="stretch"):
                 if file_growth is None:
                     st.error("Upload a SAV file first.")
                 else:
@@ -1629,7 +1726,7 @@ with tab2:
             st.caption("Target: Enterprise Client Pipeline")
             file_r10 = st.file_uploader("Upload RMW SAV (.sav)", type=["sav"], key="r10_file")
             
-            if st.button("▶ Run R10Mil Stage", key="btn_r10", type="primary", use_container_width=True):
+            if st.button("▶ Run R10Mil Stage", key="btn_r10", type="primary", width="stretch"):
                 if file_r10 is None:
                     st.error("Upload a SAV file first.")
                 else:
@@ -1651,7 +1748,7 @@ with tab2:
             st.caption("Target: Public Sector Pipeline")
             file_pub = st.file_uploader("Upload PUBW SAV (.sav)", type=["sav"], key="pub_file")
             
-            if st.button("▶ Run PUBSC Stage", key="btn_pub", type="primary", use_container_width=True):
+            if st.button("▶ Run PUBSC Stage", key="btn_pub", type="primary", width="stretch"):
                 if file_pub is None:
                     st.error("Upload a SAV file first.")
                 else:
@@ -3156,10 +3253,10 @@ with tab6:
                         st.success("Extraction completed with chronological month sorting successfully!")
 
                         st.subheader("Results Preview: R10MIL_GROWTH")
-                        st.dataframe(pd.DataFrame(rows_r10), use_container_width=True)
+                        st.dataframe(pd.DataFrame(rows_r10), width="stretch")
 
                         st.subheader("Results Preview: PUBSC")
-                        st.dataframe(pd.DataFrame(rows_pub), use_container_width=True)
+                        st.dataframe(pd.DataFrame(rows_pub), width="stretch")
 
                         wb = Workbook()
                         default_sheet = wb.active
@@ -3749,7 +3846,7 @@ with tab7:
             st.warning("No records matched the selected date range.")
             return
             
-        edited_df = st.data_editor(df_transformed, num_rows="fixed", use_container_width=True, height=380, key=f"editor_{prefix_key}")
+        edited_df = st.data_editor(df_transformed, num_rows="fixed", width="stretch", height=380, key=f"editor_{prefix_key}")
         
         date_str_file = e_date.strftime("%Y_%m_%d")
         csv_bytes = edited_df.to_csv(sep='|', index=False, encoding='utf-8').encode('utf-8')
@@ -3771,13 +3868,13 @@ with tab7:
         
 # Update columns from 3 to 4 to include the Audit Log
         d1, d2, d3, d4 = st.columns(4)
-        d1.download_button("📄 Pipe CSV (|)", data=csv_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.csv", mime="text/csv", use_container_width=True, key=f"dl_csv_{prefix_key}")
-        d2.download_button("💾 SPSS (.sav)", data=sav_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.sav", mime="application/x-spss-sav", use_container_width=True, key=f"dl_sav_{prefix_key}")
-        d3.download_button("📊 Excel (.xlsx)", data=excel_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, key=f"dl_xlsx_{prefix_key}")
+        d1.download_button("📄 Pipe CSV (|)", data=csv_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.csv", mime="text/csv", width="stretch", key=f"dl_csv_{prefix_key}")
+        d2.download_button("💾 SPSS (.sav)", data=sav_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.sav", mime="application/x-spss-sav", width="stretch", key=f"dl_sav_{prefix_key}")
+        d3.download_button("📊 Excel (.xlsx)", data=excel_bytes, file_name=f"{prefix_key}_Verbatims_{date_str_file}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", width="stretch", key=f"dl_xlsx_{prefix_key}")
         
         # Add the standalone Audit Log CSV download button
         audit_csv_bytes = df_audit.to_csv(sep='|', index=False, encoding='utf-8').encode('utf-8') if not df_audit.empty else b"No corrections made."
-        d4.download_button("📝 Audit Log", data=audit_csv_bytes, file_name=f"{prefix_key}_AuditLog_{date_str_file}.csv", mime="text/csv", use_container_width=True, key=f"dl_audit_{prefix_key}")
+        d4.download_button("📝 Audit Log", data=audit_csv_bytes, file_name=f"{prefix_key}_AuditLog_{date_str_file}.csv", mime="text/csv", width="stretch", key=f"dl_audit_{prefix_key}")
 
     with tab_growth: render_processing_section("Growth / Business", "Growth", is_pubsc=False)
     with tab_enterprise: render_processing_section("R10Mil / Enterprise", "Enterprise", is_pubsc=False)
