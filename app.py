@@ -242,6 +242,74 @@ st.markdown(
     "Your unified command center for Project Star, Weekly 911's pipeline automation, BM/RM NPS Portfolio Generator, Q11 extractions, Yearly Dashboard generation, and SME/ENT tables."
 )
 
+# ---------------------------------------------------------------------------
+# ENHANCED OPERATIONAL CONTROLS (SAFE ADD-ONS ONLY)
+# ---------------------------------------------------------------------------
+# These helpers extend the dashboard without changing the original workflow logic.
+def _ensure_hub_preferences():
+    defaults = {
+        "hub_export_csv": "Module,Target,Achieved,Progress %\n",
+        "hub_validation_message": "",
+        "hub_dashboard_state": "ready",
+    }
+    for key, value in defaults.items():
+        st.session_state.setdefault(key, value)
+
+
+def _build_hub_export_df(business_target, enterprise_target, pubsc_target, achieved_growth, achieved_rmw, achieved_pubw, total_target_quota, total_achieved):
+    export_df = pd.DataFrame(
+        {
+            "Module": ["Business (Growth)", "Enterprise (R10Mil)", "PUBSC", "Total"],
+            "Target": [
+                float(business_target),
+                float(enterprise_target),
+                float(pubsc_target),
+                float(total_target_quota),
+            ],
+            "Achieved": [
+                int(achieved_growth),
+                int(achieved_rmw),
+                int(achieved_pubw),
+                int(total_achieved),
+            ],
+            "Progress %": [
+                round((achieved_growth / business_target) * 100, 2) if business_target else 0.0,
+                round((achieved_rmw / enterprise_target) * 100, 2) if enterprise_target else 0.0,
+                round((achieved_pubw / pubsc_target) * 100, 2) if pubsc_target else 0.0,
+                round((total_achieved / total_target_quota) * 100, 2) if total_target_quota else 0.0,
+            ],
+        }
+    )
+    return export_df
+
+
+_ensure_hub_preferences()
+
+with st.container():
+    st.markdown("### 🚀 Ops Controls")
+    col_ops_1, col_ops_2, col_ops_3 = st.columns([1.3, 1.5, 2.6])
+
+    with col_ops_1:
+        if st.button("Reset dashboard state", key="hub_reset_dashboard"):
+            st.session_state["hub_export_csv"] = "Module,Target,Achieved,Progress %\n"
+            st.session_state["hub_validation_message"] = ""
+            st.session_state["hub_dashboard_state"] = "ready"
+            st.rerun()
+
+    with col_ops_2:
+        st.download_button(
+            label="Download summary CSV",
+            data=st.session_state.get("hub_export_csv", "Module,Target,Achieved,Progress %\n"),
+            file_name="project_star_summary.csv",
+            mime="text/csv",
+            key="hub_download_summary",
+        )
+
+    with col_ops_3:
+        st.caption(
+            "Operational add-ons: KPI validation, summary export, and reset controls built in a separate version without touching the original app logic."
+        )
+
 # ============================================================================
 # SCRIPT PURPOSE
 # ============================================================================
@@ -329,6 +397,36 @@ with tab1:
         )
 
     total_target_quota = business_target + enterprise_target + pubsc_target
+
+    validation_issues = []
+    if total_target_quota <= 0:
+        validation_issues.append("Target quota total is zero; please update the targets.")
+    if total_segment_quota > 0 and abs(total_segment_quota - total_target_quota) > 0:
+        validation_issues.append(
+            "Segment-level quota total does not match the overall target total. Review the segment inputs."
+        )
+
+    if validation_issues:
+        st.session_state["hub_dashboard_state"] = "warning"
+        st.session_state["hub_validation_message"] = "⚠️ " + " ".join(validation_issues)
+        st.warning(st.session_state["hub_validation_message"])
+    else:
+        st.session_state["hub_dashboard_state"] = "ready"
+        st.session_state["hub_validation_message"] = "✅ Input validation passed: quota targets are complete and internally consistent."
+        st.success(st.session_state["hub_validation_message"])
+
+    summary_snapshot = pd.DataFrame(
+        {
+            "Module": ["Business (Growth)", "Enterprise (R10Mil)", "PUBSC"],
+            "Target": [business_target, enterprise_target, pubsc_target],
+            "Segment Total": [
+                q_rom_r1m + q_r1m_r5m + q_r5m_r10m + q_r10_r60m + q_r60_r150m + q_r150m_plus,
+                0,
+                0,
+            ],
+        }
+    )
+    st.dataframe(summary_snapshot, hide_index=True, use_container_width=True)
 
     st.markdown("---")
 
@@ -542,6 +640,18 @@ with tab1:
     }
     df_summary = pd.DataFrame(summary_data)
     st.dataframe(df_summary, use_container_width=True, hide_index=True)
+
+    export_df = _build_hub_export_df(
+        business_target,
+        enterprise_target,
+        pubsc_target,
+        effective_achieved_growth,
+        effective_achieved_rmw,
+        achieved_pubw,
+        total_target_quota,
+        total_achieved,
+    )
+    st.session_state["hub_export_csv"] = export_df.to_csv(index=False)
 
     st.markdown("---")
 
