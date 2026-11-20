@@ -2111,6 +2111,8 @@ with tab3:
                     if 'TYPE' in df_lbl.columns:
                         df_base['TYPE'] = df_lbl[orig_type_col]
 
+                    df_base['_TYPE_CODE'] = raw_type_numeric
+
                     if selected_waves_filter != 'ALL' and 'WAVE' in df_base.columns:
                         df_base = df_base[df_base['WAVE'].isin(selected_waves_filter)].copy()
 
@@ -2135,15 +2137,15 @@ with tab3:
 
                     runs = []
                     if 'TYPE' in df_raw.columns:
-                        subset_type_numeric = pd.to_numeric(df_raw[orig_type_col], errors='coerce')
+                        subset_type_numeric = pd.to_numeric(df_base['_TYPE_CODE'], errors='coerce')
 
                         mask_comb = subset_type_numeric.isin([1, 2])
                         mask_grow = subset_type_numeric == 1
                         mask_r10m = subset_type_numeric == 2
 
-                        df_comb = df_base[mask_comb].copy()
-                        df_grow = df_base[mask_grow].copy()
-                        df_r10m = df_base[mask_r10m].copy()
+                        df_comb = df_base[mask_comb].drop(columns=['_TYPE_CODE']).copy()
+                        df_grow = df_base[mask_grow].drop(columns=['_TYPE_CODE']).copy()
+                        df_r10m = df_base[mask_r10m].drop(columns=['_TYPE_CODE']).copy()
 
                         if portfolio_mode == "Generate All (Combined, Growth, and R10M Separately)":
                             runs = [("Combined", df_comb), ("Growth", df_grow), ("R10M", df_r10m)]
