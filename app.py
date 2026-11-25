@@ -335,13 +335,13 @@ _ensure_hub_preferences()
 #   and the region/segment mapping rules in the relevant tab.
 
 # =========================================================================
-# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (7 Tabs Total)
+# SECTION 3: DEFINING MAIN APP NAVIGATION TABS (8 Tabs Total)
 # =========================================================================
 # Each tab represents a distinct operational module. This tab structure keeps
 # the dashboard easy to navigate while maintaining separate logic for each
 # workflow. If a new module is added later, update both the tab list here and
 # the corresponding section below.
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
     [
         "📊 Project Status & Quotas Update",
         "⚙️ Weekly 911's Control Room",
@@ -350,6 +350,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
         "📅 NPS Yearly Dashboard",
         "🏢 SME/ENT Tables",
         "💬 CATI Verbatim Processor",
+        "End of wave dashboard",
     ]
 )
 
@@ -3881,3 +3882,142 @@ with tab7:
     with tab_growth: render_processing_section("Growth / Business", "Growth", is_pubsc=False)
     with tab_enterprise: render_processing_section("R10Mil / Enterprise", "Enterprise", is_pubsc=False)
     with tab_pubsc: render_processing_section("Public Sector / PUBSC", "PUBSC", is_pubsc=True)
+
+# ==========================================================================
+# TAB 8: END OF WAVE DASHBOARD
+# ==========================================================================
+def _build_end_wave_type_exports(combined_xlsx):
+    source_workbook = openpyxl.load_workbook(io.BytesIO(combined_xlsx), read_only=True)
+    source_data = source_workbook["_Data"]
+    headers = next(source_data.iter_rows(min_row=1, max_row=1, values_only=True))
+    if "Type" not in headers:
+        raise ValueError("The generated dashboard data does not contain a Type column.")
+
+    type_index = headers.index("Type")
+    data_rows = list(source_data.iter_rows(min_row=2, values_only=True))
+    type_values = sorted(
+        {str(row[type_index]) for row in data_rows if row[type_index] is not None}
+    )
+    source_workbook.close()
+
+    if not type_values:
+        raise ValueError("No Type values were found in the generated dashboard data.")
+
+    exports = {}
+    for type_value in type_values:
+        workbook = openpyxl.load_workbook(io.BytesIO(combined_xlsx))
+        data_sheet = workbook["_Data"]
+        if data_sheet.max_row > 1:
+            data_sheet.delete_rows(2, data_sheet.max_row - 1)
+        for row in data_rows:
+            if row[type_index] is not None and str(row[type_index]) == type_value:
+                data_sheet.append(row)
+
+        dashboard_sheet = workbook["NPS Dashboard"]
+        dashboard_sheet["L5"] = type_value
+        for validation in dashboard_sheet.data_validations.dataValidation:
+            if "L5" in validation.sqref:
+                validation.formula1 = f'"{type_value}"'
+
+        workbook.calculation.fullCalcOnLoad = True
+        workbook.calculation.forceFullCalc = True
+        output = io.BytesIO()
+        workbook.save(output)
+        workbook.close()
+        exports[type_value] = output.getvalue()
+
+    return exports
+
+
+with tab8:
+    st.header("End of wave dashboard", icon=":material/assessment:")
+    st.write(
+        "Upload the combined Project Star SPSS file to generate the multi-wave "
+        "dashboard, with a combined workbook and separate workbooks for each Type."
+    )
+
+    dashboard_upload = st.file_uploader(
+        "Upload Project Star SPSS file (.sav)",
+        type=["sav"],
+        help="For example: Project Star_W1 to W22.sav",
+        key="end_wave_dashboard_upload",
+    )
+
+    if dashboard_upload is not None:
+        dashboard_input = dashboard_upload.getvalue()
+        dashboard_input_hash = hashlib.sha256(dashboard_input).hexdigest()
+
+        if st.button("Generate dashboard", key="end_wave_dashboard_generate"):
+            import subprocess
+            import sys
+            import zipfile
+
+            with st.spinner("Generating the end of wave dashboard..."):
+                try:
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        input_path = os.path.join(temp_dir, "Project Star_W1 to W22.sav")
+                        output_path = os.path.join(temp_dir, "Star_Yearly_Dashboard_W22.xlsx")
+                        with open(input_path, "wb") as input_file:
+                            input_file.write(dashboard_input)
+
+                        dashboard_env = os.environ.copy()
+                        dashboard_env["STAR_DASHBOARD_INPUT"] = input_path
+                        dashboard_env["STAR_DASHBOARD_OUTPUT"] = output_path
+                        dashboard_script = os.path.join(
+                            os.path.dirname(os.path.abspath(__file__)),
+                            "star_dashboard.py",
+                        )
+                        result = subprocess.run(
+                            [sys.executable, dashboard_script],
+                            capture_output=True,
+                            text=True,
+                            env=dashboard_env,
+                            check=False,
+                        )
+                        if result.returncode != 0:
+                            details = (result.stderr or result.stdout).strip()
+                            raise RuntimeError(
+                                details or "The dashboard script exited without an error message."
+                            )
+
+                        with open(output_path, "rb") as output_file:
+                            combined_xlsx = output_file.read()
+
+                    type_exports = _build_end_wave_type_exports(combined_xlsx)
+                    st.session_state["end_wave_dashboard_results"] = {
+                        "input_hash": dashboard_input_hash,
+                        "combined": combined_xlsx,
+                        "by_type": type_exports,
+                    }
+                    st.success("Dashboard workbooks generated successfully.")
+                except (
+                    KeyError,
+                    OSError,
+                    RuntimeError,
+                    ValueError,
+                    zipfile.BadZipFile,
+                    subprocess.SubprocessError,
+                    openpyxl.utils.exceptions.InvalidFileException,
+                ) as exc:
+                    st.error(f"Dashboard generation failed: {exc}")
+
+        dashboard_results = st.session_state.get("end_wave_dashboard_results")
+        if dashboard_results and dashboard_results["input_hash"] == dashboard_input_hash:
+            st.subheader("Download workbooks")
+            st.download_button(
+                "Download combined dashboard",
+                data=dashboard_results["combined"],
+                file_name="Star_Yearly_Dashboard_W22_Combined.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="end_wave_dashboard_download_combined",
+            )
+
+            for type_value, type_xlsx in dashboard_results["by_type"].items():
+                safe_type = re.sub(r"[^A-Za-z0-9_-]+", "_", type_value).strip("_")
+                st.download_button(
+                    f"Download {type_value} dashboard",
+                    data=type_xlsx,
+                    file_name=f"Star_Yearly_Dashboard_W22_{safe_type}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key=f"end_wave_dashboard_download_{safe_type}",
+                )
