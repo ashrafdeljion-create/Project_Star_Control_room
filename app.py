@@ -347,7 +347,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
         "⚙️ Weekly 911's Control Room",
         "📈 BM/RM NPS Portfolio Generator",
         "📋 Q11 Ratings & Reasons Extraction",
-        "📅 NPS Yearly Dashboard",
+        "📅 NPS Yearly Dashboard crosstab",
         "🏢 SME/ENT Tables",
         "💬 CATI Verbatim Processor",
         "📶 End of wave dashboard",
@@ -2412,7 +2412,7 @@ with tab4:
         )
 
 # ==========================================================================
-# TAB 5: NPS YEARLY DASHBOARD GENERATOR
+# TAB 5: NPS YEARLY DASHBOARD CROSSTAB GENERATOR
 # ==========================================================================
 # Purpose:
 # This tab creates the annual NPS dashboard based on the yearly SPSS input.
@@ -2425,7 +2425,7 @@ with tab4:
 # - Producing a single Excel dashboard output.
 # ==========================================================================
 with tab5:
-    st.markdown("### 📅 NPS Yearly Dashboard Generator")
+    st.markdown("### 📅 NPS Yearly Dashboard crosstab Generator")
     st.markdown("Upload your latest yearly SPSS file (`Project Star_W? to W?.sav`) below to generate and download the cross-tabulation report.")
 
     yearly_file = st.file_uploader("Upload Yearly SPSS File (.sav)", type=["sav"], key="yearly_spss_file")
